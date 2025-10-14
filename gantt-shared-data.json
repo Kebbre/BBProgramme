@@ -1,0 +1,1513 @@
+{
+  "tasks": [
+    {
+      "id": "gen-1760449271373-0",
+      "name": "GA Plan",
+      "description": "",
+      "startDate": "2025-10-28",
+      "endDate": "2025-12-08",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-0-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 15
+        },
+        {
+          "id": "gen-1760449271373-0-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 3
+        },
+        {
+          "id": "gen-1760449271373-0-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 5
+        },
+        {
+          "id": "gen-1760449271373-0-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 3
+        },
+        {
+          "id": "gen-1760449271373-0-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 4
+        },
+        {
+          "id": "gen-1760449271373-0-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-0-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-1",
+      "name": "Elevations",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-11-03",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-1-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 8
+        },
+        {
+          "id": "gen-1760449271373-1-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-1-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-1-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-1-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-1-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-1-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-2",
+      "name": "Circulation Plans",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-10-23",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-2-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 4
+        },
+        {
+          "id": "gen-1760449271373-2-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-2-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-2-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-2-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-2-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-2-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-3",
+      "name": "GA Plan",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-10-29",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-3-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 6
+        },
+        {
+          "id": "gen-1760449271373-3-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-3-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-3-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-3-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-3-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-3-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-4",
+      "name": "Elevations",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-11-03",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-4-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 8
+        },
+        {
+          "id": "gen-1760449271373-4-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-4-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-4-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-4-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-4-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-4-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-5",
+      "name": "Circulation Plans",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-10-23",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-5-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 4
+        },
+        {
+          "id": "gen-1760449271373-5-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-5-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-5-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-5-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-5-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-5-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-6",
+      "name": "GA Plan",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-10-29",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-6-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 6
+        },
+        {
+          "id": "gen-1760449271373-6-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-6-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-6-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-6-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-6-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-6-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-7",
+      "name": "Elevations",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-11-03",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-7-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 8
+        },
+        {
+          "id": "gen-1760449271373-7-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-7-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-7-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-7-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-7-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-7-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-8",
+      "name": "Circulation Plans",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-10-23",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-8-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 4
+        },
+        {
+          "id": "gen-1760449271373-8-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-8-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-8-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-8-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-8-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-8-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-9",
+      "name": "GA Plan",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-10-29",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-9-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 6
+        },
+        {
+          "id": "gen-1760449271373-9-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-9-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-9-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-9-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-9-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-9-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-10",
+      "name": "Elevations",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-11-03",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-10-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 8
+        },
+        {
+          "id": "gen-1760449271373-10-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-10-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-10-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-10-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-10-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-10-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-11",
+      "name": "Circulation Plans",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-10-23",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-11-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 4
+        },
+        {
+          "id": "gen-1760449271373-11-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-11-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-11-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-11-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-11-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-11-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-12",
+      "name": "GA Plan",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-11-14",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-12-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 12
+        },
+        {
+          "id": "gen-1760449271373-12-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-12-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 4
+        },
+        {
+          "id": "gen-1760449271373-12-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-12-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 4
+        },
+        {
+          "id": "gen-1760449271373-12-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-12-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-13",
+      "name": "Elevations",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-11-03",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-13-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 8
+        },
+        {
+          "id": "gen-1760449271373-13-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-13-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-13-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-13-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-13-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-13-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-14",
+      "name": "GA Plan",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-10-29",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-14-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 6
+        },
+        {
+          "id": "gen-1760449271373-14-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-14-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-14-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-14-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-14-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-14-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-15",
+      "name": "Elevations",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-11-03",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-15-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 8
+        },
+        {
+          "id": "gen-1760449271373-15-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-15-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-15-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-15-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-15-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-15-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-16",
+      "name": "Circulation Plans",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-10-23",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-16-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 4
+        },
+        {
+          "id": "gen-1760449271373-16-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-16-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-16-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-16-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-16-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-16-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-17",
+      "name": "GA Plan",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-10-29",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-17-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 6
+        },
+        {
+          "id": "gen-1760449271373-17-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-17-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-17-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-17-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-17-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-17-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-18",
+      "name": "Elevations",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-11-03",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-18-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 8
+        },
+        {
+          "id": "gen-1760449271373-18-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-18-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-18-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-18-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-18-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-18-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-19",
+      "name": "Circulation Plans",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-10-23",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-19-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 4
+        },
+        {
+          "id": "gen-1760449271373-19-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-19-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-19-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-19-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-19-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-19-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-20",
+      "name": "GA Plan",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-10-29",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-20-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 6
+        },
+        {
+          "id": "gen-1760449271373-20-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-20-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-20-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-20-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-20-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-20-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-21",
+      "name": "Elevations",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-11-03",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-21-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 8
+        },
+        {
+          "id": "gen-1760449271373-21-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-21-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-21-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-21-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-21-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-21-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-22",
+      "name": "Circulation Plans",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-10-23",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-22-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 4
+        },
+        {
+          "id": "gen-1760449271373-22-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-22-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-22-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-22-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-22-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-22-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-23",
+      "name": "GA Plan",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-10-29",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-23-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 6
+        },
+        {
+          "id": "gen-1760449271373-23-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-23-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-23-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-23-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-23-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-23-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-24",
+      "name": "Elevations",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-11-03",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-24-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 8
+        },
+        {
+          "id": "gen-1760449271373-24-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-24-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-24-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-24-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-24-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-24-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-25",
+      "name": "Circulation Plans",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-10-23",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-25-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 4
+        },
+        {
+          "id": "gen-1760449271373-25-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-25-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-25-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-25-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-25-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-25-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-26",
+      "name": "GA Plan",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-11-14",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-26-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 12
+        },
+        {
+          "id": "gen-1760449271373-26-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-26-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 4
+        },
+        {
+          "id": "gen-1760449271373-26-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-26-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 4
+        },
+        {
+          "id": "gen-1760449271373-26-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-26-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-27",
+      "name": "Elevations",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-11-03",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-27-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 8
+        },
+        {
+          "id": "gen-1760449271373-27-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-27-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-27-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 2
+        },
+        {
+          "id": "gen-1760449271373-27-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-27-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-27-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "gen-1760449271373-28",
+      "name": "Circulation Plans",
+      "description": "",
+      "startDate": "2025-10-14",
+      "endDate": "2025-12-04",
+      "progress": 0,
+      "miniTasks": [
+        {
+          "id": "gen-1760449271373-28-mini-1",
+          "enabled": true,
+          "name": "Bond Bryan Design",
+          "duration": 19
+        },
+        {
+          "id": "gen-1760449271373-28-mini-2",
+          "enabled": true,
+          "name": "CPD",
+          "duration": 4
+        },
+        {
+          "id": "gen-1760449271373-28-mini-3",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 6
+        },
+        {
+          "id": "gen-1760449271373-28-mini-4",
+          "enabled": true,
+          "name": "Client Comments",
+          "duration": 4
+        },
+        {
+          "id": "gen-1760449271373-28-mini-5",
+          "enabled": true,
+          "name": "Bond Bryan review",
+          "duration": 5
+        },
+        {
+          "id": "gen-1760449271373-28-mini-6",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        },
+        {
+          "id": "gen-1760449271373-28-mini-7",
+          "enabled": false,
+          "name": "",
+          "duration": 1
+        }
+      ]
+    }
+  ],
+  "milestones": []
+}

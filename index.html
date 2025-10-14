@@ -1,0 +1,3108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Architecture Project Planner</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;}
+    :root{--sidebar-width:470px;--day-width:32px;--row-height:54px;--primary:#3056d3;--surface:#fff;--surface-alt:#f2f4f9;--border:#d6dbe7;--text:#1f2937;--text-muted:#4b5563;--header-offset-days:.8rem;--header-offset-weeks:4.5rem;}
+    body{margin:0;font-family:"Inter","Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;background:#eef1f7;color:var(--text);min-height:100vh;display:flex;flex-direction:column;font-size:.94rem;}
+    h1,h2,h3{margin:0;}
+    button{border:0;background:var(--primary);color:#fff;border-radius:8px;padding:.5rem 1rem;font-size:.95rem;font-weight:600;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;}
+    button:disabled{opacity:.4;cursor:not-allowed;}
+    button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 10px 18px rgba(48,86,211,.16);}
+    input,textarea{font:inherit;border-radius:6px;border:1px solid var(--border);padding:.35rem .5rem;width:100%;background:#fff;color:inherit;}
+    input:focus,textarea:focus{outline:2px solid rgba(48,86,211,.25);border-color:transparent;}
+    textarea{resize:vertical;min-height:96px;}
+    .top-bar{display:flex;justify-content:space-between;align-items:flex-end;gap:1.5rem;padding:1.1rem 1.75rem 1rem;background:#fff;border-bottom:1px solid var(--border);box-shadow:0 2px 8px rgba(31,45,61,.08);position:sticky;top:0;z-index:5;}
+    .top-bar form{display:flex;flex-wrap:wrap;align-items:flex-end;gap:1rem;}
+    .top-bar .button-row{display:flex;align-items:center;gap:.75rem;}
+    .top-bar .button-row .secondary{background:var(--surface-alt);color:var(--text);border:1px solid var(--border);box-shadow:none;}
+    .top-bar .button-row .secondary:hover{transform:none;color:var(--primary);border-color:var(--primary);}
+    .top-bar .field{display:flex;flex-direction:column;gap:.35rem;}
+    .top-bar label{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);}
+    .top-bar input,.top-bar select{min-width:140px;padding:.4rem .6rem;border-radius:8px;border:1px solid var(--border);background:#fff;font:inherit;color:inherit;}
+    .top-bar input:focus,.top-bar select:focus{outline:2px solid rgba(48,86,211,.25);border-color:transparent;}
+    .top-bar button{align-self:flex-end;}
+    .legend{display:flex;flex-wrap:wrap;gap:.85rem;align-items:center;}
+    .legend-item{display:flex;align-items:center;gap:.45rem;font-size:.78rem;color:var(--text-muted);}
+    .legend-swatch{width:16px;height:16px;border-radius:6px;box-shadow:0 0 0 1px rgba(15,23,42,.1);}
+    .app{display:flex;flex:1;min-height:0;}
+    .sidebar{width:var(--sidebar-width);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;}
+    .sidebar-header{padding:1.2rem 1.5rem .9rem;border-bottom:1px solid var(--border);}
+    .sidebar-header h1{font-size:1.35rem;font-weight:700;margin-bottom:.8rem;}
+    .sidebar-actions{display:flex;gap:.6rem;flex-wrap:wrap;}
+    .sidebar-actions button{flex:1 0 48%;min-width:0;}
+    .sidebar-actions .icon-btn{flex:0 0 auto;width:42px;padding:.45rem;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);box-shadow:none;font-size:1rem;line-height:1;border-radius:8px;}
+    .sidebar-actions .icon-btn:hover{transform:none;color:var(--primary);border-color:var(--primary);}
+    .sidebar-actions .secondary{background:var(--surface-alt);color:var(--text);border:1px solid var(--border);box-shadow:none;}
+    .sidebar-actions .secondary:hover{transform:none;color:var(--primary);border-color:var(--primary);}
+    .task-list-header,
+    .task-row{display:grid;grid-template-columns:105px 95px 95px 60px 80px;column-gap:1px;align-items:center;}
+    .task-list-header{padding:.6rem 1.5rem;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);background:rgba(48,86,211,.08);position:sticky;top:0;z-index:2;align-items:center;}
+    .task-list{flex:1;overflow-y:auto;padding:0;}
+    .task-row{align-items:center;padding:0 1.5rem;height:var(--row-height);border-bottom:1px solid rgba(15,23,42,.06);cursor:pointer;transition:background .15s ease,box-shadow .15s ease;font-size:.7rem;}
+    .task-row > *{width:100%;box-sizing:border-box;height:100%;}
+    .task-row > *:nth-child(1){display:flex;align-items:center;}
+    .task-row > *:nth-child(n+2){display:flex;align-items:center;justify-content:flex-end;}
+    .task-row:hover{background:rgba(48,86,211,.08);}
+    .task-row.selected{background:rgba(48,86,211,.14);box-shadow:inset 4px 0 0 var(--primary);}
+    .task-name{display:flex;align-items:center;font-size:inherit;font-weight:600;color:var(--text);}
+    .task-duration{font-size:.7rem;font-weight:600;text-align:center;padding:.3rem .5rem;border-radius:999px;background:rgba(48,86,211,.12);color:var(--primary);height:30px;display:inline-flex;align-items:center;justify-content:center;line-height:1;}
+    .task-progress{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:.2rem;height:100%;}
+    .task-row input[type="date"],.task-row input[type="number"]{font-size:.7rem;padding:.25rem .4rem;height:30px;line-height:30px;}
+    .task-row input[type="date"]{width:100%;}
+    .task-progress input{text-align:right;width:68px;min-width:unset;padding-right:1.3rem;}
+    .task-progress span{position:relative;right:.35rem;transform:none;font-size:.65rem;color:var(--text-muted);}
+    .gantt-wrapper{flex:1;display:flex;flex-direction:column;}
+    .gantt-header{padding:1.2rem 1.75rem 1rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;}
+    .gantt-header h2{font-size:1.2rem;font-weight:600;}
+    .gantt-header-left{display:inline-flex;align-items:center;gap:.75rem;flex-wrap:wrap;}
+    .view-mode-toggle{display:inline-flex;align-items:center;background:var(--surface-alt);border:1px solid var(--border);border-radius:999px;padding:2px;}
+    .view-mode-toggle button{border:0;background:transparent;color:var(--text-muted);font-size:.75rem;font-weight:600;padding:.3rem .75rem;border-radius:999px;cursor:pointer;transition:background .15s ease,color .15s ease,box-shadow .15s ease;}
+    .view-mode-toggle button.active{background:var(--primary);color:#fff;box-shadow:0 6px 14px rgba(48,86,211,.2);}
+    .view-mode-toggle button:focus-visible{outline:2px solid rgba(48,86,211,.35);outline-offset:2px;}
+    .gantt-calendar{flex:1;background:var(--surface);border-top:1px solid var(--border);overflow:auto;position:relative;}
+    .timeline-header{position:sticky;top:0;z-index:4;display:grid;background:#fff;border-bottom:1px solid var(--border);box-shadow:0 4px 12px rgba(15,23,42,.08);grid-auto-flow:column;}
+    .timeline-header .timeline-year,
+    .timeline-header .timeline-month,
+    .timeline-header .timeline-week{display:flex;align-items:center;justify-content:center;padding:.4rem .6rem;font-weight:700;font-size:.78rem;color:var(--text);border-left:1px solid rgba(15,23,42,.08);background:rgba(48,86,211,.06);}
+    .timeline-header .timeline-month{font-weight:600;font-size:.75rem;color:var(--text-muted);background:rgba(48,86,211,.02);}
+    .timeline-header .timeline-week{background:rgba(48,86,211,.08);color:var(--text);}
+    .timeline-header .timeline-day-name,
+    .timeline-header .timeline-day-number{display:flex;align-items:center;justify-content:center;padding:.35rem .25rem;border-left:1px solid rgba(15,23,42,.06);}
+    .timeline-header > *{position:relative;z-index:2;}
+    .timeline-highlight{background:rgba(220,38,38,.12);border-left:2px solid transparent;border-right:2px solid transparent;border-radius:6px;pointer-events:none;z-index:1;}
+    .timeline-highlight--today{background:rgba(220,38,38,.12);border-color:#dc2626;}
+    .timeline-highlight--deadline{background:rgba(253,224,140,.28);border-color:#d97706;}
+    .timeline-highlight--standdown{background:rgba(148,163,184,.28);border-color:#475569;}
+    .timeline-header.week-view .timeline-highlight{border-radius:4px;}
+    .timeline-header .timeline-day-name.today,
+    .timeline-header .timeline-day-number.today,
+    .timeline-header .timeline-week.today{color:#dc2626;font-weight:700;}
+    .timeline-header .timeline-day-name.milestone-deadline,
+    .timeline-header .timeline-day-number.milestone-deadline,
+    .timeline-header .timeline-week.milestone-deadline{color:#b45309;font-weight:700;}
+    .timeline-header .timeline-day-name.milestone-standdown,
+    .timeline-header .timeline-day-number.milestone-standdown,
+    .timeline-header .timeline-week.milestone-standdown{color:#334155;font-weight:700;}
+    .timeline-header .timeline-day-name{font-size:.72rem;font-weight:600;color:var(--text-muted);letter-spacing:.03em;text-transform:uppercase;}
+    .timeline-header .timeline-day-number{font-size:.76rem;font-weight:700;color:var(--text);}
+    .timeline-header .timeline-year:first-child,
+    .timeline-header .timeline-month:first-child,
+    .timeline-header .timeline-week:first-child,
+    .timeline-header .timeline-day-name:first-child,
+    .timeline-header .timeline-day-number:first-child{border-left:none;}
+    .timeline-header.week-view .timeline-year,
+    .timeline-header.week-view .timeline-month{background:rgba(48,86,211,.04);}
+    .gantt-body{margin-top:0;display:flex;flex-direction:column;gap:0;transition:margin-top .2s ease;}
+    .gantt-row{position:relative;height:var(--row-height);min-width:100%;overflow:visible;}
+    .gantt-grid{position:absolute;inset:0;display:grid;pointer-events:none;z-index:0;}
+    .gantt-grid .day-cell{position:relative;border-left:1px solid rgba(15,23,42,.05);background:rgba(240,243,248,.9);}
+    .gantt-grid .day-cell:nth-child(5n+1){background:rgba(48,86,211,.08);}
+    .gantt-grid .day-cell::before,
+    .gantt-grid .day-cell::after{content:"";position:absolute;top:0;bottom:0;left:0;right:0;border-radius:6px;pointer-events:none;}
+    .gantt-grid .day-cell::before{background:transparent;opacity:0;}
+    .gantt-grid .day-cell.milestone-deadline::before{background:rgba(253,224,140,.28);border-left:2px solid #d97706;border-right:2px solid #d97706;opacity:1;}
+    .gantt-grid .day-cell.milestone-standdown::before{background:rgba(148,163,184,.32);border-left:2px solid #475569;border-right:2px solid #475569;opacity:1;}
+    .gantt-grid .day-cell.today::after{background:rgba(220,38,38,.12);border-left:2px solid #dc2626;border-right:2px solid #dc2626;}
+    .task-bar{position:absolute;top:50%;transform:translateY(-50%);height:35px;min-height:35px;border-radius:8px;background:rgba(48,86,211,.22);border:1px solid rgba(48,86,211,.32);display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:.12rem;padding:.25rem .7rem;cursor:pointer;transition:box-shadow .2s ease,transform .2s ease;overflow:visible;}
+    .task-bar:hover{transform:translateY(calc(-50% - 0.5px));box-shadow:0 12px 22px rgba(48,86,211,.2);}
+    .task-bar.selected{background:rgba(48,86,211,.32);border-color:rgba(48,86,211,.55);box-shadow:0 12px 26px rgba(48,86,211,.26);}
+    .task-label{font-size:.85rem;font-weight:600;line-height:1.05;white-space:nowrap;pointer-events:none;color:#000;position:relative;z-index:5;text-shadow:0 1px 2px rgba(255,255,255,.25);max-width:100%;overflow:hidden;text-overflow:ellipsis;}
+    .task-dates{font-size:.74rem;line-height:1.05;color:rgba(0,0,0,.72);pointer-events:none;position:relative;z-index:5;max-width:100%;overflow:hidden;text-overflow:ellipsis;}
+    .task-bar .progress{position:absolute;top:0;bottom:0;left:0;width:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,.9)0,rgba(255,255,255,.9)6px,rgba(255,255,255,.25)6px,rgba(255,255,255,.25)12px);background-color:rgba(255,255,255,.25);border-radius:8px 0 0 8px;pointer-events:none;transition:width .2s ease;z-index:2;box-shadow:inset -1px 0 0 rgba(0,0,0,.08);overflow:hidden;}
+    .task-bar .progress.is-full{border-radius:8px;}
+    .mini-layer{position:absolute;inset:0;pointer-events:none;border-radius:8px;overflow:hidden;z-index:1;}
+    .mini-segment{position:absolute;top:0;bottom:0;opacity:.9;}
+    .standdown-layer{position:absolute;inset:0;pointer-events:none;z-index:3;}
+    .standdown-gap{position:absolute;top:-1px;bottom:-1px;background:rgba(55,65,81,.7);border-left:1px dashed rgba(31,41,55,.8);border-right:1px dashed rgba(31,41,55,.8);box-shadow:inset 0 0 0 1px rgba(17,24,39,.36);}
+    .mini-0{background:rgba(48,86,211,.88);} .mini-1{background:rgba(46,160,67,.85);} .mini-2{background:rgba(191,135,0,.85);} .mini-3{background:rgba(219,97,162,.85);} .mini-4{background:rgba(137,87,229,.85);} .mini-5{background:rgba(64,193,213,.85);} .mini-6{background:rgba(231,120,67,.85);}
+    .handle{position:absolute;top:0;bottom:0;width:10px;background:rgba(15,23,42,.18);border-radius:4px;cursor:ew-resize;opacity:0;transition:opacity .15s ease;z-index:6;}
+    .task-bar:hover .handle,.task-bar.selected .handle{opacity:1;}
+    .handle-start{left:-4px;}
+    .handle-end{right:-4px;}
+    .empty-state{padding:2rem 1.5rem;color:var(--text-muted);font-size:.95rem;text-align:center;}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);z-index:10;}
+    .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:11;padding:2rem;}
+    .modal.hidden,.modal-backdrop.hidden{display:none;}
+    .modal-content{background:#fff;border-radius:14px;width:min(720px,96vw);max-height:92vh;display:flex;flex-direction:column;box-shadow:0 28px 64px rgba(15,23,42,.3);overflow:auto;}
+    .modal-header{padding:1.3rem 1.75rem 1rem;border-bottom:1px solid rgba(15,23,42,.08);display:flex;align-items:center;justify-content:space-between;}
+    .modal-body{padding:1.4rem 1.75rem;display:flex;flex-direction:column;gap:1.4rem;}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem 1.4rem;}
+    .form-group{display:flex;flex-direction:column;gap:.4rem;font-size:.88rem;}
+    .form-group label{font-weight:600;color:var(--text-muted);}
+    .duration-indicator{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .6rem;border-radius:999px;background:rgba(48,86,211,.12);color:var(--primary);font-size:.8rem;font-weight:600;}
+    .mini-task-section{border:1px solid rgba(15,23,42,.08);border-radius:12px;background:rgba(48,86,211,.05);padding:1.1rem 1.4rem;display:flex;flex-direction:column;gap:1rem;}
+    .mini-task-section h3{font-size:1rem;font-weight:700;}
+    .mini-task-section p{margin:0;font-size:.85rem;color:var(--text-muted);}
+    .mini-task-list{display:flex;flex-direction:column;gap:.8rem;}
+    .mini-task-item{display:grid;grid-template-columns:auto 1fr 110px auto;gap:.65rem;align-items:center;padding:.6rem .8rem;border-radius:10px;background:rgba(255,255,255,.85);border:1px solid rgba(15,23,42,.05);}
+    .mini-task-item.disabled{opacity:.4;}
+    .mini-task-item label{display:flex;align-items:center;gap:.45rem;font-weight:600;font-size:.85rem;}
+    .mini-task-item input[type="checkbox"]{width:18px;height:18px;accent-color:var(--primary);}
+    .mini-task-item select{font:inherit;border-radius:6px;border:1px solid var(--border);padding:.4rem .5rem;background:#fff;color:inherit;}
+    .mini-task-item select:disabled{background:#fff;}
+    .mini-task-duration{display:flex;align-items:center;gap:.35rem;font-size:.78rem;color:var(--text-muted);}
+    .mini-task-duration input{width:60px;text-align:right;padding-right:.35rem;font-size:.78rem;height:32px;}
+    .mini-task-controls{display:flex;flex-direction:column;gap:.35rem;align-items:center;}
+    .mini-task-controls button{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--text);font-size:.8rem;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:color .15s ease,border-color .15s ease,transform .15s ease;}
+    .mini-task-controls button:hover:not(:disabled){color:var(--primary);border-color:var(--primary);transform:translateY(-1px);}
+    .mini-task-controls button:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+    .modal-footer{padding:1rem 1.75rem 1.35rem;border-top:1px solid rgba(15,23,42,.08);display:flex;justify-content:flex-end;gap:.75rem;}
+    .modal-footer .secondary{background:#fff;color:var(--text);border:1px solid var(--border);}
+    .modal-footer .secondary:hover{color:var(--primary);border-color:var(--primary);transform:none;}
+    .schedule-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);z-index:12;}
+    .schedule-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:13;padding:2rem;}
+    .schedule-modal.hidden,.schedule-modal-backdrop.hidden{display:none;}
+    .schedule-modal-content{background:#fff;border-radius:14px;width:min(660px,95vw);max-height:92vh;display:flex;flex-direction:column;box-shadow:0 28px 64px rgba(15,23,42,.3);}
+    .schedule-modal-header{padding:1.4rem 1.75rem 1rem;border-bottom:1px solid rgba(15,23,42,.08);display:flex;flex-direction:column;gap:.45rem;}
+    .schedule-modal-header h2{margin:0;font-size:1.25rem;font-weight:700;}
+    .schedule-modal-header p{margin:0;font-size:.88rem;color:var(--text-muted);}
+    .schedule-modal-body{padding:1.4rem 1.75rem;display:flex;flex-direction:column;gap:1rem;overflow:auto;}
+    .milestone-toolbar{display:flex;gap:.6rem;flex-wrap:wrap;}
+    .milestone-toolbar button{background:var(--primary);color:#fff;border:none;border-radius:8px;padding:.45rem 1rem;font-size:.85rem;font-weight:600;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;}
+    .milestone-toolbar button:hover{transform:translateY(-1px);box-shadow:0 8px 16px rgba(48,86,211,.18);}
+    .milestone-toolbar button:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
+    .milestone-toolbar .neutral{background:#fff;color:var(--text);border:1px solid var(--border);box-shadow:none;}
+    .milestone-toolbar .neutral:hover{transform:none;color:var(--primary);border-color:var(--primary);}
+    .milestone-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.75rem;}
+    .milestone-item{display:grid;grid-template-columns:minmax(0,1fr) 140px repeat(2,minmax(130px,1fr));gap:.75rem;align-items:center;padding:.8rem 1rem;border:1px solid rgba(15,23,42,.08);border-radius:10px;background:rgba(248,250,255,.9);position:relative;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;}
+    .milestone-item:hover{border-color:rgba(48,86,211,.35);box-shadow:0 12px 28px rgba(15,23,42,.16);}
+    .milestone-item.selected{border-color:var(--primary);box-shadow:0 14px 34px rgba(48,86,211,.24);background:#fff;}
+    .milestone-item .field{display:flex;flex-direction:column;gap:.3rem;}
+    .milestone-item .field label{font-size:.72rem;font-weight:600;color:var(--text-muted);}
+    .milestone-item input[type="text"]{border:1px solid var(--border);border-radius:8px;padding:.4rem .6rem;font-size:.85rem;}
+    .milestone-item select,
+    .milestone-item input[type="date"]{border:1px solid var(--border);border-radius:8px;padding:.35rem .5rem;font-size:.8rem;}
+    .milestone-item .placeholder{display:flex;align-items:center;justify-content:center;font-size:.78rem;color:var(--text-muted);background:rgba(15,23,42,.04);border:1px dashed rgba(15,23,42,.16);border-radius:8px;padding:.45rem;}
+    .empty-milestones{padding:1.2rem;border:1px dashed rgba(15,23,42,.2);border-radius:12px;text-align:center;color:var(--text-muted);font-size:.9rem;}
+    .schedule-modal-footer{padding:1rem 1.75rem 1.35rem;border-top:1px solid rgba(15,23,42,.08);display:flex;justify-content:flex-end;gap:.75rem;background:#fff;border-radius:0 0 14px 14px;}
+    .schedule-modal-footer .secondary{background:#fff;color:var(--text);border:1px solid var(--border);padding:.55rem 1.15rem;font-size:.9rem;border-radius:8px;}
+    .schedule-modal-footer .secondary:hover{color:var(--primary);border-color:var(--primary);transform:none;}
+    .schedule-modal-footer button:not(.secondary){background:var(--primary);color:#fff;border:none;padding:.55rem 1.25rem;font-size:.95rem;font-weight:600;border-radius:8px;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;}
+    .schedule-modal-footer button:not(.secondary):hover{transform:translateY(-1px);box-shadow:0 10px 20px rgba(48,86,211,.18);}
+    @media(max-width:1200px){:root{--sidebar-width:320px;--day-width:28px;}}
+    @media(max-width:960px){:root{--sidebar-width:100%;}.app{flex-direction:column;}.sidebar{width:100%;max-height:55vh;border-right:none;border-bottom:1px solid var(--border);}.task-list-header,.task-row{grid-template-columns:1.6fr 1fr 1fr .8fr;}.task-duration{display:none;}}
+  </style>
+</head>
+<body>
+  <header class="top-bar">
+    <form id="configForm">
+      <div class="field">
+        <label for="buildingTypeSelect">Building Type</label>
+        <select id="buildingTypeSelect" required></select>
+      </div>
+      <div class="field">
+        <label for="projectDifficultyInput">Project Difficulty</label>
+        <input id="projectDifficultyInput" type="number" min="1" max="10" value="1" required>
+      </div>
+      <div class="field">
+        <label for="numberOfLevelsInput">Number of Levels</label>
+        <input id="numberOfLevelsInput" type="number" min="1" max="99" value="1" required>
+      </div>
+      <div class="field">
+        <label for="projectSizeInput">Project Size (m²)</label>
+        <input id="projectSizeInput" type="number" min="100" max="20000" step="10" value="100" required>
+      </div>
+      <div class="button-row">
+        <button type="submit" id="generateScheduleBtn">Generate Schedule</button>
+        <button type="button" id="savePdfBtn">Save PDF</button>
+        <button type="button" id="scheduleSettingsBtn" class="secondary">Schedule Settings</button>
+        <button type="button" id="saveProgrammeBtn" class="secondary">Save Programme</button>
+        <button type="button" id="loadProgrammeBtn" class="secondary">Load Programme</button>
+      </div>
+    </form>
+    <div class="legend" id="taskLegend"></div>
+  </header>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1>Architecture Project 3 Planner</h1>
+        <div class="sidebar-actions">
+          <button id="addTaskBtn" type="button">＋ New Task</button>
+          <button id="editTaskBtn" class="secondary" type="button" disabled>Edit</button>
+          <button id="moveUpBtn" class="secondary icon-btn" type="button" disabled title="Move task up" aria-label="Move task up">↑</button>
+          <button id="moveDownBtn" class="secondary icon-btn" type="button" disabled title="Move task down" aria-label="Move task down">↓</button>
+        </div>
+      </div>
+      <div class="task-list-header">
+        <span>Task</span>
+        <span>Start</span>
+        <span>End</span>
+        <span></span>
+        <span>Progress</span>
+      </div>
+      <div class="task-list" id="taskList"></div>
+    </aside>
+    <main class="gantt-wrapper">
+      <div class="gantt-header">
+        <div class="gantt-header-left">
+          <div class="view-mode-toggle" role="group" aria-label="Timeline view mode">
+            <button type="button" class="view-mode-btn active" data-view-mode="days" aria-pressed="true">Days</button>
+            <button type="button" class="view-mode-btn" data-view-mode="weeks" aria-pressed="false">Weeks</button>
+          </div>
+          <h2>Project Timeline</h2>
+        </div>
+      </div>
+      <div class="gantt-calendar">
+        <div class="timeline-header" id="timelineHeader"></div>
+        <div class="gantt-body" id="ganttBody"></div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop hidden" id="modalBackdrop"></div>
+  <div class="modal hidden" id="taskModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-content">
+      <form id="taskForm">
+        <div class="modal-header">
+          <h2 id="modalTitle">Add Task</h2>
+          <span class="duration-indicator" id="durationPreview">0 working days</span>
+        </div>
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="modalTaskName">Task name</label>
+              <input id="modalTaskName" name="taskName" type="text" placeholder="e.g. Design Development" required>
+            </div>
+            <div class="form-group">
+              <label for="modalTaskProgress">Progress (%)</label>
+              <input id="modalTaskProgress" name="taskProgress" type="number" min="0" max="100" value="0">
+            </div>
+            <div class="form-group" style="grid-column:span 2;">
+              <label for="modalTaskDescription">Description</label>
+              <textarea id="modalTaskDescription" name="taskDescription" placeholder="Task goals, deliverables, or notes"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="modalStartDate">Start date</label>
+              <input id="modalStartDate" name="taskStart" type="date" required>
+            </div>
+            <div class="form-group">
+              <label for="modalEndDate">End date</label>
+              <input id="modalEndDate" name="taskEnd" type="date" required>
+            </div>
+          </div>
+
+          <div class="mini-task-section">
+            <div>
+              <h3>Sequenced steps</h3>
+              <p>Enable up to seven sequential steps. Their durations always add up to the main task and display as segments on the Gantt bar.</p>
+            </div>
+            <div class="mini-task-list" id="miniTaskList"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="secondary" id="cancelModalBtn">Cancel</button>
+          <button type="submit" id="saveTaskBtn">Save Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="schedule-modal-backdrop hidden" id="scheduleModalBackdrop"></div>
+  <div class="schedule-modal hidden" id="scheduleModal" role="dialog" aria-modal="true" aria-labelledby="scheduleModalTitle">
+    <div class="schedule-modal-content">
+      <div class="schedule-modal-header">
+        <h2 id="scheduleModalTitle">Schedule Settings</h2>
+        <p>Configure milestones to highlight on the programme timeline.</p>
+      </div>
+      <div class="schedule-modal-body">
+        <div class="milestone-toolbar">
+          <button type="button" id="addMilestoneBtn">＋ Add Milestone</button>
+          <button type="button" id="removeMilestoneBtn" class="neutral" disabled>− Remove Selected</button>
+        </div>
+        <ul class="milestone-list" id="milestoneList"></ul>
+      </div>
+      <div class="schedule-modal-footer">
+        <button type="button" class="secondary" id="cancelScheduleBtn">Cancel</button>
+        <button type="button" id="saveScheduleBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    (async function () {
+      const BASE_DAY_WIDTH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--day-width'), 10);
+      const MAX_MINI_TASKS = 7;
+      const MINI_TASK_OPTIONS = ['Bond Bryan Design', 'Bond Bryan review', 'CPD', 'Client Comments', 'Delays'];
+      const DEFAULT_SEQUENCE_STEPS = [
+        { name: 'Bond Bryan Design', weight: 50 },
+        { name: 'CPD', weight: 10 },
+        { name: 'Bond Bryan review', weight: 15 },
+        { name: 'Client Comments', weight: 10 },
+        { name: 'Bond Bryan review', weight: 15 }
+      ];
+      const TASK_COLOR_MAP = {
+        'Bond Bryan Design': 'rgb(176, 207, 255)',
+        'Bond Bryan review': 'rgb(255, 192, 203)',
+        'CPD': 'rgb(196, 235, 214)',
+        'Client Comments': 'rgb(255, 223, 186)',
+        'Delays': 'rgb(220, 220, 230)'
+      };
+      const DEFAULT_SEGMENT_COLOR = '#3056d3';
+      const DATABASE_FALLBACK = [
+        {"buildingType":"school","task":"GA Plan","weekdays":10,"squareMeterFactor":0.01,"difficultyFactor":3,"levelsFactor":2},
+        {"buildingType":"school","task":"Elevations","weekdays":15,"squareMeterFactor":0.02,"difficultyFactor":5,"levelsFactor":1},
+        {"buildingType":"school","task":"Circulation Plans","weekdays":5,"squareMeterFactor":0.03,"difficultyFactor":6,"levelsFactor":2},
+        {"buildingType":"Residential tower","task":"GA Plan","weekdays":20,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":2},
+        {"buildingType":"Residential tower","task":"Stairs drawings","weekdays":20,"squareMeterFactor":0.01,"difficultyFactor":3,"levelsFactor":6},
+        {"buildingType":"Residential tower","task":"Kitchen layouts","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":1,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1}
+      ];
+      const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+      let tasks = [];
+      let selectedTaskId = null;
+      let timelineDays = [];
+      let timelineRangeStart = null;
+      let timelineRangeEnd = null;
+      let currentMode = 'create';
+      let editingTaskId = null;
+      let databaseRecords = [];
+      let timelineViewMode = 'days';
+      let standdownDateSet = new Set();
+      let timelineDayIndexMap = new Map();
+      let currentStanddownSegments = [];
+      let milestones = [];
+      let milestoneDrafts = [];
+      let selectedMilestoneId = null;
+      let programmeFileHandle = null;
+
+      const taskListEl = document.getElementById('taskList');
+      const addTaskBtn = document.getElementById('addTaskBtn');
+      const editTaskBtn = document.getElementById('editTaskBtn');
+      const moveUpBtn = document.getElementById('moveUpBtn');
+      const moveDownBtn = document.getElementById('moveDownBtn');
+      const timelineHeaderEl = document.getElementById('timelineHeader');
+      const ganttBodyEl = document.getElementById('ganttBody');
+      const modalBackdrop = document.getElementById('modalBackdrop');
+      const modalEl = document.getElementById('taskModal');
+      const taskForm = document.getElementById('taskForm');
+      const modalTitle = document.getElementById('modalTitle');
+      const durationPreview = document.getElementById('durationPreview');
+      const cancelModalBtn = document.getElementById('cancelModalBtn');
+      const miniTaskList = document.getElementById('miniTaskList');
+      const modalTaskName = document.getElementById('modalTaskName');
+      const modalTaskDescription = document.getElementById('modalTaskDescription');
+      const modalStartDate = document.getElementById('modalStartDate');
+      const modalEndDate = document.getElementById('modalEndDate');
+      const modalProgress = document.getElementById('modalTaskProgress');
+      const viewModeButtons = Array.from(document.querySelectorAll('.view-mode-btn'));
+      const saveTaskBtn = document.getElementById('saveTaskBtn');
+      const configForm = document.getElementById('configForm');
+      const buildingTypeSelect = document.getElementById('buildingTypeSelect');
+      const projectDifficultyInput = document.getElementById('projectDifficultyInput');
+      const numberOfLevelsInput = document.getElementById('numberOfLevelsInput');
+      const projectSizeInput = document.getElementById('projectSizeInput');
+      const savePdfBtn = document.getElementById('savePdfBtn');
+      const scheduleSettingsBtn = document.getElementById('scheduleSettingsBtn');
+      const saveProgrammeBtn = document.getElementById('saveProgrammeBtn');
+      const loadProgrammeBtn = document.getElementById('loadProgrammeBtn');
+      const legendContainer = document.getElementById('taskLegend');
+      const scheduleModalBackdrop = document.getElementById('scheduleModalBackdrop');
+      const scheduleModal = document.getElementById('scheduleModal');
+      const addMilestoneBtn = document.getElementById('addMilestoneBtn');
+      const removeMilestoneBtn = document.getElementById('removeMilestoneBtn');
+      const milestoneListEl = document.getElementById('milestoneList');
+      const cancelScheduleBtn = document.getElementById('cancelScheduleBtn');
+      const saveScheduleBtn = document.getElementById('saveScheduleBtn');
+
+      function parseDate(value) {
+        if (!value) return null;
+        const parts = value.split('-').map(Number);
+        if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
+        return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+      }
+
+      function formatDate(date) {
+        return date instanceof Date ? date.toISOString().slice(0, 10) : '';
+      }
+
+      function formatDisplayDate(date) {
+        if (!(date instanceof Date)) return '';
+        return `${MONTH_NAMES[date.getUTCMonth()]} ${String(date.getUTCDate()).padStart(2, '0')}`;
+      }
+
+      function formatShortDate(date) {
+        if (!(date instanceof Date)) return '';
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        return `${day}/${month}`;
+      }
+
+      function getTodayUtc() {
+        const now = new Date();
+        return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+      }
+
+      function isSameUtcDay(a, b) {
+        if (!(a instanceof Date) || !(b instanceof Date)) return false;
+        return a.getUTCFullYear() === b.getUTCFullYear()
+          && a.getUTCMonth() === b.getUTCMonth()
+          && a.getUTCDate() === b.getUTCDate();
+      }
+
+      function recomputeStanddownSet() {
+        standdownDateSet = new Set();
+        milestones.forEach((milestone) => {
+          if (!milestone || milestone.type !== 'standdown') return;
+          const start = parseDate(milestone.startDate);
+          const end = parseDate(milestone.endDate);
+          if (!start || !end) return;
+          let current = new Date(start.getTime());
+          const guardLimit = 1500;
+          let guard = 0;
+          while (compareDates(current, end) <= 0 && guard < guardLimit) {
+            standdownDateSet.add(formatDate(current));
+            current = addDays(current, 1);
+            guard += 1;
+          }
+        });
+      }
+
+      function refreshStanddownLayer(barElement) {
+        const layer = barElement.querySelector('.standdown-layer');
+        if (!layer) return;
+        layer.innerHTML = '';
+        const startIndex = Number(barElement.dataset.startIndex);
+        const endIndex = Number(barElement.dataset.endIndex);
+        if (!Number.isFinite(startIndex) || !Number.isFinite(endIndex)) return;
+        const dayWidth = getDayWidth();
+        currentStanddownSegments.forEach((segment) => {
+          const overlapStart = Math.max(startIndex, segment.startIndex);
+          const overlapEnd = Math.min(endIndex, segment.endIndex);
+          if (overlapStart > overlapEnd) return;
+          const mask = document.createElement('div');
+          mask.className = 'standdown-gap';
+          mask.style.left = `${(overlapStart - startIndex) * dayWidth}px`;
+          mask.style.width = `${(overlapEnd - overlapStart + 1) * dayWidth}px`;
+          const rangeStart = timelineDays[overlapStart];
+          const rangeEnd = timelineDays[overlapEnd];
+          if (rangeStart) {
+            const labelPrefix = segment.name ? `${segment.name} • ` : '';
+            const dateLabel = overlapStart === overlapEnd
+              ? `${formatDisplayDate(rangeStart)}`
+              : `${formatDisplayDate(rangeStart)} → ${formatDisplayDate(rangeEnd)}`;
+            mask.title = `${labelPrefix}Stand-down ${dateLabel}`;
+          }
+          layer.appendChild(mask);
+        });
+      }
+
+      function isStanddownDay(date) {
+        if (!(date instanceof Date)) return false;
+        return standdownDateSet.has(formatDate(date));
+      }
+
+      function isWorkingDay(date) {
+        if (!(date instanceof Date)) return false;
+        return !isWeekend(date) && !isStanddownDay(date);
+      }
+
+      function generateMilestoneId() {
+        return `milestone-${Date.now().toString(36)}-${Math.random().toString(16).slice(2, 8)}`;
+      }
+
+      function cloneMilestoneList(list) {
+        return Array.isArray(list) ? list.map((item) => ({ ...item })) : [];
+      }
+
+      function createMilestone(type = 'deadline') {
+        const today = formatDate(getTodayUtc());
+        return {
+          id: generateMilestoneId(),
+          name: type === 'standdown' ? 'New stand-down' : 'New deadline',
+          type,
+          startDate: today,
+          endDate: today
+        };
+      }
+
+      function normalizeMilestoneDates(milestone) {
+        if (!milestone) return;
+        if (milestone.type !== 'standdown') {
+          milestone.endDate = milestone.startDate || milestone.endDate || '';
+          return;
+        }
+        const start = parseDate(milestone.startDate);
+        if (!milestone.endDate) milestone.endDate = milestone.startDate || '';
+        const end = parseDate(milestone.endDate);
+        if (start && end && compareDates(end, start) < 0) {
+          milestone.endDate = milestone.startDate;
+        }
+      }
+
+      function updateMilestoneSelectionUI() {
+        if (!milestoneListEl) return;
+        if (!milestoneDrafts.length) {
+          selectedMilestoneId = null;
+        } else if (!selectedMilestoneId || !milestoneDrafts.some((milestone) => milestone.id === selectedMilestoneId)) {
+          selectedMilestoneId = milestoneDrafts[0].id;
+        }
+        const rows = milestoneListEl.querySelectorAll('.milestone-item');
+        rows.forEach((row) => {
+          row.classList.toggle('selected', row.dataset.id === selectedMilestoneId);
+        });
+        if (removeMilestoneBtn) removeMilestoneBtn.disabled = !selectedMilestoneId;
+      }
+
+      function renderMilestoneDrafts() {
+        if (!milestoneListEl) return;
+        milestoneListEl.innerHTML = '';
+        if (!milestoneDrafts.length) {
+          const empty = document.createElement('div');
+          empty.className = 'empty-milestones';
+          empty.textContent = 'No milestones yet. Use "＋ Add Milestone" to create one.';
+          milestoneListEl.appendChild(empty);
+          if (removeMilestoneBtn) removeMilestoneBtn.disabled = true;
+          return;
+        }
+        milestoneDrafts.forEach((milestone) => {
+          normalizeMilestoneDates(milestone);
+          const item = document.createElement('li');
+          item.className = 'milestone-item';
+          item.dataset.id = milestone.id;
+
+          item.addEventListener('click', (event) => {
+            if (event.target.closest('input') || event.target.closest('select')) return;
+            selectedMilestoneId = milestone.id;
+            updateMilestoneSelectionUI();
+          });
+
+          const nameField = document.createElement('div');
+          nameField.className = 'field';
+          const nameLabel = document.createElement('label');
+          nameLabel.textContent = 'Milestone';
+          const nameInput = document.createElement('input');
+          nameInput.type = 'text';
+          nameInput.value = milestone.name || '';
+          nameInput.placeholder = 'e.g. Planning submission';
+          nameInput.addEventListener('focus', () => {
+            if (selectedMilestoneId !== milestone.id) {
+              selectedMilestoneId = milestone.id;
+              updateMilestoneSelectionUI();
+            }
+          });
+          nameInput.addEventListener('input', (event) => {
+            milestone.name = event.target.value;
+          });
+          nameField.appendChild(nameLabel);
+          nameField.appendChild(nameInput);
+          item.appendChild(nameField);
+
+          let endInputRef = null;
+
+          const typeField = document.createElement('div');
+          typeField.className = 'field';
+          const typeLabel = document.createElement('label');
+          typeLabel.textContent = 'Type';
+          const typeSelect = document.createElement('select');
+          const deadlineOption = document.createElement('option');
+          deadlineOption.value = 'deadline';
+          deadlineOption.textContent = 'Deadline';
+          const standdownOption = document.createElement('option');
+          standdownOption.value = 'standdown';
+          standdownOption.textContent = 'Stand-down';
+          typeSelect.appendChild(deadlineOption);
+          typeSelect.appendChild(standdownOption);
+          typeSelect.value = milestone.type === 'standdown' ? 'standdown' : 'deadline';
+          typeSelect.addEventListener('focus', () => {
+            if (selectedMilestoneId !== milestone.id) {
+              selectedMilestoneId = milestone.id;
+              updateMilestoneSelectionUI();
+            }
+          });
+          typeSelect.addEventListener('change', (event) => {
+            milestone.type = event.target.value === 'standdown' ? 'standdown' : 'deadline';
+            if (milestone.type !== 'standdown') {
+              milestone.endDate = milestone.startDate || milestone.endDate || '';
+            }
+            renderMilestoneDrafts();
+          });
+          typeField.appendChild(typeLabel);
+          typeField.appendChild(typeSelect);
+          item.appendChild(typeField);
+
+          const startField = document.createElement('div');
+          startField.className = 'field';
+          const startLabel = document.createElement('label');
+          startLabel.textContent = milestone.type === 'standdown' ? 'Start date' : 'Date';
+          const startInput = document.createElement('input');
+          startInput.type = 'date';
+          startInput.value = milestone.startDate || '';
+          startInput.addEventListener('focus', () => {
+            if (selectedMilestoneId !== milestone.id) {
+              selectedMilestoneId = milestone.id;
+              updateMilestoneSelectionUI();
+            }
+          });
+          startInput.addEventListener('change', (event) => {
+            milestone.startDate = event.target.value || '';
+            if (milestone.type !== 'standdown') {
+              milestone.endDate = milestone.startDate;
+            } else {
+              normalizeMilestoneDates(milestone);
+              if (milestone.endDate && compareDates(parseDate(milestone.endDate), parseDate(milestone.startDate)) < 0) {
+                milestone.endDate = milestone.startDate;
+              }
+              if (endInputRef) {
+                endInputRef.value = milestone.endDate || '';
+              }
+            }
+            updateMilestoneSelectionUI();
+          });
+          startField.appendChild(startLabel);
+          startField.appendChild(startInput);
+          item.appendChild(startField);
+
+          const endField = document.createElement('div');
+          endField.className = 'field';
+          const endLabel = document.createElement('label');
+          endLabel.textContent = 'End date';
+          if (milestone.type === 'standdown') {
+            const endInput = document.createElement('input');
+            endInput.type = 'date';
+            endInput.value = milestone.endDate || '';
+            endInputRef = endInput;
+            endInput.addEventListener('focus', () => {
+              if (selectedMilestoneId !== milestone.id) {
+                selectedMilestoneId = milestone.id;
+                updateMilestoneSelectionUI();
+              }
+            });
+            endInput.addEventListener('change', (event) => {
+              milestone.endDate = event.target.value || '';
+              normalizeMilestoneDates(milestone);
+              if (endInput.value !== (milestone.endDate || '')) {
+                endInput.value = milestone.endDate || '';
+              }
+              updateMilestoneSelectionUI();
+            });
+            endField.appendChild(endLabel);
+            endField.appendChild(endInput);
+          } else {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'placeholder';
+            placeholder.textContent = '—';
+            endField.appendChild(endLabel);
+            endField.appendChild(placeholder);
+          }
+          item.appendChild(endField);
+
+          milestoneListEl.appendChild(item);
+        });
+        updateMilestoneSelectionUI();
+      }
+
+      function openScheduleModal() {
+        milestoneDrafts = cloneMilestoneList(milestones);
+        selectedMilestoneId = milestoneDrafts.length ? milestoneDrafts[0].id : null;
+        renderMilestoneDrafts();
+        if (scheduleModalBackdrop) scheduleModalBackdrop.classList.remove('hidden');
+        if (scheduleModal) scheduleModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeScheduleModal() {
+        if (scheduleModalBackdrop) scheduleModalBackdrop.classList.add('hidden');
+        if (scheduleModal) scheduleModal.classList.add('hidden');
+        document.body.style.overflow = '';
+        milestoneDrafts = [];
+        selectedMilestoneId = null;
+        if (removeMilestoneBtn) removeMilestoneBtn.disabled = true;
+      }
+
+      function handleSaveScheduleSettings() {
+        milestones = cloneMilestoneList(milestoneDrafts).map((milestone) => {
+          const normalized = { ...milestone };
+          if (normalized.type !== 'standdown') {
+            normalized.endDate = normalized.startDate || normalized.endDate || '';
+          }
+          normalizeMilestoneDates(normalized);
+          return normalized;
+        });
+        recomputeStanddownSet();
+        tasks.forEach((task) => {
+          ensureTaskDates(task);
+        });
+        closeScheduleModal();
+        renderAll();
+      }
+
+      function serialiseProgramme() {
+        return {
+          tasks: tasks.map((task) => ({
+            ...task,
+            miniTasks: Array.isArray(task.miniTasks) ? task.miniTasks.map((mini) => ({ ...mini })) : []
+          })),
+          milestones: cloneMilestoneList(milestones)
+        };
+      }
+
+      function applyProgrammeSnapshot(data) {
+        if (!data || typeof data !== 'object') throw new Error('Invalid programme format.');
+        const loadedTasks = Array.isArray(data.tasks) ? data.tasks : [];
+        const loadedMilestones = Array.isArray(data.milestones) ? data.milestones : [];
+        tasks = loadedTasks.map((task) => ({
+          ...task,
+          miniTasks: Array.isArray(task.miniTasks) ? task.miniTasks.map((mini) => ({ ...mini })) : []
+        }));
+        milestones = cloneMilestoneList(loadedMilestones);
+        tasks.forEach((task) => ensureTaskDates(task));
+        recomputeStanddownSet();
+        selectedTaskId = null;
+        milestoneDrafts = [];
+        selectedMilestoneId = null;
+        renderAll();
+      }
+
+      async function handleSaveProgramme() {
+        const payload = serialiseProgramme();
+        const json = JSON.stringify(payload, null, 2);
+        try {
+          if (window.showSaveFilePicker) {
+            try {
+              if (!programmeFileHandle) {
+                programmeFileHandle = await window.showSaveFilePicker({
+                  suggestedName: 'gantt-shared-data.json',
+                  types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+                });
+              }
+              const writable = await programmeFileHandle.createWritable();
+              await writable.write(json);
+              await writable.close();
+              window.localStorage.setItem('programme-cache', json);
+              window.alert('Programme saved successfully.');
+              return;
+            } catch (pickerError) {
+              if (pickerError?.name === 'AbortError') return;
+              console.warn('File picker save failed, falling back to download.', pickerError);
+            }
+          }
+
+          const blob = new Blob([json], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'gantt-shared-data.json';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          window.localStorage.setItem('programme-cache', json);
+          window.alert('Programme saved. The file has been downloaded.');
+        } catch (error) {
+          console.error('Unable to save programme', error);
+          window.alert('Unable to save the programme. Please try again.');
+        }
+      }
+
+      async function handleLoadProgramme() {
+        try {
+          if (window.showOpenFilePicker) {
+            try {
+              const [handle] = await window.showOpenFilePicker({
+                multiple: false,
+                types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+              });
+              if (!handle) return;
+              programmeFileHandle = handle;
+              const file = await handle.getFile();
+              const text = await file.text();
+              window.localStorage.setItem('programme-cache', text);
+              applyProgrammeSnapshot(JSON.parse(text));
+              return;
+            } catch (pickerError) {
+              if (pickerError?.name === 'AbortError') return;
+              console.warn('File picker load failed, falling back to bundled file/local cache.', pickerError);
+            }
+          }
+
+          const response = await fetch(`gantt-shared-data.json?cache-bust=${Date.now()}`, { cache: 'no-store' });
+          if (!response.ok) throw new Error(`Load failed ${response.status}`);
+          const data = await response.json();
+          window.localStorage.setItem('programme-cache', JSON.stringify(data));
+          applyProgrammeSnapshot(data);
+        } catch (error) {
+          console.warn('Unable to load programme from file, attempting cache.', error);
+          try {
+            const cached = window.localStorage.getItem('programme-cache');
+            if (!cached) throw new Error('No cached programme available.');
+            applyProgrammeSnapshot(JSON.parse(cached));
+            window.alert('Loaded programme from local cache.');
+          } catch (fallbackError) {
+            console.error('Unable to load programme', fallbackError);
+            window.alert('Unable to load the programme. Confirm the file exists and is valid JSON.');
+          }
+        }
+      }
+
+      function getDayWidth() {
+        return timelineViewMode === 'weeks' ? Math.max(1, BASE_DAY_WIDTH / 5) : BASE_DAY_WIDTH;
+      }
+
+      function isWeekend(date) {
+        const day = date.getUTCDay();
+        return day === 0 || day === 6;
+      }
+
+      function addDays(date, days) {
+        const result = new Date(date.getTime());
+        result.setUTCDate(result.getUTCDate() + days);
+        return result;
+      }
+
+      function ensureWeekday(date, direction = 1) {
+        if (!(date instanceof Date)) return null;
+        let result = new Date(date.getTime());
+        const step = direction >= 0 ? 1 : -1;
+        let guard = 0;
+        while (!isWorkingDay(result) && guard < 500) {
+          result = addDays(result, step);
+          guard += 1;
+        }
+        return result;
+      }
+
+      function shiftWeekdays(date, offset) {
+        if (!(date instanceof Date) || offset === 0) return ensureWeekday(date);
+        let remaining = Math.abs(offset);
+        const direction = offset > 0 ? 1 : -1;
+        let current = new Date(date.getTime());
+        let guard = 0;
+        while (remaining > 0 && guard < 4000) {
+          current = addDays(current, direction);
+          if (isWorkingDay(current)) remaining -= 1;
+          guard += 1;
+        }
+        return ensureWeekday(current, direction);
+      }
+
+      function diffInWeekdays(start, end) {
+        if (!start || !end) return 0;
+        let from = new Date(start.getTime());
+        let to = new Date(end.getTime());
+        if (from > to) [from, to] = [to, from];
+        let count = 0;
+        let current = new Date(from.getTime());
+        const guard = 4000;
+        let guardCount = 0;
+        while (compareDates(current, to) <= 0 && guardCount < guard) {
+          if (isWorkingDay(current)) count += 1;
+          current = addDays(current, 1);
+          guardCount += 1;
+        }
+        return count;
+      }
+
+      function weekdayOffset(from, to) {
+        if (!from || !to) return 0;
+        const target = ensureWeekday(to, from <= to ? 1 : -1);
+        if (!target) return 0;
+        if (from.getTime() === target.getTime()) return 0;
+        const forward = from < target;
+        let steps = 0;
+        let cursor = ensureWeekday(from, forward ? 1 : -1);
+        const guard = 5000;
+        let guardCount = 0;
+        while (cursor.getTime() !== target.getTime() && guardCount < guard) {
+          cursor = addDays(cursor, forward ? 1 : -1);
+          if (isWorkingDay(cursor)) steps += forward ? 1 : -1;
+          guardCount += 1;
+        }
+        return steps;
+      }
+
+      function compareDates(a, b) {
+        if (!a || !b) return 0;
+        const diff = a.getTime() - b.getTime();
+        if (diff === 0) return 0;
+        return diff > 0 ? 1 : -1;
+      }
+
+      function getISOWeekNumber(date) {
+        if (!(date instanceof Date)) return 0;
+        const tmp = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+        const dayNum = tmp.getUTCDay() || 7;
+        tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+        return Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
+      }
+
+      function groupTimelineDaysByWeek(days) {
+        if (!Array.isArray(days) || !days.length) return [];
+        const groups = [];
+        days.forEach((day, index) => {
+          const weekNumber = getISOWeekNumber(day);
+          const year = day.getUTCFullYear();
+          const key = `${year}-W${String(weekNumber).padStart(2, '0')}`;
+          let group = groups[groups.length - 1];
+          if (!group || group.key !== key) {
+            group = {
+              key,
+              year,
+              weekNumber,
+              start: day,
+              end: day,
+              length: 1,
+              startIndex: index
+            };
+            groups.push(group);
+          } else {
+            group.end = day;
+            group.length += 1;
+          }
+        });
+        return groups;
+      }
+
+      function groupTimelineDaysByMonth(days) {
+        if (!Array.isArray(days) || !days.length) return [];
+        const groups = [];
+        days.forEach((day, index) => {
+          const month = day.getUTCMonth();
+          const year = day.getUTCFullYear();
+          let group = groups[groups.length - 1];
+          if (!group || group.month !== month || group.year !== year) {
+            group = {
+              year,
+              month,
+              start: day,
+              end: day,
+              length: 1,
+              startIndex: index
+            };
+            groups.push(group);
+          } else {
+            group.end = day;
+            group.length += 1;
+          }
+        });
+        return groups;
+      }
+
+      function groupTimelineDaysByYear(days) {
+        if (!Array.isArray(days) || !days.length) return [];
+        const groups = [];
+        days.forEach((day, index) => {
+          const year = day.getUTCFullYear();
+          let group = groups[groups.length - 1];
+          if (!group || group.year !== year) {
+            group = {
+              year,
+              start: day,
+              end: day,
+              length: 1,
+              startIndex: index
+            };
+            groups.push(group);
+          } else {
+            group.end = day;
+            group.length += 1;
+          }
+        });
+        return groups;
+      }
+
+function adjustGanttOffset() {
+  const taskHeader = document.querySelector('.task-list-header');
+  const timeHeader = document.querySelector('#timelineHeader');
+  const ganttBody  = document.querySelector('.gantt-body');
+  if (!taskHeader || !timeHeader || !ganttBody) return;
+
+  // Get numeric row height from CSS variable safely
+  const rowHeightStr = getComputedStyle(document.documentElement)
+    .getPropertyValue('--row-height')
+    .trim();
+  const rowHeight = Number(rowHeightStr.replace('px', '')) || 54; // fallback
+
+  // Compute base header delta
+  const delta = taskHeader.offsetHeight - timeHeader.offsetHeight;
+
+  // Add modest downward offset (~1.5 rows) but clamp to a reasonable max
+  const offset = Math.min(delta + rowHeight * 1.6, 160); // prevents overshoot
+
+  ganttBody.style.marginTop = `${offset}px`;
+}
+
+
+      function updateViewModeButtons() {
+        viewModeButtons.forEach((button) => {
+          const isActive = button.dataset.viewMode === timelineViewMode;
+          button.classList.toggle('active', isActive);
+          button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+      }
+
+      function setTimelineViewMode(mode) {
+        if (mode !== 'days' && mode !== 'weeks') return;
+        if (timelineViewMode === mode) return;
+        timelineViewMode = mode;
+        updateViewModeButtons();
+        renderGantt();
+      }
+
+      function getMiniColor(name) {
+        if (!name) return DEFAULT_SEGMENT_COLOR;
+        return TASK_COLOR_MAP[name] || DEFAULT_SEGMENT_COLOR;
+      }
+
+      function parseColorToRgb(value) {
+        if (typeof value !== 'string' || !value) {
+          return { r: 48, g: 86, b: 211 };
+        }
+        const trimmed = value.trim();
+        const rgbMatch = trimmed.match(/^rgb\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
+        if (rgbMatch) {
+          return {
+            r: Math.max(0, Math.min(255, parseInt(rgbMatch[1], 10))),
+            g: Math.max(0, Math.min(255, parseInt(rgbMatch[2], 10))),
+            b: Math.max(0, Math.min(255, parseInt(rgbMatch[3], 10)))
+          };
+        }
+        if (trimmed.startsWith('#')) {
+          let hex = trimmed.slice(1);
+          if (hex.length === 3) {
+            hex = hex.split('').map((char) => char + char).join('');
+          }
+          if (hex.length === 6 && /^[0-9a-f]{6}$/i.test(hex)) {
+            return {
+              r: parseInt(hex.slice(0, 2), 16),
+              g: parseInt(hex.slice(2, 4), 16),
+              b: parseInt(hex.slice(4, 6), 16)
+            };
+          }
+        }
+        return { r: 48, g: 86, b: 211 };
+      }
+
+      let jsPdfConstructorCache = null;
+      let jsPdfLoaderPromise = null;
+
+      function setGlobalJsPdf(ctor) {
+        if (!ctor) return;
+        if (!window.jspdf) window.jspdf = { jsPDF: ctor };
+        else if (typeof window.jspdf.jsPDF !== 'function') window.jspdf.jsPDF = ctor;
+      }
+
+      function loadJsPdfFromScript(options) {
+        if (window.jspdf && typeof window.jspdf.jsPDF === 'function') {
+          return Promise.resolve(window.jspdf.jsPDF);
+        }
+        const { src, integrity } = options;
+        return new Promise((resolve) => {
+          const existing = document.querySelector(`script[data-jspdf-source="${src}"]`);
+          const finalize = () => {
+            const ctor = window.jspdf && typeof window.jspdf.jsPDF === 'function' ? window.jspdf.jsPDF : null;
+            if (ctor) setGlobalJsPdf(ctor);
+            resolve(ctor);
+          };
+          const handleError = () => resolve(null);
+          if (existing) {
+            existing.addEventListener('load', finalize, { once: true });
+            existing.addEventListener('error', handleError, { once: true });
+            return;
+          }
+          const script = document.createElement('script');
+          script.src = src;
+          script.async = true;
+          script.dataset.jspdfSource = src;
+          script.referrerPolicy = 'no-referrer';
+          if (integrity) {
+            script.integrity = integrity;
+            script.crossOrigin = 'anonymous';
+          }
+          script.addEventListener('load', finalize, { once: true });
+          script.addEventListener('error', handleError, { once: true });
+          document.head.appendChild(script);
+        });
+      }
+
+      async function loadJsPdfFallbacks() {
+        const sources = [
+          {
+            src: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+            integrity: 'sha512-2JvIUMI5KOZ6+Jo7oBMnp1vOSfQ1+avG4v8M45bNaMdWOh9fvydMBaTlM3Dd3yXTVzTuvq8rqBiTWLY4dTqHOg=='
+          },
+          {
+            src: 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js'
+          }
+        ];
+        for (let index = 0; index < sources.length; index += 1) {
+          const ctor = await loadJsPdfFromScript(sources[index]);
+          if (typeof ctor === 'function') return ctor;
+        }
+        return null;
+      }
+
+      async function ensureJsPdfLoaded() {
+        if (jsPdfConstructorCache) return jsPdfConstructorCache;
+        if (window.jspdf && typeof window.jspdf.jsPDF === 'function') {
+          jsPdfConstructorCache = window.jspdf.jsPDF;
+          return jsPdfConstructorCache;
+        }
+        if (jsPdfLoaderPromise) return jsPdfLoaderPromise;
+        jsPdfLoaderPromise = import('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.es.min.js')
+          .then((module) => {
+            const ctor = module?.jsPDF || module?.default || (window.jspdf && window.jspdf.jsPDF);
+            if (typeof ctor === 'function') {
+              jsPdfConstructorCache = ctor;
+              setGlobalJsPdf(ctor);
+            }
+            return jsPdfConstructorCache;
+          })
+          .catch(async (error) => {
+            console.error('Failed to load jsPDF ESM bundle', error);
+            const fallbackCtor = await loadJsPdfFallbacks();
+            if (typeof fallbackCtor === 'function') {
+              jsPdfConstructorCache = fallbackCtor;
+              setGlobalJsPdf(fallbackCtor);
+            }
+            return jsPdfConstructorCache;
+          })
+          .finally(() => {
+            jsPdfLoaderPromise = null;
+          });
+        return jsPdfLoaderPromise;
+      }
+
+      function countEnabledMiniTasks(task) {
+        return (task.miniTasks || []).filter((mini) => mini.enabled).length;
+      }
+
+      function minimumTaskDuration(task) {
+        return Math.max(1, countEnabledMiniTasks(task));
+      }
+
+      function normalizeMiniDurations(miniTasks, totalDuration) {
+        if (!Array.isArray(miniTasks) || miniTasks.length === 0) return;
+        const enabled = miniTasks.filter((mini) => mini.enabled);
+        if (!enabled.length) return;
+        const weights = enabled.map((mini) => Math.max(1, mini.duration || 1));
+        const totalWeights = weights.reduce((acc, value) => acc + value, 0);
+        if (totalWeights === 0) {
+          const even = Math.floor(totalDuration / enabled.length) || 1;
+          let remainder = totalDuration;
+          enabled.forEach((mini, index) => {
+            const assigned = index === enabled.length - 1 ? remainder : Math.max(1, even);
+            mini.duration = assigned;
+            remainder -= assigned;
+          });
+          return;
+        }
+        let remainder = totalDuration;
+        enabled.forEach((mini, index) => {
+          const remainingSlots = enabled.length - index - 1;
+          let share = Math.round((weights[index] / totalWeights) * totalDuration);
+          if (share < 1) share = 1;
+          const maxAllowed = remainder - remainingSlots;
+          if (share > maxAllowed) share = Math.max(1, maxAllowed);
+          if (index === enabled.length - 1) share = Math.max(1, remainder);
+          mini.duration = share;
+          remainder -= share;
+        });
+        if (remainder > 0 && enabled.length > 0) {
+          enabled[enabled.length - 1].duration += remainder;
+        }
+        if (remainder < 0 && enabled.length > 0) {
+          const last = enabled[enabled.length - 1];
+          last.duration = Math.max(1, last.duration + remainder);
+        }
+      }
+      function buildMiniSegments(task) {
+        const totalDuration = getTaskDuration(task);
+        const clones = task.miniTasks.map((mini) => ({ ...mini }));
+        normalizeMiniDurations(clones, totalDuration);
+        return clones.filter((mini) => mini.enabled);
+      }
+
+      function buildMiniSegmentsPreview(task, duration) {
+        const clones = task.miniTasks.map((mini) => ({ ...mini }));
+        normalizeMiniDurations(clones, duration);
+        return clones.filter((mini) => mini.enabled);
+      }
+
+      function getTaskDuration(task) {
+        const start = parseDate(task.startDate);
+        const end = parseDate(task.endDate);
+        if (!start || !end) return 0;
+        return Math.max(1, diffInWeekdays(start, end));
+      }
+
+      function ensureTaskDates(task) {
+        let start = ensureWeekday(parseDate(task.startDate) || new Date(), 1);
+        let end = ensureWeekday(parseDate(task.endDate) || new Date(start.getTime()), -1);
+        if (compareDates(end, start) < 0) {
+          end = new Date(start.getTime());
+        }
+        let duration = Math.max(1, diffInWeekdays(start, end));
+        const minDuration = minimumTaskDuration(task);
+        if (duration < minDuration) {
+          end = shiftWeekdays(start, minDuration - 1);
+          duration = diffInWeekdays(start, end);
+        }
+        normalizeMiniDurations(task.miniTasks, duration);
+        task.startDate = formatDate(start);
+        task.endDate = formatDate(end);
+      }
+
+      function renderTaskList() {
+        taskListEl.innerHTML = '';
+        if (!tasks.length) {
+          const empty = document.createElement('div');
+          empty.className = 'empty-state';
+          empty.textContent = 'Add a task to populate the planner.';
+          taskListEl.appendChild(empty);
+          return;
+        }
+        tasks.forEach((task) => {
+          const duration = getTaskDuration(task);
+          const row = document.createElement('div');
+          row.className = 'task-row';
+          if (task.id === selectedTaskId) row.classList.add('selected');
+          row.dataset.taskId = task.id;
+
+          const nameCell = document.createElement('div');
+          nameCell.className = 'task-name';
+          nameCell.textContent = task.name;
+          row.appendChild(nameCell);
+
+          const startCell = document.createElement('div');
+          const startInput = document.createElement('input');
+          startInput.type = 'date';
+          startInput.value = task.startDate;
+          startInput.addEventListener('click', (event) => event.stopPropagation());
+          startInput.addEventListener('change', (event) => {
+            event.stopPropagation();
+            const newStart = ensureWeekday(parseDate(event.target.value), 1);
+            if (!newStart) {
+              event.target.value = task.startDate;
+              return;
+            }
+            updateTaskStartDate(task, newStart);
+            renderAll();
+          });
+          startCell.appendChild(startInput);
+          row.appendChild(startCell);
+
+          const endCell = document.createElement('div');
+          const endInput = document.createElement('input');
+          endInput.type = 'date';
+          endInput.value = task.endDate;
+          endInput.addEventListener('click', (event) => event.stopPropagation());
+          endInput.addEventListener('change', (event) => {
+            event.stopPropagation();
+            const newEnd = ensureWeekday(parseDate(event.target.value), -1);
+            if (!newEnd) {
+              event.target.value = task.endDate;
+              return;
+            }
+            updateTaskEndDate(task, newEnd);
+            renderAll();
+          });
+          endCell.appendChild(endInput);
+          row.appendChild(endCell);
+
+          const durationCell = document.createElement('div');
+          const badge = document.createElement('div');
+          badge.className = 'task-duration';
+          badge.textContent = `${duration} day${duration !== 1 ? 's' : ''}`;
+          durationCell.appendChild(badge);
+          row.appendChild(durationCell);
+
+          const progressCell = document.createElement('div');
+          progressCell.className = 'task-progress';
+          const progressInput = document.createElement('input');
+          progressInput.type = 'number';
+          progressInput.min = '0';
+          progressInput.max = '100';
+          progressInput.step = '1';
+          progressInput.value = task.progress;
+          progressInput.addEventListener('click', (event) => event.stopPropagation());
+          progressInput.addEventListener('change', (event) => {
+            event.stopPropagation();
+            let value = parseInt(event.target.value, 10);
+            if (Number.isNaN(value)) value = 0;
+            task.progress = Math.min(100, Math.max(0, value));
+            event.target.value = task.progress;
+            renderGantt();
+          });
+          const percentLabel = document.createElement('span');
+          percentLabel.textContent = '%';
+          progressCell.appendChild(progressInput);
+          progressCell.appendChild(percentLabel);
+          row.appendChild(progressCell);
+
+          row.addEventListener('click', () => {
+            selectTask(task.id);
+          });
+
+          taskListEl.appendChild(row);
+        });
+      }
+      function computeTimelineRange() {
+        if (!tasks.length) {
+          const today = ensureWeekday(new Date(), 1);
+          return {
+            start: shiftWeekdays(today, -7),
+            end: shiftWeekdays(today, 14)
+          };
+        }
+        let minStart = parseDate(tasks[0].startDate);
+        let maxEnd = parseDate(tasks[0].endDate);
+        tasks.forEach((task) => {
+          const start = parseDate(task.startDate);
+          const end = parseDate(task.endDate);
+          if (start && start < minStart) minStart = start;
+          if (end && end > maxEnd) maxEnd = end;
+        });
+        minStart = ensureWeekday(minStart, -1);
+        maxEnd = ensureWeekday(maxEnd, 1);
+        return {
+          start: shiftWeekdays(minStart, -5),
+          end: shiftWeekdays(maxEnd, 7)
+        };
+      }
+
+      function buildTimelineDays(start, end) {
+        const days = [];
+        let current = new Date(start.getTime());
+        const guard = 2000;
+        let guardCount = 0;
+        while (compareDates(current, end) <= 0 && guardCount < guard) {
+          if (!isWeekend(current)) {
+            days.push(new Date(current.getTime()));
+          }
+          current = addDays(current, 1);
+          guardCount += 1;
+        }
+        return days;
+      }
+
+      function buildMilestoneSegments(days) {
+        if (!Array.isArray(days) || !days.length || !milestones.length) return [];
+        const segments = [];
+        const timelineStart = days[0];
+        const timelineEnd = days[days.length - 1];
+        milestones.forEach((milestone) => {
+          if (!milestone) return;
+          const rawStart = parseDate(milestone.startDate);
+          if (!rawStart) return;
+          const isStanddown = milestone.type === 'standdown';
+          let rawEnd = isStanddown ? parseDate(milestone.endDate) : rawStart;
+          if (!rawEnd || compareDates(rawEnd, rawStart) < 0) rawEnd = rawStart;
+          if (compareDates(rawStart, timelineEnd) > 0) return;
+          if (compareDates(rawEnd, timelineStart) < 0) return;
+          let startIndex = -1;
+          for (let i = 0; i < days.length; i += 1) {
+            if (compareDates(days[i], rawStart) >= 0) {
+              startIndex = i;
+              break;
+            }
+          }
+          if (startIndex === -1) return;
+          let endIndex = startIndex;
+          for (let i = startIndex; i < days.length; i += 1) {
+            if (compareDates(days[i], rawEnd) > 0) break;
+            endIndex = i;
+          }
+          if (endIndex < startIndex) return;
+          segments.push({
+            id: milestone.id,
+            name: milestone.name || '',
+            type: isStanddown ? 'standdown' : 'deadline',
+            startIndex,
+            endIndex
+          });
+        });
+        return segments;
+      }
+
+      function updateMiniLayerElements(barElement, segments) {
+        const miniElements = Array.from(barElement.querySelectorAll('.mini-segment'));
+        if (!miniElements.length) return;
+        const dayWidth = getDayWidth();
+        const startIndex = Number(barElement.dataset.startIndex);
+        const endIndex = Number(barElement.dataset.endIndex);
+        if (!Number.isFinite(startIndex) || !Number.isFinite(endIndex)) return;
+        const workingDayIndices = [];
+        for (let index = startIndex; index <= endIndex; index += 1) {
+          const day = timelineDays[index];
+          if (!isStanddownDay(day)) workingDayIndices.push(index);
+        }
+        let workingPointer = 0;
+        miniElements.forEach((element, index) => {
+          const segment = segments[index];
+          if (!segment) {
+            element.style.display = 'none';
+            return;
+          }
+          const startWorkingIndex = workingDayIndices[workingPointer];
+          if (startWorkingIndex == null) {
+            element.style.display = 'none';
+            return;
+          }
+          const endWorkingIndex = workingDayIndices[Math.min(
+            workingPointer + Math.max(0, segment.duration - 1),
+            workingDayIndices.length - 1
+          )];
+          if (endWorkingIndex == null || endWorkingIndex < startWorkingIndex) {
+            element.style.display = 'none';
+            return;
+          }
+          const left = (startWorkingIndex - startIndex) * dayWidth;
+          const width = ((endWorkingIndex - startWorkingIndex) + 1) * dayWidth;
+          element.style.display = 'block';
+          element.style.left = `${left}px`;
+          element.style.width = `${width}px`;
+          element.title = `${segment.name || 'Step'} • ${segment.duration} day${segment.duration !== 1 ? 's' : ''}`;
+          element.style.background = getMiniColor(segment.name);
+          workingPointer += segment.duration;
+        });
+      }
+
+      function setBarLabel(barElement, task, startDate, endDate) {
+        const label = barElement.querySelector('.task-label');
+        const datesEl = barElement.querySelector('.task-dates') || document.createElement('span');
+        const duration = Math.max(1, diffInWeekdays(startDate, endDate));
+        barElement.title = `${task.name}
+${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} days)`;
+        datesEl.className = 'task-dates';
+        datesEl.textContent = `${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)}`;
+        if (!datesEl.isConnected) {
+          const handle = barElement.querySelector('.handle');
+          if (handle) {
+            barElement.insertBefore(datesEl, handle);
+          } else {
+            barElement.appendChild(datesEl);
+          }
+        }
+        if (label) label.textContent = task.name;
+      }
+
+      function attachResizeHandles(barElement, task) {
+        barElement.querySelectorAll('.handle').forEach((handle) => {
+          const type = handle.classList.contains('handle-start') ? 'start' : 'end';
+          handle.addEventListener('pointerdown', (event) => {
+            event.stopPropagation();
+            event.preventDefault();
+            handle.setPointerCapture(event.pointerId);
+            const initialStart = parseDate(task.startDate);
+            const initialEnd = parseDate(task.endDate);
+            let previewStart = new Date(initialStart.getTime());
+            let previewEnd = new Date(initialEnd.getTime());
+            const progressEl = barElement.querySelector('.progress');
+
+            const onPointerMove = (moveEvent) => {
+              const calendarEl = document.querySelector('.gantt-calendar');
+              const headerRect = timelineHeaderEl.getBoundingClientRect();
+              const relativeX = moveEvent.clientX - headerRect.left + calendarEl.scrollLeft;
+              const dayWidth = getDayWidth();
+              let dayIndex = Math.round(relativeX / dayWidth);
+              dayIndex = Math.max(0, Math.min(dayIndex, timelineDays.length - 1));
+              const targetDate = timelineDays[dayIndex];
+              if (!targetDate) return;
+
+              if (type === 'start') {
+                let candidate = ensureWeekday(targetDate, 1);
+                if (compareDates(candidate, previewEnd) > 0) {
+                  candidate = shiftWeekdays(previewEnd, -(minimumTaskDuration(task) - 1));
+                }
+                previewStart = candidate;
+              } else {
+                let candidate = ensureWeekday(targetDate, -1);
+                if (compareDates(candidate, previewStart) < 0) {
+                  candidate = shiftWeekdays(previewStart, minimumTaskDuration(task) - 1);
+                }
+                previewEnd = candidate;
+              }
+
+              const duration = Math.max(minimumTaskDuration(task), diffInWeekdays(previewStart, previewEnd));
+              const dayWidthForRender = getDayWidth();
+              const previewStartIndex = timelineDayIndexMap.get(formatDate(previewStart));
+              const previewEndIndex = timelineDayIndexMap.get(formatDate(previewEnd));
+              if (typeof previewStartIndex !== 'number' || typeof previewEndIndex !== 'number') return;
+              barElement.style.left = `${previewStartIndex * dayWidthForRender}px`;
+              barElement.style.width = `${Math.max(dayWidthForRender, (previewEndIndex - previewStartIndex + 1) * dayWidthForRender)}px`;
+              barElement.dataset.startIndex = String(previewStartIndex);
+              barElement.dataset.endIndex = String(previewEndIndex);
+              const previewSegments = buildMiniSegmentsPreview(task, duration);
+              updateMiniLayerElements(barElement, previewSegments);
+              refreshStanddownLayer(barElement);
+              if (progressEl) {
+                const progressValue = Math.min(100, Math.max(0, task.progress));
+                progressEl.style.width = `${progressValue}%`;
+                progressEl.classList.toggle('is-full', progressValue >= 99.5);
+              }
+              setBarLabel(barElement, task, previewStart, previewEnd);
+            };
+
+            const onPointerUp = () => {
+              handle.removeEventListener('pointermove', onPointerMove);
+              handle.removeEventListener('pointerup', onPointerUp);
+              handle.removeEventListener('pointercancel', onPointerUp);
+              handle.releasePointerCapture(event.pointerId);
+              if (type === 'start') {
+                applyNewStartDate(task, previewStart, initialEnd);
+              } else {
+                applyNewEndDate(task, initialStart, previewEnd);
+              }
+              renderAll();
+              selectTask(task.id);
+            };
+
+            handle.addEventListener('pointermove', onPointerMove);
+            handle.addEventListener('pointerup', onPointerUp);
+            handle.addEventListener('pointercancel', onPointerUp);
+          });
+        });
+      }
+
+      function enableBarDrag(barElement, task) {
+        barElement.addEventListener('pointerdown', (event) => {
+          if (event.target.closest('.handle')) return;
+          event.stopPropagation();
+          event.preventDefault();
+          const initialStart = parseDate(task.startDate);
+          const initialEnd = parseDate(task.endDate);
+          if (!initialStart || !initialEnd) return;
+          const calendarEl = document.querySelector('.gantt-calendar');
+          if (!calendarEl) return;
+          const initialPointer = event.clientX + calendarEl.scrollLeft;
+          const initialLeft = barElement.style.left;
+          let latestShift = 0;
+
+          const onPointerMove = (moveEvent) => {
+            const currentPointer = moveEvent.clientX + calendarEl.scrollLeft;
+            const deltaPx = currentPointer - initialPointer;
+            const shift = Math.round(deltaPx / getDayWidth());
+            if (shift === latestShift) return;
+            latestShift = shift;
+            const previewStart = shiftWeekdays(initialStart, shift);
+            const previewEnd = shiftWeekdays(initialEnd, shift);
+            const previewStartIndex = timelineDayIndexMap.get(formatDate(previewStart));
+            const previewEndIndex = timelineDayIndexMap.get(formatDate(previewEnd));
+            if (typeof previewStartIndex !== 'number' || typeof previewEndIndex !== 'number') return;
+            barElement.style.left = `${previewStartIndex * getDayWidth()}px`;
+            barElement.dataset.startIndex = String(previewStartIndex);
+            barElement.dataset.endIndex = String(previewEndIndex);
+            refreshStanddownLayer(barElement);
+            setBarLabel(barElement, task, previewStart, previewEnd);
+          };
+
+          const onPointerUp = () => {
+            barElement.removeEventListener('pointermove', onPointerMove);
+            barElement.removeEventListener('pointerup', onPointerUp);
+            barElement.removeEventListener('pointercancel', onPointerUp);
+            barElement.releasePointerCapture(event.pointerId);
+            if (latestShift !== 0) {
+              const newStart = shiftWeekdays(initialStart, latestShift);
+              const newEnd = shiftWeekdays(initialEnd, latestShift);
+              task.startDate = formatDate(newStart);
+              task.endDate = formatDate(newEnd);
+              renderAll();
+              selectTask(task.id);
+            } else {
+              barElement.style.left = initialLeft;
+              const originalStartIndex = timelineDayIndexMap.get(task.startDate);
+              const originalEndIndex = timelineDayIndexMap.get(task.endDate);
+              if (typeof originalStartIndex === 'number') {
+                barElement.dataset.startIndex = String(originalStartIndex);
+              } else {
+                delete barElement.dataset.startIndex;
+              }
+              if (typeof originalEndIndex === 'number') {
+                barElement.dataset.endIndex = String(originalEndIndex);
+              } else {
+                delete barElement.dataset.endIndex;
+              }
+              refreshStanddownLayer(barElement);
+              setBarLabel(barElement, task, initialStart, initialEnd);
+            }
+          };
+
+          barElement.setPointerCapture(event.pointerId);
+          barElement.addEventListener('pointermove', onPointerMove);
+          barElement.addEventListener('pointerup', onPointerUp);
+          barElement.addEventListener('pointercancel', onPointerUp);
+        });
+      }
+
+      function renderGantt() {
+        ganttBodyEl.innerHTML = '';
+        timelineHeaderEl.innerHTML = '';
+        const { start, end } = computeTimelineRange();
+        timelineRangeStart = start;
+        timelineRangeEnd = end;
+        timelineDays = buildTimelineDays(start, end);
+        const todayUtc = getTodayUtc();
+        const todayIndex = todayUtc ? timelineDays.findIndex((day) => isSameUtcDay(day, todayUtc)) : -1;
+        timelineDayIndexMap = new Map();
+        timelineDays.forEach((day, index) => {
+          timelineDayIndexMap.set(formatDate(day), index);
+        });
+        const dayHighlightMap = timelineDays.map(() => new Set());
+        const highlightSegments = [];
+        if (todayIndex !== -1) {
+          highlightSegments.push({
+            id: 'today',
+            type: 'today',
+            startIndex: todayIndex,
+            endIndex: todayIndex
+          });
+        }
+        const milestoneSegments = buildMilestoneSegments(timelineDays);
+        milestoneSegments.forEach((segment) => {
+          highlightSegments.push(segment);
+        });
+        const normalizedSegments = highlightSegments
+          .map((segment) => {
+            const startIndex = Math.max(0, Math.min(timelineDays.length - 1, segment.startIndex));
+            const endIndex = Math.max(startIndex, Math.min(timelineDays.length - 1, segment.endIndex));
+            return { ...segment, startIndex, endIndex };
+          })
+          .filter((segment) => segment.startIndex <= segment.endIndex);
+        currentStanddownSegments = normalizedSegments.filter((segment) => segment.type === 'standdown');
+        normalizedSegments.forEach((segment) => {
+          for (let index = segment.startIndex; index <= segment.endIndex; index += 1) {
+            dayHighlightMap[index]?.add(segment.type);
+          }
+        });
+        if (!timelineDays.length) {
+          timelineHeaderEl.classList.remove('week-view');
+          const emptyHeader = document.createElement('div');
+          emptyHeader.className = 'empty-state';
+          emptyHeader.textContent = 'No working days to display.';
+          timelineHeaderEl.appendChild(emptyHeader);
+          return;
+        }
+        const dayWidth = getDayWidth();
+        timelineHeaderEl.style.gridTemplateColumns = `repeat(${timelineDays.length}, ${dayWidth}px)`;
+        const yearGroups = groupTimelineDaysByYear(timelineDays);
+        const monthGroups = groupTimelineDaysByMonth(timelineDays);
+        if (timelineViewMode === 'weeks') {
+          timelineHeaderEl.classList.add('week-view');
+          timelineHeaderEl.style.gridTemplateRows = 'auto auto auto';
+        } else {
+          timelineHeaderEl.classList.remove('week-view');
+          timelineHeaderEl.style.gridTemplateRows = 'auto auto auto auto';
+        }
+        adjustGanttOffset();
+
+        normalizedSegments.forEach((segment) => {
+          const highlightEl = document.createElement('div');
+          highlightEl.className = `timeline-highlight timeline-highlight--${segment.type}`;
+          highlightEl.style.gridColumn = `${segment.startIndex + 1} / ${segment.endIndex + 2}`;
+          highlightEl.style.gridRow = '1 / -1';
+          if (segment.type === 'today') {
+            highlightEl.title = 'Today';
+          } else if (segment.name) {
+            const label = segment.type === 'deadline' ? 'Deadline' : 'Stand-down';
+            highlightEl.title = `${segment.name} • ${label}`;
+          }
+          timelineHeaderEl.appendChild(highlightEl);
+        });
+
+        yearGroups.forEach((group) => {
+          const cell = document.createElement('div');
+          cell.className = 'timeline-year';
+          cell.textContent = String(group.year);
+          cell.style.gridColumn = `${group.startIndex + 1} / span ${group.length}`;
+          cell.style.gridRow = '1';
+          timelineHeaderEl.appendChild(cell);
+        });
+
+        monthGroups.forEach((group) => {
+          const cell = document.createElement('div');
+          cell.className = 'timeline-month';
+          const label = timelineViewMode === 'weeks'
+            ? MONTH_NAMES[group.month].slice(0, 3)
+            : MONTH_NAMES[group.month];
+          cell.textContent = label;
+          cell.style.gridColumn = `${group.startIndex + 1} / span ${group.length}`;
+          cell.style.gridRow = '2';
+          timelineHeaderEl.appendChild(cell);
+        });
+
+        if (timelineViewMode === 'weeks') {
+          const weekGroups = groupTimelineDaysByWeek(timelineDays);
+          weekGroups.forEach((group) => {
+            const cell = document.createElement('div');
+            cell.className = 'timeline-week';
+            cell.style.gridColumn = `${group.startIndex + 1} / span ${Math.max(1, group.length)}`;
+            const monday = new Date(group.start.getTime());
+            const dayOfWeek = monday.getUTCDay();
+            const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+            monday.setUTCDate(monday.getUTCDate() - diff);
+            const mondayShort = formatShortDate(monday);
+            cell.textContent = mondayShort.split('/')[0];
+            cell.title = `${formatDisplayDate(group.start)} → ${formatDisplayDate(group.end)} (${group.length} working day${group.length !== 1 ? 's' : ''})`;
+            cell.style.gridRow = '3';
+            const highlightSet = new Set();
+            const span = Math.max(1, group.length);
+            for (let offsetIndex = 0; offsetIndex < span; offsetIndex += 1) {
+              const dayIndex = group.startIndex + offsetIndex;
+              dayHighlightMap[dayIndex]?.forEach((type) => highlightSet.add(type));
+            }
+            if (highlightSet.has('today')) cell.classList.add('today');
+            if (highlightSet.has('deadline')) cell.classList.add('milestone-deadline');
+            if (highlightSet.has('standdown')) cell.classList.add('milestone-standdown');
+            timelineHeaderEl.appendChild(cell);
+          });
+        } else {
+          timelineDays.forEach((day, index) => {
+            const dayName = document.createElement('div');
+            dayName.className = 'timeline-day-name';
+            dayName.textContent = DAY_NAMES[day.getUTCDay()];
+            dayName.style.gridRow = '3';
+            dayName.style.gridColumn = `${index + 1}`;
+            const highlightSet = dayHighlightMap[index] || new Set();
+            if (highlightSet.has('today')) dayName.classList.add('today');
+            if (highlightSet.has('deadline')) dayName.classList.add('milestone-deadline');
+            if (highlightSet.has('standdown')) dayName.classList.add('milestone-standdown');
+            timelineHeaderEl.appendChild(dayName);
+
+            const dayNumber = document.createElement('div');
+            dayNumber.className = 'timeline-day-number';
+            dayNumber.textContent = formatShortDate(day).split('/')[0];
+            dayNumber.style.gridRow = '4';
+            dayNumber.style.gridColumn = `${index + 1}`;
+            if (highlightSet.has('today')) dayNumber.classList.add('today');
+            if (highlightSet.has('deadline')) dayNumber.classList.add('milestone-deadline');
+            if (highlightSet.has('standdown')) dayNumber.classList.add('milestone-standdown');
+            timelineHeaderEl.appendChild(dayNumber);
+          });
+        }
+
+        if (!tasks.length) {
+          const empty = document.createElement('div');
+          empty.className = 'empty-state';
+          empty.textContent = 'Create a task to visualise the schedule.';
+          ganttBodyEl.appendChild(empty);
+          return;
+        }
+
+        tasks.forEach((task) => {
+          const row = document.createElement('div');
+          row.className = 'gantt-row';
+          row.style.width = `${timelineDays.length * dayWidth}px`;
+          row.dataset.taskId = task.id;
+
+          const grid = document.createElement('div');
+          grid.className = 'gantt-grid';
+          grid.style.gridTemplateColumns = `repeat(${timelineDays.length}, ${dayWidth}px)`;
+          timelineDays.forEach((_, index) => {
+            const cell = document.createElement('div');
+            cell.className = 'day-cell';
+            if (index % 5 === 0) cell.classList.add('week-start');
+            const highlightSet = dayHighlightMap[index] || new Set();
+            if (highlightSet.has('today')) cell.classList.add('today');
+            if (highlightSet.has('deadline')) cell.classList.add('milestone-deadline');
+            if (highlightSet.has('standdown')) cell.classList.add('milestone-standdown');
+            grid.appendChild(cell);
+          });
+
+          const startDate = parseDate(task.startDate);
+          const endDate = parseDate(task.endDate);
+          const startIndex = timelineDayIndexMap.get(task.startDate);
+          const endIndex = timelineDayIndexMap.get(task.endDate);
+          if (typeof startIndex !== 'number' || typeof endIndex !== 'number' || startIndex > endIndex) {
+            return;
+          }
+          const barLeft = startIndex * dayWidth;
+          const barWidth = Math.max(dayWidth, (endIndex - startIndex + 1) * dayWidth);
+          const bar = document.createElement('div');
+          bar.className = 'task-bar';
+          if (task.id === selectedTaskId) bar.classList.add('selected');
+          bar.style.left = `${barLeft}px`;
+          bar.style.width = `${barWidth}px`;
+          bar.dataset.startIndex = String(startIndex);
+          bar.dataset.endIndex = String(endIndex);
+
+          const progress = document.createElement('div');
+          progress.className = 'progress';
+          const progressValue = Math.min(100, Math.max(0, task.progress));
+          progress.style.width = `${progressValue}%`;
+          progress.classList.toggle('is-full', progressValue >= 99.5);
+
+          const miniLayer = document.createElement('div');
+          miniLayer.className = 'mini-layer';
+          const segments = buildMiniSegments(task);
+          segments.forEach(() => {
+            const segmentEl = document.createElement('div');
+            segmentEl.className = 'mini-segment';
+            miniLayer.appendChild(segmentEl);
+          });
+
+          const standdownLayer = document.createElement('div');
+          standdownLayer.className = 'standdown-layer';
+
+          const label = document.createElement('span');
+          label.className = 'task-label';
+          label.textContent = task.name;
+
+          const handleStart = document.createElement('div');
+          handleStart.className = 'handle handle-start';
+          const handleEnd = document.createElement('div');
+          handleEnd.className = 'handle handle-end';
+
+          bar.appendChild(miniLayer);
+          bar.appendChild(progress);
+          bar.appendChild(standdownLayer);
+          refreshStanddownLayer(bar);
+          bar.appendChild(label);
+          bar.appendChild(handleStart);
+          bar.appendChild(handleEnd);
+          setBarLabel(bar, task, startDate, endDate);
+          updateMiniLayerElements(bar, segments);
+
+          bar.addEventListener('click', (event) => {
+            event.stopPropagation();
+            selectTask(task.id);
+          });
+
+          attachResizeHandles(bar, task);
+          enableBarDrag(bar, task);
+
+          row.appendChild(grid);
+          row.appendChild(bar);
+          ganttBodyEl.appendChild(row);
+        });
+        adjustGanttOffset();
+      }
+
+      async function handleSavePdf() {
+        const jsPdfCtor = await ensureJsPdfLoaded();
+        if (typeof jsPdfCtor !== 'function') {
+          console.error('jsPDF library failed to load.');
+          window.alert('Unable to save the PDF because the export component failed to load.');
+          return;
+        }
+        if (!tasks.length) {
+          window.alert('Add at least one task before saving the PDF.');
+          return;
+        }
+        if (!timelineDays.length) {
+          renderGantt();
+        }
+        if (!timelineDays.length) {
+          window.alert('Generate the schedule before exporting it as a PDF.');
+          return;
+        }
+
+        const doc = new jsPdfCtor({ orientation: 'landscape', unit: 'mm', format: 'a3' });
+        const margin = 8;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const contentWidth = pageWidth - (margin * 2);
+        const contentHeight = pageHeight - (margin * 2);
+        const leftColumnWidth = 75;
+        const rightColumnWidth = contentWidth - leftColumnWidth;
+        const columnLabels = ['Task', 'Start', 'End', '', 'Progress'];
+        const columnWeights = [105, 95, 95, 60, 80];
+        const totalWeight = columnWeights.reduce((sum, weight) => sum + weight, 0);
+        const columnWidths = columnWeights.map((weight) => (weight / totalWeight) * leftColumnWidth);
+        const tasksSnapshot = tasks.map((task) => ({
+          ...task,
+          miniTasks: Array.isArray(task.miniTasks) ? task.miniTasks.map((mini) => ({ ...mini })) : []
+        }));
+        const dayCount = timelineDays.length;
+        const dayWidth = dayCount ? rightColumnWidth / dayCount : rightColumnWidth;
+        const timelineRowHeight = 5;
+        const timelineRowCount = timelineViewMode === 'weeks' ? 3 : 4;
+        const timelineHeaderHeight = timelineRowHeight * timelineRowCount;
+        const textPadding = 1.5;
+        const timelineStartX = margin + leftColumnWidth;
+        const pageBottom = margin + contentHeight;
+        const defaultTextColor = { r: 31, g: 41, b: 55 };
+        const defaultDrawColor = { r: 214, g: 219, b: 231 };
+        const headerFill = { r: 234, g: 238, b: 248 };
+        const zebraFill = { r: 246, g: 248, b: 252 };
+        const legendItems = Object.entries(TASK_COLOR_MAP);
+        const supportsOpacity = typeof doc.GState === 'function';
+        const progressOverlayState = supportsOpacity ? doc.GState({ opacity: 0.35 }) : null;
+        const resetOpacityState = supportsOpacity ? doc.GState({ opacity: 1 }) : null;
+        const todayUtcPdf = getTodayUtc();
+        const todayIndexPdf = todayUtcPdf ? timelineDays.findIndex((day) => compareDates(day, todayUtcPdf) === 0) : -1;
+        const todayMarker = todayIndexPdf !== -1 ? {
+          index: todayIndexPdf,
+          x: timelineStartX + (todayIndexPdf * dayWidth)
+        } : null;
+        const pdfTimelineIndexMap = new Map();
+        timelineDays.forEach((day, index) => {
+          pdfTimelineIndexMap.set(formatDate(day), index);
+        });
+        const highlightPriority = { standdown: 0, deadline: 1, today: 2 };
+        const highlightPalette = {
+          today: { fill: { r: 255, g: 228, b: 232 }, border: { r: 220, g: 38, b: 38 } },
+          deadline: { fill: { r: 255, g: 243, b: 207 }, border: { r: 217, g: 119, b: 6 } },
+          standdown: { fill: { r: 229, g: 231, b: 235 }, border: { r: 71, g: 85, b: 105 } }
+        };
+        const highlightSegmentsPdf = [];
+        if (todayMarker) {
+          highlightSegmentsPdf.push({
+            type: 'today',
+            startIndex: todayMarker.index,
+            endIndex: todayMarker.index
+          });
+        }
+        const milestoneSegmentsPdf = buildMilestoneSegments(timelineDays);
+        milestoneSegmentsPdf.forEach((segment) => {
+          highlightSegmentsPdf.push(segment);
+        });
+        const normalizedHighlightSegments = highlightSegmentsPdf
+          .map((segment) => {
+            const startIndex = Math.max(0, Math.min(dayCount - 1, segment.startIndex));
+            const endIndex = Math.max(startIndex, Math.min(dayCount - 1, segment.endIndex));
+            return { ...segment, startIndex, endIndex };
+          })
+          .filter((segment) => segment.startIndex <= segment.endIndex);
+        const segmentsForDrawing = normalizedHighlightSegments
+          .slice()
+          .sort((a, b) => {
+            const priorityDifference = (highlightPriority[a.type] ?? 0) - (highlightPriority[b.type] ?? 0);
+            if (priorityDifference !== 0) return priorityDifference;
+            return a.startIndex - b.startIndex;
+          });
+        const pdfDayHighlights = timelineDays.map(() => new Set());
+        normalizedHighlightSegments.forEach((segment) => {
+          for (let index = segment.startIndex; index <= segment.endIndex; index += 1) {
+            pdfDayHighlights[index]?.add(segment.type);
+          }
+        });
+        const boundaryTypes = {};
+        const applyBoundaryType = (index, type) => {
+          if (index < 0 || index > dayCount) return;
+          const existing = boundaryTypes[index];
+          if (!existing || (highlightPriority[type] ?? 0) >= (highlightPriority[existing] ?? 0)) {
+            boundaryTypes[index] = type;
+          }
+        };
+        segmentsForDrawing.forEach((segment) => {
+          applyBoundaryType(segment.startIndex, segment.type);
+          applyBoundaryType(segment.endIndex + 1, segment.type);
+        });
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setLineHeightFactor(1.2);
+        doc.setTextColor(defaultTextColor.r, defaultTextColor.g, defaultTextColor.b);
+        doc.setLineWidth(0.2);
+
+        const truncateText = (value, maxWidth) => {
+          if (!value) return '';
+          let text = String(value);
+          if (doc.getTextWidth(text) <= maxWidth) return text;
+          const ellipsis = '...';
+          while (text.length > 0 && doc.getTextWidth(`${text}${ellipsis}`) > maxWidth) {
+            text = text.slice(0, -1);
+          }
+          return text.length ? `${text}${ellipsis}` : ellipsis;
+        };
+
+        const lineHeight = (doc.getFontSize() * doc.getLineHeightFactor()) / doc.internal.scaleFactor;
+        const minRowHeight = 12;
+        const verticalPadding = 2;
+        const nameColumnWidth = Math.max(10, columnWidths[0] - (textPadding * 2));
+
+        const formatDateCell = (value) => {
+          const date = parseDate(value);
+          if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+            return ['--', '---', '----'];
+          }
+          const day = String(date.getUTCDate()).padStart(2, '0');
+          const monthIndex = date.getUTCMonth();
+          const monthLabel = MONTH_NAMES[monthIndex] ? MONTH_NAMES[monthIndex].slice(0, 3).toUpperCase() : '---';
+          const year = String(date.getUTCFullYear());
+          return [day, monthLabel, year];
+        };
+
+        const buildNameLines = (rawName) => {
+          const name = (rawName || '').trim();
+          let lines = doc.splitTextToSize(name || 'Untitled task', nameColumnWidth);
+          if (!Array.isArray(lines) || !lines.length) lines = ['Untitled task'];
+          const maxLines = 3;
+          if (lines.length > maxLines) {
+            const limited = lines.slice(0, maxLines);
+            const ellipsis = '...';
+            let last = limited[maxLines - 1].trimEnd();
+            while (last.length && doc.getTextWidth(`${last}${ellipsis}`) > nameColumnWidth) {
+              last = last.slice(0, -1).trimEnd();
+            }
+            limited[maxLines - 1] = last ? `${last}${ellipsis}` : ellipsis;
+            return limited;
+          }
+          return lines;
+        };
+
+        const computeRowLayout = (task) => {
+          const duration = getTaskDuration(task);
+          const progressValue = Math.min(100, Math.max(0, Number.isFinite(task.progress) ? task.progress : 0));
+          const columnLines = [
+            buildNameLines(task.name),
+            formatDateCell(task.startDate),
+            formatDateCell(task.endDate),
+            [String(duration), 'Days'],
+            [`${Math.round(progressValue)}%`]
+          ].map((cellLines) => cellLines.map((line) => (line === undefined || line === null ? '' : String(line))));
+          const lineCounts = columnLines.map((lines) => Math.max(1, lines.length));
+          const maxLineCount = Math.max(...lineCounts);
+          const rowHeight = Math.max(minRowHeight, (maxLineCount * lineHeight) + (verticalPadding * 2));
+          return { rowHeight, columnLines, lineCounts, duration, progressValue };
+        };
+
+        const applyHighlightTextStyle = (types) => {
+          if (types.has('today')) {
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(220, 38, 38);
+            return true;
+          }
+          if (types.has('deadline')) {
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(180, 83, 9);
+            return true;
+          }
+          if (types.has('standdown')) {
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(51, 65, 85);
+            return true;
+          }
+          return false;
+        };
+
+        const resetHighlightTextStyle = () => {
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(defaultTextColor.r, defaultTextColor.g, defaultTextColor.b);
+        };
+
+        const drawLegend = (topY) => {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          doc.setTextColor(defaultTextColor.r, defaultTextColor.g, defaultTextColor.b);
+          if (!legendItems.length) {
+            doc.text('Legend: not configured', margin, topY + 4);
+            return topY + 8;
+          }
+          const swatchSize = 4;
+          const lineHeight = swatchSize + 2.5;
+          let x = margin;
+          let y = topY;
+          legendItems.forEach(([label, color]) => {
+            const textWidth = doc.getTextWidth(label);
+            const requiredWidth = swatchSize + 2 + textWidth + 6;
+            if (x + requiredWidth > margin + contentWidth) {
+              x = margin;
+              y += lineHeight;
+            }
+            const rgb = parseColorToRgb(color);
+            doc.setFillColor(rgb.r, rgb.g, rgb.b);
+            doc.rect(x, y, swatchSize, swatchSize, 'F');
+            doc.setDrawColor(160, 167, 187);
+            doc.rect(x, y, swatchSize, swatchSize);
+            doc.setTextColor(defaultTextColor.r, defaultTextColor.g, defaultTextColor.b);
+            doc.text(label, x + swatchSize + 2, y + swatchSize - 0.6);
+            x += requiredWidth;
+          });
+          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
+          return y + lineHeight;
+        };
+
+        const drawDocumentHeader = (topY) => {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(18);
+          doc.setTextColor(defaultTextColor.r, defaultTextColor.g, defaultTextColor.b);
+          const titleBaseline = topY + 7;
+          doc.text('BB: Project Programme', margin, titleBaseline);
+          const legendBottom = drawLegend(titleBaseline + 2.5);
+          return legendBottom + 2;
+        };
+
+        const drawTimelineGridLines = (topY, height) => {
+          if (!dayCount) return;
+          const originalLineWidth = doc.getLineWidth();
+          for (let index = 0; index <= dayCount; index += 1) {
+            const x = timelineStartX + (index * dayWidth);
+            const boundaryType = boundaryTypes[index];
+            const isWeekStart = index % 5 === 0;
+            if (boundaryType) {
+              const palette = highlightPalette[boundaryType];
+              doc.setDrawColor(palette.border.r, palette.border.g, palette.border.b);
+              doc.setLineWidth(boundaryType === 'today' ? 0.45 : 0.3);
+            } else if (isWeekStart) {
+              doc.setDrawColor(190, 195, 205);
+              doc.setLineWidth(0.1);
+            } else {
+              doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
+              doc.setLineWidth(0.1);
+            }
+            doc.line(x, topY, x, topY + height);
+          }
+          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
+          doc.setLineWidth(originalLineWidth);
+        };
+
+        const drawTimelineHeader = (topY) => {
+          doc.setFillColor(244, 246, 252);
+          doc.rect(timelineStartX, topY, rightColumnWidth, timelineHeaderHeight, 'F');
+          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
+          doc.rect(timelineStartX, topY, rightColumnWidth, timelineHeaderHeight);
+
+          segmentsForDrawing.forEach((segment) => {
+            const palette = highlightPalette[segment.type];
+            if (!palette) return;
+            const startX = timelineStartX + (segment.startIndex * dayWidth);
+            const width = (segment.endIndex - segment.startIndex + 1) * dayWidth;
+            doc.setFillColor(palette.fill.r, palette.fill.g, palette.fill.b);
+            doc.rect(startX, topY, width, timelineHeaderHeight, 'F');
+          });
+
+          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
+          doc.rect(timelineStartX, topY, rightColumnWidth, timelineHeaderHeight);
+
+          const yearBaseline = topY + timelineRowHeight - 1;
+          const monthBaseline = topY + (timelineRowHeight * 2) - 1;
+          const extraBaseline = topY + (timelineRowHeight * 3) - 1;
+          const dayBaseline = topY + (timelineRowHeight * 4) - 1;
+
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8);
+          const yearGroups = groupTimelineDaysByYear(timelineDays);
+          yearGroups.forEach((group) => {
+            const startX = timelineStartX + (group.startIndex * dayWidth);
+            const centreX = startX + ((group.length * dayWidth) / 2);
+            doc.text(String(group.year), centreX, yearBaseline, { align: 'center' });
+          });
+
+          const monthGroups = groupTimelineDaysByMonth(timelineDays);
+          monthGroups.forEach((group) => {
+            const startX = timelineStartX + (group.startIndex * dayWidth);
+            const centreX = startX + ((group.length * dayWidth) / 2);
+            const label = timelineViewMode === 'weeks'
+              ? MONTH_NAMES[group.month].slice(0, 3)
+              : MONTH_NAMES[group.month];
+            doc.text(label, centreX, monthBaseline, { align: 'center' });
+          });
+
+          doc.setFont('helvetica', 'normal');
+          if (timelineViewMode === 'weeks') {
+            const weekGroups = groupTimelineDaysByWeek(timelineDays);
+            weekGroups.forEach((group) => {
+              const startX = timelineStartX + (group.startIndex * dayWidth);
+              const centreX = startX + ((Math.max(1, group.length) * dayWidth) / 2);
+              const monday = new Date(group.start.getTime());
+              const dayOfWeek = monday.getUTCDay();
+              const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+              monday.setUTCDate(monday.getUTCDate() - diff);
+              const mondayLabel = formatShortDate(monday).split('/')[0];
+              const highlightSet = new Set();
+              const span = Math.max(1, group.length);
+              for (let offset = 0; offset < span; offset += 1) {
+                const dayIndex = group.startIndex + offset;
+                pdfDayHighlights[dayIndex]?.forEach((type) => highlightSet.add(type));
+              }
+              const styled = applyHighlightTextStyle(highlightSet);
+              doc.text(mondayLabel, centreX, extraBaseline, { align: 'center' });
+              if (styled) resetHighlightTextStyle();
+            });
+          } else {
+            timelineDays.forEach((day, index) => {
+              const centreX = timelineStartX + ((index + 0.5) * dayWidth);
+              const highlightSet = pdfDayHighlights[index] || new Set();
+              const styled = applyHighlightTextStyle(highlightSet);
+              doc.text(DAY_NAMES[day.getUTCDay()], centreX, extraBaseline, { align: 'center' });
+              doc.text(String(day.getUTCDate()).padStart(2, '0'), centreX, dayBaseline, { align: 'center' });
+              if (styled) resetHighlightTextStyle();
+            });
+          }
+
+          drawTimelineGridLines(topY, timelineHeaderHeight);
+        };
+
+        const drawTaskRow = (task, topY, rowIndex, layout) => {
+          const {
+            rowHeight,
+            columnLines,
+            lineCounts,
+            progressValue
+          } = layout;
+          if (rowIndex % 2 === 0) {
+            doc.setFillColor(zebraFill.r, zebraFill.g, zebraFill.b);
+            doc.rect(margin, topY, contentWidth, rowHeight, 'F');
+          }
+
+          if (segmentsForDrawing.length && dayWidth > 0) {
+            segmentsForDrawing.forEach((segment) => {
+              const palette = highlightPalette[segment.type];
+              if (!palette) return;
+              const segmentX = timelineStartX + (segment.startIndex * dayWidth);
+              const width = (segment.endIndex - segment.startIndex + 1) * dayWidth;
+              doc.setFillColor(palette.fill.r, palette.fill.g, palette.fill.b);
+              doc.rect(segmentX, topY, width, rowHeight, 'F');
+            });
+          }
+
+          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
+          doc.line(margin, topY, margin + contentWidth, topY);
+          doc.line(margin, topY + rowHeight, margin + contentWidth, topY + rowHeight);
+
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          let cellX = margin;
+          const originalLineWidth = doc.getLineWidth();
+          doc.setLineWidth(0.1);
+
+          columnLines.forEach((lines, index) => {
+            const width = columnWidths[index];
+            const effectiveLines = Math.max(1, lineCounts[index]);
+            const contentHeight = effectiveLines * lineHeight;
+            const textTop = topY + Math.max(verticalPadding, (rowHeight - contentHeight) / 2);
+            const cleanedLines = lines.length ? lines.map((line) => (line === '' ? ' ' : line)) : [' '];
+            if (index === 0) {
+              doc.text(cleanedLines, cellX + textPadding, textTop, { baseline: 'top' });
+            } else {
+              const centreX = cellX + (width / 2);
+              doc.text(cleanedLines, centreX, textTop, { baseline: 'top', align: 'center' });
+            }
+            cellX += width;
+            if (index < columnLines.length - 1) {
+              doc.line(cellX, topY, cellX, topY + rowHeight);
+            }
+          });
+
+          doc.line(timelineStartX, topY, timelineStartX, topY + rowHeight);
+          doc.setLineWidth(originalLineWidth);
+
+          drawTimelineGridLines(topY, rowHeight);
+
+          const startDate = parseDate(task.startDate);
+          const endDate = parseDate(task.endDate);
+          if (!startDate || !endDate || !dayCount) return;
+
+          const startIndex = timelineDayIndexMap.get(task.startDate);
+          const endIndex = timelineDayIndexMap.get(task.endDate);
+          if (typeof startIndex !== 'number' || typeof endIndex !== 'number' || startIndex > endIndex) return;
+
+          const barX = timelineStartX + (startIndex * dayWidth);
+          const barWidth = Math.max(dayWidth, (endIndex - startIndex + 1) * dayWidth);
+          const barHeight = rowHeight * 0.6;
+          const barY = topY + ((rowHeight - barHeight) / 2);
+
+          if (barWidth <= 0) return;
+
+          const workingIndices = [];
+          for (let index = startIndex; index <= endIndex; index += 1) {
+            const day = timelineDays[index];
+            if (!isStanddownDay(day)) workingIndices.push(index);
+          }
+
+          const segments = buildMiniSegments(task);
+          const paintSegments = segments.length ? segments : [{ name: null, duration: workingIndices.length }];
+          const paintedRects = [];
+          let workingPointer = 0;
+          paintSegments.forEach((segment) => {
+            const duration = Math.max(0, segment.duration || 0);
+            if (duration <= 0) return;
+            const startWorkingIndex = workingIndices[workingPointer];
+            if (startWorkingIndex == null) return;
+            const endWorkingIndex = workingIndices[Math.min(
+              workingPointer + duration - 1,
+              workingIndices.length - 1
+            )];
+            if (endWorkingIndex == null || endWorkingIndex < startWorkingIndex) return;
+            const left = (startWorkingIndex - startIndex) * dayWidth;
+            const width = (endWorkingIndex - startWorkingIndex + 1) * dayWidth;
+            const color = segment.name ? parseColorToRgb(getMiniColor(segment.name)) : parseColorToRgb(DEFAULT_SEGMENT_COLOR);
+            doc.setFillColor(color.r, color.g, color.b);
+            doc.rect(barX + left, barY, width, barHeight, 'F');
+            paintedRects.push({ left, width });
+            workingPointer += duration;
+          });
+
+          if (!paintedRects.length && workingIndices.length) {
+            const left = 0;
+            const width = (workingIndices[workingIndices.length - 1] - startIndex + 1) * dayWidth;
+            const fallback = parseColorToRgb(DEFAULT_SEGMENT_COLOR);
+            doc.setFillColor(fallback.r, fallback.g, fallback.b);
+            doc.rect(barX + left, barY, width, barHeight, 'F');
+            paintedRects.push({ left, width });
+          }
+
+          if (progressValue > 0 && workingIndices.length) {
+            let remaining = (progressValue / 100) * workingIndices.length;
+            let prevIndex = null;
+            let currentSegment = null;
+            const overlaySegments = [];
+            for (let i = 0; i < workingIndices.length && remaining > 1e-6; i += 1) {
+              const idx = workingIndices[i];
+              const left = (idx - startIndex) * dayWidth;
+              const portion = Math.min(1, remaining);
+              const contiguous = currentSegment && prevIndex != null && idx === prevIndex + 1 && !currentSegment.partial;
+              if (!contiguous) {
+                currentSegment = { left, width: portion * dayWidth, partial: portion < 1 };
+                overlaySegments.push(currentSegment);
+              } else {
+                currentSegment.width += portion * dayWidth;
+                currentSegment.partial = portion < 1;
+              }
+              remaining -= portion;
+              prevIndex = idx;
+              if (portion < 1) break;
+            }
+
+            overlaySegments.forEach((segment) => {
+              const overlayX = barX + segment.left;
+              const overlayWidth = Math.min(segment.width, barWidth);
+              if (overlayWidth <= 0) return;
+              if (progressOverlayState && resetOpacityState) {
+                doc.setGState(progressOverlayState);
+                doc.setFillColor(255, 255, 255);
+                doc.rect(overlayX, barY, overlayWidth, barHeight, 'F');
+                doc.setGState(resetOpacityState);
+              }
+              doc.setFillColor(255, 255, 255);
+              const stripeWidth = 0.45;
+              const stripeSpacing = 2;
+              const stripeRight = overlayX + overlayWidth;
+              for (let stripeX = overlayX; stripeX < stripeRight; stripeX += stripeSpacing) {
+                const width = Math.min(stripeWidth, stripeRight - stripeX);
+                if (width <= 0) continue;
+                doc.rect(stripeX, barY, width, barHeight, 'F');
+              }
+            });
+          }
+
+          doc.setDrawColor(80, 94, 120);
+          paintedRects.forEach((rect) => {
+            doc.rect(barX + rect.left, barY, rect.width, barHeight);
+          });
+
+          const labelMaxWidth = Math.max(barWidth - 4, 0);
+          if (labelMaxWidth > 0) {
+            const label = truncateText(task.name, labelMaxWidth);
+            if (label) {
+              doc.setFont('helvetica', 'bold');
+              doc.setFontSize(7);
+              doc.setTextColor(33, 45, 67);
+              doc.text(label, barX + 2, barY + (barHeight / 2) + 0.2, { baseline: 'middle' });
+              doc.setFont('helvetica', 'normal');
+              doc.setFontSize(9);
+              doc.setTextColor(defaultTextColor.r, defaultTextColor.g, defaultTextColor.b);
+            }
+          }
+
+          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
+        };
+
+        const startNewPage = (isFirstPage) => {
+          if (!isFirstPage) {
+            doc.addPage();
+          }
+          doc.setTextColor(defaultTextColor.r, defaultTextColor.g, defaultTextColor.b);
+          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
+          doc.setLineWidth(0.2);
+          let cursorY = drawDocumentHeader(margin);
+
+          doc.setFillColor(headerFill.r, headerFill.g, headerFill.b);
+          doc.rect(margin, cursorY, leftColumnWidth, timelineHeaderHeight, 'F');
+          doc.rect(margin, cursorY, leftColumnWidth, timelineHeaderHeight);
+
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9);
+          let headerX = margin;
+          const headerBaseline = cursorY + 4;
+          columnLabels.forEach((label, index) => {
+            doc.text(label, headerX + textPadding, headerBaseline);
+            headerX += columnWidths[index];
+          });
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          drawTimelineHeader(cursorY);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          return cursorY + timelineHeaderHeight;
+        };
+
+        const ensurePageCapacity = (requiredHeight) => {
+          if (currentY + requiredHeight > pageBottom) {
+            currentY = startNewPage(false);
+          }
+        };
+
+        let currentY = startNewPage(true);
+        tasksSnapshot.forEach((task, index) => {
+          const layout = computeRowLayout(task);
+          ensurePageCapacity(layout.rowHeight);
+          drawTaskRow(task, currentY, index, layout);
+          currentY += layout.rowHeight;
+        });
+
+        doc.save('project-programme.pdf');
+      }
+
+      function updateTaskStartDate(task, newStartDate) {
+        const currentEnd = parseDate(task.endDate) || newStartDate;
+        let duration = diffInWeekdays(newStartDate, currentEnd);
+        const minDuration = minimumTaskDuration(task);
+        if (duration < minDuration) {
+          const adjustedEnd = shiftWeekdays(newStartDate, minDuration - 1);
+          task.endDate = formatDate(adjustedEnd);
+          duration = diffInWeekdays(newStartDate, adjustedEnd);
+        }
+        task.startDate = formatDate(newStartDate);
+        normalizeMiniDurations(task.miniTasks, Math.max(1, duration));
+      }
+
+      function updateTaskEndDate(task, newEndDate) {
+        const currentStart = parseDate(task.startDate) || newEndDate;
+        let duration = diffInWeekdays(currentStart, newEndDate);
+        const minDuration = minimumTaskDuration(task);
+        if (duration < minDuration) {
+          newEndDate = shiftWeekdays(currentStart, minDuration - 1);
+          duration = diffInWeekdays(currentStart, newEndDate);
+        }
+        task.endDate = formatDate(newEndDate);
+        normalizeMiniDurations(task.miniTasks, Math.max(1, duration));
+      }
+
+      function applyNewStartDate(task, newStartDate, fixedEndDate) {
+        let start = ensureWeekday(newStartDate, 1);
+        let end = ensureWeekday(fixedEndDate, -1);
+        if (compareDates(end, start) < 0) {
+          end = shiftWeekdays(start, minimumTaskDuration(task) - 1);
+        }
+        const duration = Math.max(minimumTaskDuration(task), diffInWeekdays(start, end));
+        end = shiftWeekdays(start, duration - 1);
+        normalizeMiniDurations(task.miniTasks, duration);
+        task.startDate = formatDate(start);
+        task.endDate = formatDate(end);
+      }
+
+      function applyNewEndDate(task, fixedStartDate, newEndDate) {
+        let start = ensureWeekday(fixedStartDate, 1);
+        let end = ensureWeekday(newEndDate, -1);
+        if (compareDates(end, start) < 0) {
+          end = shiftWeekdays(start, minimumTaskDuration(task) - 1);
+        }
+        const duration = Math.max(minimumTaskDuration(task), diffInWeekdays(start, end));
+        end = shiftWeekdays(start, duration - 1);
+        normalizeMiniDurations(task.miniTasks, duration);
+        task.startDate = formatDate(start);
+        task.endDate = formatDate(end);
+      }
+
+      function selectTask(taskId) {
+        selectedTaskId = taskId;
+        renderTaskList();
+        renderGantt();
+        updateActionButtons();
+      }
+
+      function updateActionButtons() {
+        const hasSelection = Boolean(selectedTaskId);
+        editTaskBtn.disabled = !hasSelection;
+        const currentIndex = hasSelection ? tasks.findIndex((task) => task.id === selectedTaskId) : -1;
+        moveUpBtn.disabled = !hasSelection || currentIndex <= 0;
+        moveDownBtn.disabled = !hasSelection || currentIndex === -1 || currentIndex >= tasks.length - 1;
+      }
+
+      function moveSelectedTask(direction) {
+        if (!selectedTaskId) return;
+        const currentIndex = tasks.findIndex((task) => task.id === selectedTaskId);
+        if (currentIndex === -1) return;
+        const targetIndex = currentIndex + direction;
+        if (targetIndex < 0 || targetIndex >= tasks.length) return;
+        const [task] = tasks.splice(currentIndex, 1);
+        tasks.splice(targetIndex, 0, task);
+        selectedTaskId = task.id;
+        renderAll();
+      }
+
+      function createBlankMiniTasks(taskId) {
+        const miniTasks = [];
+        for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
+          miniTasks.push({
+            id: `${taskId}-mini-${i + 1}`,
+            enabled: false,
+            name: '',
+            duration: 1
+          });
+        }
+        return miniTasks;
+      }
+
+      function createDefaultSequencedMiniTasks(taskId) {
+        const miniTasks = createBlankMiniTasks(taskId);
+        DEFAULT_SEQUENCE_STEPS.slice(0, MAX_MINI_TASKS).forEach((step, index) => {
+          miniTasks[index] = {
+            id: `${taskId}-mini-${index + 1}`,
+            enabled: true,
+            name: step.name,
+            duration: step.weight
+          };
+        });
+        return miniTasks;
+      }
+
+      function renderLegend() {
+        if (!legendContainer) return;
+        legendContainer.innerHTML = '';
+        Object.entries(TASK_COLOR_MAP).forEach(([label, color]) => {
+          const item = document.createElement('span');
+          item.className = 'legend-item';
+          const swatch = document.createElement('span');
+          swatch.className = 'legend-swatch';
+          swatch.style.background = color;
+          item.appendChild(swatch);
+          item.appendChild(document.createTextNode(label));
+          legendContainer.appendChild(item);
+        });
+      }
+
+      function populateBuildingTypeOptions() {
+        const uniqueTypes = [...new Set(databaseRecords.map((record) => record.buildingType))].filter(Boolean).sort((a, b) => a.localeCompare(b));
+        buildingTypeSelect.innerHTML = '';
+        if (!uniqueTypes.length) {
+          const option = document.createElement('option');
+          option.value = '';
+          option.textContent = 'No building types found';
+          option.disabled = true;
+          option.selected = true;
+          buildingTypeSelect.appendChild(option);
+          return;
+        }
+        uniqueTypes.forEach((type, index) => {
+          const option = document.createElement('option');
+          option.value = type;
+          option.textContent = type;
+          if (index === 0) option.selected = true;
+          buildingTypeSelect.appendChild(option);
+        });
+      }
+
+      async function loadDatabase() {
+        databaseRecords = [];
+        try {
+          const response = await fetch(`database.json?cache-bust=${Date.now()}`, { cache: 'no-store' });
+          if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+          const data = await response.json();
+          if (Array.isArray(data) && data.length) {
+            databaseRecords = data;
+          }
+        } catch (error) {
+          console.warn('Unable to load database.json, falling back to embedded data', error);
+        }
+        if (!databaseRecords.length && window.location.protocol === 'file:') {
+          try {
+            const module = await import(`./database.json?cache-bust=${Date.now()}`, { assert: { type: 'json' } });
+            if (module && Array.isArray(module.default) && module.default.length) {
+              databaseRecords = module.default;
+            }
+          } catch (error) {
+            console.warn('Dynamic JSON import failed, using embedded fallback', error);
+          }
+        }
+        if (!databaseRecords.length) {
+          databaseRecords = DATABASE_FALLBACK.slice();
+        }
+        populateBuildingTypeOptions();
+      }
+
+      function sanitizeNumber(input, min, max, fallback) {
+        let value = Number.parseFloat(input.value);
+        if (Number.isNaN(value)) value = fallback;
+        value = Math.min(max, Math.max(min, value));
+        input.value = value;
+        return value;
+      }
+
+      function generateScheduleFromConfig() {
+        if (!databaseRecords.length) return;
+        const buildingType = buildingTypeSelect.value;
+        if (!buildingType) return;
+        const projectDifficulty = Math.round(sanitizeNumber(projectDifficultyInput, 1, 10, 1));
+        const numberOfLevels = Math.round(sanitizeNumber(numberOfLevelsInput, 1, 99, 1));
+        const projectSize = Math.round(sanitizeNumber(projectSizeInput, 100, 20000, 100));
+        const filtered = databaseRecords.filter((record) => record.buildingType === buildingType);
+        const baseStart = ensureWeekday(new Date(), 1);
+        if (!filtered.length) {
+          tasks = [];
+          selectedTaskId = null;
+          renderAll();
+          return;
+        }
+        const timestampBase = Date.now();
+        tasks = filtered.map((record, index) => {
+          const baseWeekdays = Number(record.weekdays) || 0;
+          const sqFactor = Number(record.squareMeterFactor) || 0;
+          const diffFactor = Number(record.difficultyFactor) || 0;
+          const levelsFactor = Number(record.levelsFactor) || 0;
+          const adjusted = baseWeekdays
+            + projectSize * sqFactor * baseWeekdays
+            + projectDifficulty * diffFactor * baseWeekdays
+            + numberOfLevels * levelsFactor * baseWeekdays;
+          const totalDuration = Math.max(1, Math.ceil(adjusted));
+          const taskStart = ensureWeekday(new Date(baseStart.getTime()), 1);
+          const taskEnd = shiftWeekdays(taskStart, totalDuration - 1);
+          const taskId = `gen-${timestampBase}-${index}`;
+          const miniTasks = createDefaultSequencedMiniTasks(taskId);
+          const task = {
+            id: taskId,
+            name: record.task,
+            description: '',
+            startDate: formatDate(taskStart),
+            endDate: formatDate(taskEnd),
+            progress: 0,
+            miniTasks
+          };
+          ensureTaskDates(task);
+          return task;
+        });
+        selectedTaskId = tasks.length ? tasks[0].id : null;
+        renderAll();
+      }
+
+      function renderMiniTaskInputs() {
+        miniTaskList.innerHTML = '';
+        for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
+          const item = document.createElement('div');
+          item.className = 'mini-task-item disabled';
+          item.dataset.index = String(i);
+
+          const toggleLabel = document.createElement('label');
+          toggleLabel.htmlFor = `miniEnabled${i}`;
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.id = `miniEnabled${i}`;
+          checkbox.name = `miniEnabled${i}`;
+          checkbox.addEventListener('change', () => handleMiniTaskToggle(i));
+          const labelText = document.createElement('span');
+          labelText.textContent = String(i + 1);
+          toggleLabel.appendChild(checkbox);
+          toggleLabel.appendChild(labelText);
+
+          const nameSelect = document.createElement('select');
+          nameSelect.id = `miniName${i}`;
+          nameSelect.name = `miniName${i}`;
+          nameSelect.disabled = true;
+          const placeholderOption = document.createElement('option');
+          placeholderOption.value = '';
+          placeholderOption.textContent = 'Select description';
+          nameSelect.appendChild(placeholderOption);
+          MINI_TASK_OPTIONS.forEach((option) => {
+            const optionEl = document.createElement('option');
+            optionEl.value = option;
+            optionEl.textContent = option;
+            nameSelect.appendChild(optionEl);
+          });
+          nameSelect.addEventListener('change', updateDurationPreview);
+
+          const durationWrapper = document.createElement('div');
+          durationWrapper.className = 'mini-task-duration';
+          const durationInput = document.createElement('input');
+          durationInput.type = 'number';
+          durationInput.id = `miniDuration${i}`;
+          durationInput.name = `miniDuration${i}`;
+          durationInput.min = '1';
+          durationInput.step = '1';
+          durationInput.value = '1';
+          durationInput.disabled = true;
+          durationInput.addEventListener('input', () => handleMiniDurationChange(i));
+          const durationSuffix = document.createElement('span');
+          durationSuffix.textContent = 'days';
+          durationWrapper.appendChild(durationInput);
+          durationWrapper.appendChild(durationSuffix);
+
+          const controls = document.createElement('div');
+          controls.className = 'mini-task-controls';
+          const upButton = document.createElement('button');
+          upButton.type = 'button';
+          upButton.className = 'mini-move mini-move-up';
+          upButton.textContent = '↑';
+          upButton.title = 'Move step up';
+          upButton.setAttribute('aria-label', `Move step ${i + 1} up`);
+          upButton.addEventListener('click', () => moveMiniTask(i, -1));
+          const downButton = document.createElement('button');
+          downButton.type = 'button';
+          downButton.className = 'mini-move mini-move-down';
+          downButton.textContent = '↓';
+          downButton.title = 'Move step down';
+          downButton.setAttribute('aria-label', `Move step ${i + 1} down`);
+          downButton.addEventListener('click', () => moveMiniTask(i, 1));
+          controls.appendChild(upButton);
+          controls.appendChild(downButton);
+
+          item.appendChild(toggleLabel);
+          item.appendChild(nameSelect);
+          item.appendChild(durationWrapper);
+          item.appendChild(controls);
+          miniTaskList.appendChild(item);
+        }
+        updateMiniTaskMoveButtons();
+      }
+
+      function getMiniFields(index) {
+        const item = miniTaskList.querySelector(`.mini-task-item[data-index="${index}"]`);
+        if (!item) return null;
+        const checkbox = document.getElementById(`miniEnabled${index}`);
+        const nameSelect = document.getElementById(`miniName${index}`);
+        const durationInput = document.getElementById(`miniDuration${index}`);
+        const upButton = item.querySelector('.mini-move-up');
+        const downButton = item.querySelector('.mini-move-down');
+        return { item, checkbox, nameSelect, durationInput, upButton, downButton };
+      }
+
+      function captureMiniValues(fields) {
+        if (!fields) return null;
+        const durationRaw = fields.durationInput ? parseInt(fields.durationInput.value, 10) : 1;
+        return {
+          enabled: Boolean(fields.checkbox && fields.checkbox.checked),
+          name: fields.nameSelect ? fields.nameSelect.value : '',
+          duration: Number.isNaN(durationRaw) || durationRaw < 1 ? 1 : durationRaw
+        };
+      }
+
+      function applyMiniValues(fields, values) {
+        if (!fields || !values) return;
+        const enabled = Boolean(values.enabled);
+        if (fields.checkbox) fields.checkbox.checked = enabled;
+        if (fields.nameSelect) {
+          const hasOption = Array.from(fields.nameSelect.options || []).some((opt) => opt.value === values.name);
+          fields.nameSelect.value = hasOption ? values.name : '';
+          fields.nameSelect.disabled = !enabled;
+        }
+        if (fields.durationInput) {
+          const duration = Number.isFinite(values.duration) && values.duration >= 1 ? Math.round(values.duration) : 1;
+          fields.durationInput.value = String(duration);
+          fields.durationInput.disabled = !enabled;
+        }
+        if (fields.item) {
+          fields.item.classList.toggle('disabled', !enabled);
+        }
+      }
+
+      function updateMiniTaskMoveButtons() {
+        for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
+          const fields = getMiniFields(i);
+          if (!fields) continue;
+          if (fields.upButton) fields.upButton.disabled = i === 0;
+          if (fields.downButton) fields.downButton.disabled = i === MAX_MINI_TASKS - 1;
+        }
+      }
+
+      function moveMiniTask(index, direction) {
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= MAX_MINI_TASKS) return;
+        const currentFields = getMiniFields(index);
+        const targetFields = getMiniFields(targetIndex);
+        if (!currentFields || !targetFields) return;
+        const currentValues = captureMiniValues(currentFields);
+        const targetValues = captureMiniValues(targetFields);
+        applyMiniValues(currentFields, targetValues);
+        applyMiniValues(targetFields, currentValues);
+        updateDurationPreview();
+        updateMiniTaskMoveButtons();
+      }
+
+      function handleMiniTaskToggle(index) {
+        const item = miniTaskList.querySelector(`.mini-task-item[data-index="${index}"]`);
+        const checkbox = document.getElementById(`miniEnabled${index}`);
+        const nameSelect = document.getElementById(`miniName${index}`);
+        const durationInput = document.getElementById(`miniDuration${index}`);
+        const enabled = checkbox.checked;
+        nameSelect.disabled = !enabled;
+        durationInput.disabled = !enabled;
+        if (enabled) {
+          item.classList.remove('disabled');
+        } else {
+          item.classList.add('disabled');
+          nameSelect.value = '';
+        }
+        updateDurationPreview();
+        updateMiniTaskMoveButtons();
+      }
+
+      function handleMiniDurationChange(index) {
+        const input = document.getElementById(`miniDuration${index}`);
+        let value = parseInt(input.value, 10);
+        if (Number.isNaN(value) || value < 1) value = 1;
+        input.value = value;
+        updateDurationPreview();
+      }
+
+      function updateDurationPreview() {
+        let start = ensureWeekday(parseDate(modalStartDate.value), 1);
+        let end = ensureWeekday(parseDate(modalEndDate.value), -1);
+        if (!start) {
+          durationPreview.textContent = '0 working days';
+          return;
+        }
+        if (!end || compareDates(end, start) < 0) {
+          end = new Date(start.getTime());
+        }
+        let baseDuration = Math.max(1, diffInWeekdays(start, end));
+        let miniTotal = 0;
+        let enabledCount = 0;
+        for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
+          const enabled = document.getElementById(`miniEnabled${i}`).checked;
+          const duration = parseInt(document.getElementById(`miniDuration${i}`).value, 10);
+          if (enabled) {
+            enabledCount += 1;
+            miniTotal += Number.isNaN(duration) ? 0 : duration;
+          }
+        }
+        if (enabledCount > 0) {
+          baseDuration = Math.max(miniTotal, enabledCount);
+        }
+        const finalEnd = shiftWeekdays(start, baseDuration - 1);
+        modalEndDate.value = formatDate(finalEnd);
+        durationPreview.textContent = `${baseDuration} working day${baseDuration !== 1 ? 's' : ''}`;
+      }
+
+      function openTaskModal(mode = 'create', taskId = null) {
+        currentMode = mode;
+        editingTaskId = taskId;
+        taskForm.reset();
+        renderMiniTaskInputs();
+        if (mode === 'edit' && taskId) {
+          const task = tasks.find((item) => item.id === taskId);
+          if (task) populateModal(task);
+          modalTitle.textContent = 'Edit Task';
+          saveTaskBtn.textContent = 'Save';
+        } else {
+          populateModal();
+          modalTitle.textContent = 'Add Task';
+          saveTaskBtn.textContent = 'Save Task';
+        }
+        document.body.classList.add('modal-open');
+        modalBackdrop.classList.remove('hidden');
+        modalEl.classList.remove('hidden');
+        modalTaskName.focus();
+      }
+
+      function closeTaskModal() {
+        document.body.classList.remove('modal-open');
+        modalBackdrop.classList.add('hidden');
+        modalEl.classList.add('hidden');
+        editingTaskId = null;
+        currentMode = 'create';
+      }
+
+      function populateModal(task = null) {
+        const defaultStart = ensureWeekday(new Date(), 1);
+        modalTaskName.value = task ? task.name : '';
+        modalTaskDescription.value = task ? task.description : '';
+        modalProgress.value = task ? task.progress : 0;
+        modalStartDate.value = task ? task.startDate : formatDate(defaultStart);
+        modalEndDate.value = task ? task.endDate : formatDate(defaultStart);
+        const baseMini = task ? task.miniTasks : [];
+        for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
+          const checkbox = document.getElementById(`miniEnabled${i}`);
+          const nameInput = document.getElementById(`miniName${i}`);
+          const durationInput = document.getElementById(`miniDuration${i}`);
+          const mini = baseMini[i] || { enabled: false, name: '', duration: 1 };
+          checkbox.checked = Boolean(mini.enabled);
+          const incomingName = mini.name || '';
+          nameInput.value = MINI_TASK_OPTIONS.includes(incomingName) ? incomingName : '';
+          durationInput.value = mini.duration || 1;
+          nameInput.disabled = !checkbox.checked;
+          durationInput.disabled = !checkbox.checked;
+          const item = miniTaskList.querySelector(`.mini-task-item[data-index="${i}"]`);
+          if (checkbox.checked) {
+            item.classList.remove('disabled');
+          } else {
+            item.classList.add('disabled');
+          }
+        }
+        updateMiniTaskMoveButtons();
+        updateDurationPreview();
+      }
+
+      function collectMiniTasks(taskId) {
+        const results = [];
+        for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
+          const enabled = document.getElementById(`miniEnabled${i}`).checked;
+          const name = document.getElementById(`miniName${i}`).value;
+          let duration = parseInt(document.getElementById(`miniDuration${i}`).value, 10);
+          if (Number.isNaN(duration) || duration < 1) duration = 1;
+          results.push({
+            id: `${taskId || 'new'}-mini-${i + 1}`,
+            enabled,
+            name,
+            duration
+          });
+        }
+        return results;
+      }
+      function handleFormSubmit(event) {
+        event.preventDefault();
+        const name = modalTaskName.value.trim() || 'Untitled task';
+        const description = modalTaskDescription.value.trim();
+        let start = ensureWeekday(parseDate(modalStartDate.value), 1);
+        let end = ensureWeekday(parseDate(modalEndDate.value), -1);
+        if (!start) start = ensureWeekday(new Date(), 1);
+        if (!end || compareDates(end, start) < 0) end = new Date(start.getTime());
+        let progress = parseInt(modalProgress.value, 10);
+        if (Number.isNaN(progress)) progress = 0;
+        progress = Math.min(100, Math.max(0, progress));
+        const taskId = editingTaskId || `task-${Date.now()}`;
+        const miniTasks = collectMiniTasks(taskId);
+        const enabledCount = miniTasks.filter((mini) => mini.enabled).length;
+        let totalDuration = Math.max(1, diffInWeekdays(start, end));
+        if (enabledCount > 0) {
+          let miniSum = 0;
+          miniTasks.forEach((mini) => {
+            if (mini.enabled) miniSum += mini.duration;
+          });
+          totalDuration = Math.max(miniSum, enabledCount);
+          end = shiftWeekdays(start, totalDuration - 1);
+        }
+        normalizeMiniDurations(miniTasks, totalDuration);
+        const payload = {
+          id: taskId,
+          name,
+          description,
+          startDate: formatDate(start),
+          endDate: formatDate(end),
+          progress,
+          miniTasks
+        };
+        ensureTaskDates(payload);
+        if (currentMode === 'edit' && editingTaskId) {
+          const index = tasks.findIndex((task) => task.id === editingTaskId);
+          if (index !== -1) {
+            tasks[index] = payload;
+            selectedTaskId = editingTaskId;
+          }
+        } else {
+          tasks.push(payload);
+          selectedTaskId = taskId;
+        }
+        closeTaskModal();
+        renderAll();
+      }
+
+      function renderAll() {
+        renderTaskList();
+        renderGantt();
+        updateActionButtons();
+        adjustGanttOffset();
+      }
+
+      function attachEventListeners() {
+        configForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          generateScheduleFromConfig();
+        });
+        buildingTypeSelect.addEventListener('change', () => {
+          generateScheduleFromConfig();
+        });
+        if (savePdfBtn) {
+          savePdfBtn.addEventListener('click', handleSavePdf);
+        }
+        if (scheduleSettingsBtn) {
+          scheduleSettingsBtn.addEventListener('click', () => {
+            openScheduleModal();
+          });
+        }
+        if (addMilestoneBtn) {
+          addMilestoneBtn.addEventListener('click', () => {
+            const milestone = createMilestone();
+            milestoneDrafts.push(milestone);
+            selectedMilestoneId = milestone.id;
+            renderMilestoneDrafts();
+          });
+        }
+        if (removeMilestoneBtn) {
+          removeMilestoneBtn.addEventListener('click', () => {
+            if (!selectedMilestoneId) return;
+            const index = milestoneDrafts.findIndex((milestone) => milestone.id === selectedMilestoneId);
+            if (index !== -1) {
+              milestoneDrafts.splice(index, 1);
+              selectedMilestoneId = milestoneDrafts[index]?.id || milestoneDrafts[index - 1]?.id || null;
+              renderMilestoneDrafts();
+            }
+          });
+        }
+        if (scheduleModalBackdrop) {
+          scheduleModalBackdrop.addEventListener('click', () => {
+            closeScheduleModal();
+          });
+        }
+        if (cancelScheduleBtn) {
+          cancelScheduleBtn.addEventListener('click', () => {
+            closeScheduleModal();
+          });
+        }
+        if (saveScheduleBtn) {
+          saveScheduleBtn.addEventListener('click', handleSaveScheduleSettings);
+        }
+        if (saveProgrammeBtn) {
+          saveProgrammeBtn.addEventListener('click', handleSaveProgramme);
+        }
+        if (loadProgrammeBtn) {
+          loadProgrammeBtn.addEventListener('click', handleLoadProgramme);
+        }
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape' && scheduleModal && !scheduleModal.classList.contains('hidden')) {
+            event.preventDefault();
+            closeScheduleModal();
+          }
+        });
+        addTaskBtn.addEventListener('click', () => openTaskModal('create'));
+        editTaskBtn.addEventListener('click', () => {
+          if (!selectedTaskId) return;
+          openTaskModal('edit', selectedTaskId);
+        });
+        moveUpBtn.addEventListener('click', () => moveSelectedTask(-1));
+        moveDownBtn.addEventListener('click', () => moveSelectedTask(1));
+        modalBackdrop.addEventListener('click', closeTaskModal);
+        cancelModalBtn.addEventListener('click', closeTaskModal);
+        taskForm.addEventListener('submit', handleFormSubmit);
+        viewModeButtons.forEach((button) => {
+          button.addEventListener('click', () => setTimelineViewMode(button.dataset.viewMode));
+        });
+        modalStartDate.addEventListener('change', () => {
+          modalStartDate.value = formatDate(ensureWeekday(parseDate(modalStartDate.value), 1));
+          updateDurationPreview();
+        });
+        modalEndDate.addEventListener('change', () => {
+          modalEndDate.value = formatDate(ensureWeekday(parseDate(modalEndDate.value), -1));
+          updateDurationPreview();
+        });
+        modalProgress.addEventListener('input', () => {
+          let value = parseInt(modalProgress.value, 10);
+          if (Number.isNaN(value)) value = 0;
+          modalProgress.value = Math.min(100, Math.max(0, value));
+        });
+      }
+
+      function initialise() {
+        renderMiniTaskInputs();
+        attachEventListeners();
+        renderLegend();
+        updateViewModeButtons();
+        recomputeStanddownSet();
+        renderAll();
+        loadDatabase().then(() => {
+          const firstEnabled = Array.from(buildingTypeSelect.options || []).find((option) => !option.disabled);
+          if (firstEnabled) {
+            buildingTypeSelect.value = firstEnabled.value;
+            generateScheduleFromConfig();
+          } else {
+            tasks = [];
+            selectedTaskId = null;
+            renderAll();
+          }
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', initialise);
+    }());
+  </script>
+</body>
+</html>

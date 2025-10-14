@@ -1,0 +1,6 @@
+PLACEHOLDER ICON - replace with a 192x192 PNG named color.png before packaging the app for Teams.
+
+Tips:
+- Create a 192x192 PNG (transparent background recommended).
+- Place the final PNG at the project root with the filename color.png.
+- The Teams package ZIP must contain manifest.json and both icon files at the root.

@@ -1,0 +1,5 @@
+PLACEHOLDER ICON - replace with a 32x32 PNG named outline.png before packaging the app for Teams.
+
+Tips:
+- Create a 32x32 PNG (1-bit or simple outline) and place it at the project root as outline.png.
+- The Teams package ZIP must contain manifest.json and both icon files at the root.

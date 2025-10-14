@@ -1,0 +1,41 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.23/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.23",
+  "id": "b7d2c3f1-88de-4a2b-9347-6a1b418b6f3e",
+  "version": "1.0.0",
+  "packageName": "com.example.architectureplanner",
+  "name": {
+    "short": "Architecture Planner",
+    "full": "Architecture Project Planner for Teams"
+  },
+  "description": {
+    "short": "Plan and manage architecture projects efficiently.",
+    "full": "Architecture Project Planner helps teams organize, schedule, and track architecture projects with Gantt charts, milestones, and collaborative tools."
+  },
+  "accentColor": "#3056d3",
+  "developer": {
+    "name": "Arthur Pescher",
+    "websiteUrl": "https://example.com",
+    "privacyUrl": "https://example.com/privacy",
+    "termsOfUseUrl": "https://example.com/terms"
+  }
+  ,
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "staticTabs": [
+    {
+      "entityId": "architecturePlannerTab",
+      "name": "Planner",
+      "contentUrl": "https://{HOSTNAME}/index.html",
+      "websiteUrl": "https://{HOSTNAME}/index.html",
+      "scopes": ["personal"]
+    }
+  ],
+  "permissions": ["identity"],
+  "validDomains": [
+    "{HOSTNAME}",
+    "localhost"
+  ]
+}
