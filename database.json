@@ -25,7 +25,7 @@
   },
     {
     "buildingType": "school",
-    "task": "GA Plan",
+    "task": "GA Plan Design",
     "weekdays": 5.0,
     "squareMeterFactor": 0.001,
     "difficultyFactor": 0.3,
