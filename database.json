@@ -1,7 +1,7 @@
 [
   {
     "buildingType": "school",
-    "task": "GA Plan",
+    "task": "GA Plan Technical",
     "weekdays": 5.0,
     "squareMeterFactor": 0.001,
     "difficultyFactor": 0.3,
@@ -9,7 +9,7 @@
   },
   {
     "buildingType": "school",
-    "task": "Elevations",
+    "task": "Elevations Planning",
     "weekdays": 5.0,
     "squareMeterFactor": 0.002,
     "difficultyFactor": 0.5,
