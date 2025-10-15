@@ -1,7 +1,7 @@
 [
   {
     "buildingType": "school",
-    "task": "GA Plan Technical",
+    "task": "GA Plan Technical 2",
     "weekdays": 5.0,
     "squareMeterFactor": 0.001,
     "difficultyFactor": 0.3,
