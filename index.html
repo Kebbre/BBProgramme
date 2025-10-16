@@ -352,6 +352,8 @@
       const GRAPH_ITEM_PATH_SEGMENTS = ['Documents', 'Programme App', 'gantt-shared-data.json'];
       const GRAPH_ITEM_PATH = GRAPH_ITEM_PATH_SEGMENTS.map((segment) => encodeURIComponent(segment)).join('/');
       const GRAPH_ITEM_CONTENT_URL = `${GRAPH_BASE_URL}/me/drive/root:/${GRAPH_ITEM_PATH}:/content`;
+      const GRAPH_AUTHORITY_PRIMARY = TENANT_ID ? `https://login.microsoftonline.com/${TENANT_ID}` : null;
+      const GRAPH_AUTHORITY_FALLBACK = 'https://login.microsoftonline.com/common';
       const GRAPH_REDIRECT_URI = (() => {
         const origin = window.location.origin;
         if (origin && origin !== 'null') return origin;
@@ -390,6 +392,8 @@
       let msalInitializationPromise = null;
       let graphAccount = null;
       let activeAccountEmail = null;
+      let currentAuthority = GRAPH_AUTHORITY_PRIMARY || GRAPH_AUTHORITY_FALLBACK;
+      let authorityFallbackActive = !GRAPH_AUTHORITY_PRIMARY;
 
       const taskListEl = document.getElementById('taskList');
       const addTaskBtn = document.getElementById('addTaskBtn');
@@ -808,50 +812,86 @@
         }
       }
 
-      async function ensureMsalClient() {
+      function isAuthorityResolutionError(error) {
+
+        const code = error?.errorCode || error?.code || error?.name;
+        if (typeof code === 'string' && code.toLowerCase().includes('endpoints_resolution_error')) {
+          return true;
+        }
+        const message = error?.message || error?.errorMessage || '';
+        if (typeof message === 'string') {
+          const lowered = message.toLowerCase();
+          if (lowered.includes('endpoints_resolution_error') || lowered.includes('openid_config_error') || lowered.includes('invalid_tenant')) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      async function setupMsalClient(authority, { allowFallback } = { allowFallback: true }) {
         if (!window.msal || !window.msal.PublicClientApplication) {
           throw new Error('Microsoft authentication library is not available.');
         }
+        currentAuthority = authority || GRAPH_AUTHORITY_FALLBACK;
+        authorityFallbackActive = currentAuthority === GRAPH_AUTHORITY_FALLBACK;
+        console.info(`Initialising MSAL with authority: ${currentAuthority}`);
+        msalInstance = new window.msal.PublicClientApplication({
+          auth: {
+            clientId: CLIENT_ID,
+            authority: currentAuthority,
+            redirectUri: GRAPH_REDIRECT_URI
+          },
+          cache: {
+            cacheLocation: 'localStorage',
+            storeAuthStateInCookie: false
+          }
+        });
+        msalInitializationPromise = typeof msalInstance.initialize === 'function'
+          ? msalInstance.initialize()
+          : Promise.resolve();
+        try {
+          await msalInitializationPromise;
+        } catch (error) {
+          if (allowFallback && currentAuthority !== GRAPH_AUTHORITY_FALLBACK && isAuthorityResolutionError(error)) {
+            console.warn('Primary authority failed, switching to fallback authority.', error);
+            return setupMsalClient(GRAPH_AUTHORITY_FALLBACK, { allowFallback: false });
+          }
+          throw error;
+        }
+        setActiveGraphAccount(null);
+        const existingAccounts = msalInstance.getAllAccounts();
+        if (existingAccounts.length) {
+          setActiveGraphAccount(existingAccounts[0]);
+        } else {
+          updateGraphAuthUI();
+        }
+        return msalInstance;
+      }
+
+      async function runWithAuthorityFallback(executor) {
+        try {
+          return await executor();
+        } catch (error) {
+          if (!authorityFallbackActive && isAuthorityResolutionError(error)) {
+            console.warn('MSAL operation failed due to authority resolution. Retrying with fallback authority.', error);
+            await setupMsalClient(GRAPH_AUTHORITY_FALLBACK, { allowFallback: false });
+            return await executor();
+          }
+          throw error;
+        }
+      }
+
+      async function ensureMsalClient() {
         if (!msalInstance) {
-          msalInstance = new window.msal.PublicClientApplication({
-            auth: {
-              clientId: CLIENT_ID,
-              authority: `https://login.microsoftonline.com/${TENANT_ID}`,
-              redirectUri: GRAPH_REDIRECT_URI
-            },
-            cache: {
-              cacheLocation: 'localStorage',
-              storeAuthStateInCookie: false
-            }
-          });
-          if (typeof msalInstance.initialize === 'function') {
-            if (!msalInitializationPromise) {
-              msalInitializationPromise = msalInstance.initialize();
-            }
-            try {
-              await msalInitializationPromise;
-            } catch (initError) {
-              console.warn('MSAL initialization failed', initError);
-            }
-          }
-          const existingAccounts = msalInstance.getAllAccounts();
-          if (existingAccounts.length && !graphAccount) {
-            setActiveGraphAccount(existingAccounts[0]);
-          } else {
-            updateGraphAuthUI();
-          }
+          await setupMsalClient(GRAPH_AUTHORITY_PRIMARY || GRAPH_AUTHORITY_FALLBACK, { allowFallback: true });
         } else if (msalInitializationPromise) {
           try {
             await msalInitializationPromise;
-          } catch (initError) {
-            console.warn('MSAL initialization failed', initError);
-          }
-          if (!graphAccount) {
-            const existingAccounts = msalInstance.getAllAccounts();
-            if (existingAccounts.length) {
-              setActiveGraphAccount(existingAccounts[0]);
+          } catch (error) {
+            if (!authorityFallbackActive && isAuthorityResolutionError(error)) {
+              await setupMsalClient(GRAPH_AUTHORITY_FALLBACK, { allowFallback: false });
             } else {
-              updateGraphAuthUI();
+              throw error;
             }
           }
         }
@@ -859,46 +899,50 @@
       }
 
       async function requireGraphAccount({ allowInteractive } = { allowInteractive: false }) {
-        const client = await ensureMsalClient();
-        if (graphAccount) return graphAccount;
-        const active = client.getActiveAccount();
-        if (active) {
-          setActiveGraphAccount(active);
+        return runWithAuthorityFallback(async () => {
+          const client = await ensureMsalClient();
+          if (graphAccount) return graphAccount;
+          const active = client.getActiveAccount();
+          if (active) {
+            setActiveGraphAccount(active);
+            return graphAccount;
+          }
+          const accounts = client.getAllAccounts();
+          if (accounts.length) {
+            setActiveGraphAccount(accounts[0]);
+            return graphAccount;
+          }
+          if (!allowInteractive) {
+            throw new Error('Please sign in to OneDrive before continuing.');
+          }
+          const response = await client.loginPopup({
+            scopes: GRAPH_SCOPES,
+            prompt: 'select_account'
+          });
+          setActiveGraphAccount(response.account);
           return graphAccount;
-        }
-        const accounts = client.getAllAccounts();
-        if (accounts.length) {
-          setActiveGraphAccount(accounts[0]);
-          return graphAccount;
-        }
-        if (!allowInteractive) {
-          throw new Error('Please sign in to OneDrive before continuing.');
-        }
-        const response = await client.loginPopup({
-          scopes: GRAPH_SCOPES,
-          prompt: 'select_account'
         });
-        setActiveGraphAccount(response.account);
-        return graphAccount;
       }
 
       async function acquireGraphToken({ interactiveFallback = true } = {}) {
-        const client = await ensureMsalClient();
-        const account = await requireGraphAccount({ allowInteractive: interactiveFallback });
-        const tokenRequest = { scopes: GRAPH_SCOPES, account };
-        try {
-          const response = await client.acquireTokenSilent(tokenRequest);
-          return response.accessToken;
-        } catch (error) {
-          if (window.msal?.InteractionRequiredAuthError && error instanceof window.msal.InteractionRequiredAuthError) {
+        return runWithAuthorityFallback(async () => {
+          const client = await ensureMsalClient();
+          const account = await requireGraphAccount({ allowInteractive: interactiveFallback });
+          const tokenRequest = { scopes: GRAPH_SCOPES, account };
+          try {
+            const response = await client.acquireTokenSilent(tokenRequest);
+            return response.accessToken;
+          } catch (error) {
+            if (window.msal?.InteractionRequiredAuthError && error instanceof window.msal.InteractionRequiredAuthError) {
+              if (!interactiveFallback) throw error;
+              const interactiveResponse = await client.acquireTokenPopup(tokenRequest);
+              return interactiveResponse.accessToken;
+            }
             if (!interactiveFallback) throw error;
             const interactiveResponse = await client.acquireTokenPopup(tokenRequest);
             return interactiveResponse.accessToken;
           }
-          if (!interactiveFallback) throw error;
-          const interactiveResponse = await client.acquireTokenPopup(tokenRequest);
-          return interactiveResponse.accessToken;
-        }
+        });
       }
 
       async function loginToGraph() {
@@ -914,15 +958,17 @@
 
       async function logoutFromGraph() {
         try {
-          const client = await ensureMsalClient();
-          if (!graphAccount) {
-            updateGraphAuthUI();
-            window.alert('No OneDrive session to sign out from.');
-            return;
-          }
-          await client.logoutPopup({ account: graphAccount });
-          setActiveGraphAccount(null);
-          window.alert('Signed out from OneDrive.');
+          await runWithAuthorityFallback(async () => {
+            const client = await ensureMsalClient();
+            if (!graphAccount) {
+              updateGraphAuthUI();
+              window.alert('No OneDrive session to sign out from.');
+              return;
+            }
+            await client.logoutPopup({ account: graphAccount });
+            setActiveGraphAccount(null);
+            window.alert('Signed out from OneDrive.');
+          });
         } catch (error) {
           console.error('Unable to sign out from OneDrive', error);
           window.alert(`Unable to sign out from OneDrive. Details: ${extractErrorMessage(error)}`);
@@ -972,11 +1018,26 @@
       }
 
       function extractErrorMessage(error) {
-        if (!error) return 'Unknown error.';
-        if (typeof error === 'string') return error;
-        if (error.message) return error.message;
-        if (error.errorMessage) return error.errorMessage;
-        return JSON.stringify(error);
+        let message = 'Unknown error.';
+        if (!error) {
+          message = 'Unknown error.';
+        } else if (typeof error === 'string') {
+          message = error;
+        } else if (error.message) {
+          message = error.message;
+        } else if (error.errorMessage) {
+          message = error.errorMessage;
+        } else {
+          try {
+            message = JSON.stringify(error);
+          } catch (jsonError) {
+            message = String(error);
+          }
+        }
+        if (currentAuthority) {
+          return `${message} [authority: ${currentAuthority}]`;
+        }
+        return message;
       }
 
       async function handleSaveProgramme() {
