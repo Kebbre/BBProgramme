@@ -354,11 +354,8 @@
       const GRAPH_ITEM_CONTENT_URL = `${GRAPH_BASE_URL}/me/drive/root:/${GRAPH_ITEM_PATH}:/content`;
       const GRAPH_AUTHORITY_PRIMARY = TENANT_ID ? `https://login.microsoftonline.com/${TENANT_ID}` : null;
       const GRAPH_AUTHORITY_FALLBACK = 'https://login.microsoftonline.com/common';
-      const GRAPH_REDIRECT_URI = (() => {
-        const origin = window.location.origin;
-        if (origin && origin !== 'null') return origin;
-        return window.location.href.replace(/[#?].*$/, '');
-      })();
+      const GRAPH_REDIRECT_URI = "https://kebbre.github.io/BBProgramme/";
+
       const DATABASE_FALLBACK = [
         {"buildingType":"school","task":"GA Plan","weekdays":10,"squareMeterFactor":0.01,"difficultyFactor":3,"levelsFactor":2},
         {"buildingType":"school","task":"Elevations","weekdays":15,"squareMeterFactor":0.02,"difficultyFactor":5,"levelsFactor":1},
