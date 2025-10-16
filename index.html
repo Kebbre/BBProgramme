@@ -212,6 +212,7 @@
         <button type="button" id="scheduleSettingsBtn" class="secondary">Schedule Settings</button>
         <button type="button" id="saveProgrammeBtn" class="secondary">Save Programme</button>
         <button type="button" id="loadProgrammeBtn" class="secondary">Load Programme</button>
+        <button type="button" id="graphAuthBtn" class="secondary">Sign in to OneDrive</button>
       </div>
     </form>
     <div class="legend" id="taskLegend"></div>
@@ -322,6 +323,7 @@
     </div>
   </div>
 
+  <script src="https://alcdn.msauth.net/browser/2.37.0/js/msal-browser.min.js" crossorigin="anonymous"></script>
   <script type="module">
     (async function () {
       const BASE_DAY_WIDTH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--day-width'), 10);
@@ -342,6 +344,19 @@
         'Delays': 'rgb(220, 220, 230)'
       };
       const DEFAULT_SEGMENT_COLOR = '#3056d3';
+      // Graph configuration for OneDrive storage
+      const CLIENT_ID = '6eaf49c0-93d7-4dba-8902-b343bc459350';
+      const TENANT_ID = '6cd7041f-549e-4127-89e9-3674513bad5';
+      const GRAPH_SCOPES = ['User.Read', 'Files.ReadWrite.All'];
+      const GRAPH_BASE_URL = 'https://graph.microsoft.com/v1.0';
+      const GRAPH_ITEM_PATH_SEGMENTS = ['Documents', 'Programme App', 'gantt-shared-data.json'];
+      const GRAPH_ITEM_PATH = GRAPH_ITEM_PATH_SEGMENTS.map((segment) => encodeURIComponent(segment)).join('/');
+      const GRAPH_ITEM_CONTENT_URL = `${GRAPH_BASE_URL}/me/drive/root:/${GRAPH_ITEM_PATH}:/content`;
+      const GRAPH_REDIRECT_URI = (() => {
+        const origin = window.location.origin;
+        if (origin && origin !== 'null') return origin;
+        return window.location.href.replace(/[#?].*$/, '');
+      })();
       const DATABASE_FALLBACK = [
         {"buildingType":"school","task":"GA Plan","weekdays":10,"squareMeterFactor":0.01,"difficultyFactor":3,"levelsFactor":2},
         {"buildingType":"school","task":"Elevations","weekdays":15,"squareMeterFactor":0.02,"difficultyFactor":5,"levelsFactor":1},
@@ -371,7 +386,10 @@
       let milestones = [];
       let milestoneDrafts = [];
       let selectedMilestoneId = null;
-      let programmeFileHandle = null;
+      let msalInstance = null;
+      let msalInitializationPromise = null;
+      let graphAccount = null;
+      let activeAccountEmail = null;
 
       const taskListEl = document.getElementById('taskList');
       const addTaskBtn = document.getElementById('addTaskBtn');
@@ -403,6 +421,7 @@
       const scheduleSettingsBtn = document.getElementById('scheduleSettingsBtn');
       const saveProgrammeBtn = document.getElementById('saveProgrammeBtn');
       const loadProgrammeBtn = document.getElementById('loadProgrammeBtn');
+      const graphAuthBtn = document.getElementById('graphAuthBtn');
       const legendContainer = document.getElementById('taskLegend');
       const scheduleModalBackdrop = document.getElementById('scheduleModalBackdrop');
       const scheduleModal = document.getElementById('scheduleModal');
@@ -761,83 +780,234 @@
         renderAll();
       }
 
+      function setActiveGraphAccount(account) {
+        if (account) {
+          graphAccount = account;
+          activeAccountEmail = account.username || account.name || '';
+        } else {
+          graphAccount = null;
+          activeAccountEmail = null;
+        }
+        if (msalInstance && typeof msalInstance.setActiveAccount === 'function') {
+          msalInstance.setActiveAccount(account || null);
+        }
+        updateGraphAuthUI();
+      }
+
+      function updateGraphAuthUI() {
+        if (!graphAuthBtn) return;
+        if (graphAccount) {
+          const label = activeAccountEmail ? `Signed in: ${activeAccountEmail}` : 'Signed in';
+          graphAuthBtn.textContent = label;
+          graphAuthBtn.dataset.signedIn = 'true';
+          graphAuthBtn.title = 'Click to sign out from OneDrive';
+        } else {
+          graphAuthBtn.textContent = 'Sign in to OneDrive';
+          delete graphAuthBtn.dataset.signedIn;
+          graphAuthBtn.title = 'Click to connect to OneDrive';
+        }
+      }
+
+      async function ensureMsalClient() {
+        if (!window.msal || !window.msal.PublicClientApplication) {
+          throw new Error('Microsoft authentication library is not available.');
+        }
+        if (!msalInstance) {
+          msalInstance = new window.msal.PublicClientApplication({
+            auth: {
+              clientId: CLIENT_ID,
+              authority: `https://login.microsoftonline.com/${TENANT_ID}`,
+              redirectUri: GRAPH_REDIRECT_URI
+            },
+            cache: {
+              cacheLocation: 'localStorage',
+              storeAuthStateInCookie: false
+            }
+          });
+          if (typeof msalInstance.initialize === 'function') {
+            if (!msalInitializationPromise) {
+              msalInitializationPromise = msalInstance.initialize();
+            }
+            try {
+              await msalInitializationPromise;
+            } catch (initError) {
+              console.warn('MSAL initialization failed', initError);
+            }
+          }
+          const existingAccounts = msalInstance.getAllAccounts();
+          if (existingAccounts.length && !graphAccount) {
+            setActiveGraphAccount(existingAccounts[0]);
+          } else {
+            updateGraphAuthUI();
+          }
+        } else if (msalInitializationPromise) {
+          try {
+            await msalInitializationPromise;
+          } catch (initError) {
+            console.warn('MSAL initialization failed', initError);
+          }
+          if (!graphAccount) {
+            const existingAccounts = msalInstance.getAllAccounts();
+            if (existingAccounts.length) {
+              setActiveGraphAccount(existingAccounts[0]);
+            } else {
+              updateGraphAuthUI();
+            }
+          }
+        }
+        return msalInstance;
+      }
+
+      async function requireGraphAccount({ allowInteractive } = { allowInteractive: false }) {
+        const client = await ensureMsalClient();
+        if (graphAccount) return graphAccount;
+        const active = client.getActiveAccount();
+        if (active) {
+          setActiveGraphAccount(active);
+          return graphAccount;
+        }
+        const accounts = client.getAllAccounts();
+        if (accounts.length) {
+          setActiveGraphAccount(accounts[0]);
+          return graphAccount;
+        }
+        if (!allowInteractive) {
+          throw new Error('Please sign in to OneDrive before continuing.');
+        }
+        const response = await client.loginPopup({
+          scopes: GRAPH_SCOPES,
+          prompt: 'select_account'
+        });
+        setActiveGraphAccount(response.account);
+        return graphAccount;
+      }
+
+      async function acquireGraphToken({ interactiveFallback = true } = {}) {
+        const client = await ensureMsalClient();
+        const account = await requireGraphAccount({ allowInteractive: interactiveFallback });
+        const tokenRequest = { scopes: GRAPH_SCOPES, account };
+        try {
+          const response = await client.acquireTokenSilent(tokenRequest);
+          return response.accessToken;
+        } catch (error) {
+          if (window.msal?.InteractionRequiredAuthError && error instanceof window.msal.InteractionRequiredAuthError) {
+            if (!interactiveFallback) throw error;
+            const interactiveResponse = await client.acquireTokenPopup(tokenRequest);
+            return interactiveResponse.accessToken;
+          }
+          if (!interactiveFallback) throw error;
+          const interactiveResponse = await client.acquireTokenPopup(tokenRequest);
+          return interactiveResponse.accessToken;
+        }
+      }
+
+      async function loginToGraph() {
+        try {
+          await requireGraphAccount({ allowInteractive: true });
+          const label = activeAccountEmail ? `Signed in: ${activeAccountEmail}` : 'Signed in to OneDrive.';
+          window.alert(label);
+        } catch (error) {
+          console.error('Unable to sign in to OneDrive', error);
+          window.alert(`Unable to sign in to OneDrive. Details: ${extractErrorMessage(error)}`);
+        }
+      }
+
+      async function logoutFromGraph() {
+        try {
+          const client = await ensureMsalClient();
+          if (!graphAccount) {
+            updateGraphAuthUI();
+            window.alert('No OneDrive session to sign out from.');
+            return;
+          }
+          await client.logoutPopup({ account: graphAccount });
+          setActiveGraphAccount(null);
+          window.alert('Signed out from OneDrive.');
+        } catch (error) {
+          console.error('Unable to sign out from OneDrive', error);
+          window.alert(`Unable to sign out from OneDrive. Details: ${extractErrorMessage(error)}`);
+        }
+      }
+
+      async function handleGraphAuthBtnClick() {
+        if (!graphAuthBtn) return;
+        const signedIn = graphAuthBtn.dataset.signedIn === 'true';
+        if (signedIn) {
+          await logoutFromGraph();
+        } else {
+          await loginToGraph();
+        }
+      }
+
+      async function uploadProgrammeToOneDrive(json) {
+        const token = await acquireGraphToken();
+        const response = await fetch(GRAPH_ITEM_CONTENT_URL, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: json
+        });
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => '');
+          throw new Error(`Graph upload failed (${response.status}): ${errorText}`);
+        }
+        return response.json().catch(() => ({}));
+      }
+
+      async function downloadProgrammeFromOneDrive() {
+        const token = await acquireGraphToken();
+        const response = await fetch(GRAPH_ITEM_CONTENT_URL, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => '');
+          throw new Error(`Graph download failed (${response.status}): ${errorText}`);
+        }
+        return response.text();
+      }
+
+      function extractErrorMessage(error) {
+        if (!error) return 'Unknown error.';
+        if (typeof error === 'string') return error;
+        if (error.message) return error.message;
+        if (error.errorMessage) return error.errorMessage;
+        return JSON.stringify(error);
+      }
+
       async function handleSaveProgramme() {
         const payload = serialiseProgramme();
         const json = JSON.stringify(payload, null, 2);
         try {
-          if (window.showSaveFilePicker) {
-            try {
-              if (!programmeFileHandle) {
-                programmeFileHandle = await window.showSaveFilePicker({
-                  suggestedName: 'gantt-shared-data.json',
-                  types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
-                });
-              }
-              const writable = await programmeFileHandle.createWritable();
-              await writable.write(json);
-              await writable.close();
-              window.localStorage.setItem('programme-cache', json);
-              window.alert('Programme saved successfully.');
-              return;
-            } catch (pickerError) {
-              if (pickerError?.name === 'AbortError') return;
-              console.warn('File picker save failed, falling back to download.', pickerError);
-            }
-          }
-
-          const blob = new Blob([json], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = 'gantt-shared-data.json';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
+          await uploadProgrammeToOneDrive(json);
           window.localStorage.setItem('programme-cache', json);
-          window.alert('Programme saved. The file has been downloaded.');
+          window.alert('Programme saved to OneDrive.');
         } catch (error) {
-          console.error('Unable to save programme', error);
-          window.alert('Unable to save the programme. Please try again.');
+          console.error('Unable to save programme to OneDrive', error);
+          window.alert(`Unable to save the programme to OneDrive. Details: ${extractErrorMessage(error)}`);
         }
       }
 
       async function handleLoadProgramme() {
         try {
-          if (window.showOpenFilePicker) {
-            try {
-              const [handle] = await window.showOpenFilePicker({
-                multiple: false,
-                types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
-              });
-              if (!handle) return;
-              programmeFileHandle = handle;
-              const file = await handle.getFile();
-              const text = await file.text();
-              window.localStorage.setItem('programme-cache', text);
-              applyProgrammeSnapshot(JSON.parse(text));
-              return;
-            } catch (pickerError) {
-              if (pickerError?.name === 'AbortError') return;
-              console.warn('File picker load failed, falling back to bundled file/local cache.', pickerError);
-            }
-          }
-
-          const response = await fetch(`gantt-shared-data.json?cache-bust=${Date.now()}`, { cache: 'no-store' });
-          if (!response.ok) throw new Error(`Load failed ${response.status}`);
-          const data = await response.json();
-          window.localStorage.setItem('programme-cache', JSON.stringify(data));
-          applyProgrammeSnapshot(data);
+          const json = await downloadProgrammeFromOneDrive();
+          window.localStorage.setItem('programme-cache', json);
+          applyProgrammeSnapshot(JSON.parse(json));
+          window.alert('Programme loaded from OneDrive.');
         } catch (error) {
-          console.warn('Unable to load programme from file, attempting cache.', error);
+          console.warn('Unable to load programme from OneDrive', error);
           try {
             const cached = window.localStorage.getItem('programme-cache');
             if (!cached) throw new Error('No cached programme available.');
             applyProgrammeSnapshot(JSON.parse(cached));
-            window.alert('Loaded programme from local cache.');
+            window.alert('Unable to reach OneDrive. Loaded cached programme instead.');
           } catch (fallbackError) {
             console.error('Unable to load programme', fallbackError);
-            window.alert('Unable to load the programme. Confirm the file exists and is valid JSON.');
+            window.alert(`Unable to load the programme from OneDrive and no cached version is available. Details: ${extractErrorMessage(error)} | Cache error: ${extractErrorMessage(fallbackError)}`);
           }
         }
       }
@@ -3047,6 +3217,9 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         if (loadProgrammeBtn) {
           loadProgrammeBtn.addEventListener('click', handleLoadProgramme);
         }
+        if (graphAuthBtn) {
+          graphAuthBtn.addEventListener('click', handleGraphAuthBtnClick);
+        }
         document.addEventListener('keydown', (event) => {
           if (event.key === 'Escape' && scheduleModal && !scheduleModal.classList.contains('hidden')) {
             event.preventDefault();
@@ -3082,6 +3255,12 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
       }
 
       function initialise() {
+        updateGraphAuthUI();
+        ensureMsalClient().then(() => {
+          updateGraphAuthUI();
+        }).catch((error) => {
+          console.warn('Unable to initialise Microsoft authentication on startup.', error);
+        });
         renderMiniTaskInputs();
         attachEventListeners();
         renderLegend();
