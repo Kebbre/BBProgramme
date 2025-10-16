@@ -235,7 +235,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>Architecture Project 10 Planner</h1>
+        <h1>Architecture Project 11 Planner</h1>
         <div class="sidebar-actions">
           <button id="addTaskBtn" type="button">＋ New Task</button>
           <button id="editTaskBtn" class="secondary" type="button" disabled>Edit</button>
@@ -2705,9 +2705,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           miniLayer.className = 'mini-layer';
           const segments = buildMiniSegments(task);
           segments.forEach(() => {
-            const segmentEl = document.createElement('div');
-            segmentEl.className = 'mini-segment';
-            miniLayer.appendChild(segmentEl);
+            miniLayer.appendChild(createMiniSegmentElement());
           });
 
           const standdownLayer = document.createElement('div');
