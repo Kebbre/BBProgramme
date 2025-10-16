@@ -115,16 +115,19 @@
     .task-bar .progress{position:absolute;top:0;bottom:0;left:0;width:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,.9)0,rgba(255,255,255,.9)6px,rgba(255,255,255,.25)6px,rgba(255,255,255,.25)12px);background-color:rgba(255,255,255,.25);border-radius:8px 0 0 8px;pointer-events:none;transition:width .2s ease;z-index:2;box-shadow:inset -1px 0 0 rgba(0,0,0,.08);overflow:hidden;}
     .task-bar .progress.is-full{border-radius:8px;}
     .mini-layer{position:absolute;inset:0;pointer-events:auto;border-radius:8px;overflow:visible;z-index:4;}
-    .mini-segment{position:absolute;top:0;bottom:0;opacity:.9;pointer-events:auto;border-radius:8px;box-shadow:inset 0 0 0 1px rgba(15,23,42,.12);}
-    .mini-segment.locked{box-shadow:inset 0 0 0 2px rgba(31,41,55,.35);}
+    .mini-segment{position:absolute;top:0;bottom:0;opacity:.92;pointer-events:auto;border-radius:10px;box-shadow:inset 0 0 0 1px rgba(15,23,42,.12);}
+    .mini-segment.locked{box-shadow:inset 0 0 0 2px rgba(31,41,55,.4);}
     .mini-segment.undefined{background:repeating-linear-gradient(135deg, rgba(99,102,241,.65) 0 6px, rgba(79,70,229,.35) 6px 12px);}
-    .mini-segment .mini-lock-btn{position:absolute;top:4px;left:50%;transform:translateX(-50%);width:22px;height:22px;border-radius:6px;border:1px solid rgba(15,23,42,.2);background:rgba(255,255,255,.85);color:var(--text);font-size:.7rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s ease,transform .15s ease,box-shadow .15s ease;}
-    .mini-segment .mini-lock-btn:hover{background:#fff;box-shadow:0 6px 12px rgba(15,23,42,.18);transform:translateX(-50%) translateY(-1px);}
-    .mini-segment.locked .mini-lock-btn{background:var(--primary);color:#fff;border-color:rgba(15,23,42,.25);}
+    .mini-segment .mini-lock-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:999px;border:1px solid rgba(15,23,42,.25);background:#fff;color:#111827;font-size:.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(15,23,42,.16);transition:background .15s ease,transform .15s ease,box-shadow .15s ease;z-index:6;}
+    .mini-segment .mini-lock-btn:hover{background:#f8fafc;transform:translate(-50%,-50%) scale(1.07);box-shadow:0 10px 22px rgba(15,23,42,.22);}
+    .mini-segment.locked .mini-lock-btn{background:var(--primary);color:#fff;border-color:rgba(15,23,42,.35);box-shadow:0 12px 26px rgba(48,86,211,.32);}
     .mini-segment.undefined .mini-lock-btn{display:none;}
-    .mini-segment .mini-handle{position:absolute;top:-2px;bottom:-2px;width:12px;border-radius:6px;cursor:col-resize;background:rgba(255,255,255,0);transition:background .15s ease;}
-    .mini-segment .mini-handle:hover{background:rgba(255,255,255,.35);}
-    .mini-segment .mini-handle-right{right:-6px;}
+    .mini-segment .mini-handle{position:absolute;top:50%;transform:translateY(-50%);width:16px;height:70%;border-radius:10px;cursor:col-resize;background:rgba(255,255,255,.92);border:1px solid rgba(15,23,42,.2);box-shadow:0 10px 16px rgba(15,23,42,.18);display:flex;align-items:center;justify-content:center;z-index:5;transition:transform .15s ease,box-shadow .15s ease;}
+    .mini-segment .mini-handle::before{content:\"\";display:block;width:2px;height:60%;border-radius:2px;background:rgba(15,23,42,.45);box-shadow:-4px 0 0 rgba(15,23,42,.15),4px 0 0 rgba(15,23,42,.15);}
+    .mini-segment .mini-handle:hover{transform:translateY(-50%) scale(1.05);box-shadow:0 12px 24px rgba(15,23,42,.26);}
+    .mini-segment .mini-handle-left{left:-7px;}
+    .mini-segment .mini-handle-right{right:-7px;}
+    .mini-segment .mini-handle.disabled{cursor:not-allowed;opacity:.4;box-shadow:none;background:rgba(236,239,244,.8);}
     .mini-segment.locked .mini-handle{cursor:not-allowed;background:rgba(255,255,255,0);opacity:.35;}
     .mini-segment.locked .mini-handle:hover{background:rgba(255,255,255,0);}
     .standdown-layer{position:absolute;inset:0;pointer-events:none;z-index:3;}
@@ -232,7 +235,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>Architecture Project 9 Planner</h1>
+        <h1>Architecture Project 10 Planner</h1>
         <div class="sidebar-actions">
           <button id="addTaskBtn" type="button">＋ New Task</button>
           <button id="editTaskBtn" class="secondary" type="button" disabled>Edit</button>
@@ -1968,21 +1971,28 @@ function adjustGanttOffset() {
       function createMiniSegmentElement() {
         const element = document.createElement('div');
         element.className = 'mini-segment';
+        const handleLeft = document.createElement('div');
+        handleLeft.className = 'mini-handle mini-handle-left mini-control';
+        handleLeft.dataset.edge = 'left';
+        handleLeft.setAttribute('role', 'button');
+        handleLeft.setAttribute('tabindex', '-1');
         const lockBtn = document.createElement('button');
         lockBtn.type = 'button';
         lockBtn.className = 'mini-lock-btn mini-control';
         lockBtn.textContent = 'X';
         lockBtn.setAttribute('aria-pressed', 'false');
+        const handleRight = document.createElement('div');
+        handleRight.className = 'mini-handle mini-handle-right mini-control';
+        handleRight.dataset.edge = 'right';
+        handleRight.setAttribute('role', 'button');
+        handleRight.setAttribute('tabindex', '-1');
+        element.appendChild(handleLeft);
         element.appendChild(lockBtn);
-        const handle = document.createElement('div');
-        handle.className = 'mini-handle mini-handle-right mini-control';
-        handle.setAttribute('role', 'button');
-        handle.setAttribute('tabindex', '-1');
-        element.appendChild(handle);
+        element.appendChild(handleRight);
         return element;
       }
 
-      function bindMiniSegmentEvents(element, segment, task, barElement) {
+      function bindMiniSegmentEvents(element, segment, task, barElement, segments, index) {
         if (element._miniCleanup) {
           element._miniCleanup();
           element._miniCleanup = null;
@@ -1993,18 +2003,19 @@ function adjustGanttOffset() {
             lockBtn.disabled = true;
             lockBtn.setAttribute('aria-pressed', 'false');
           }
-          const handle = element.querySelector('.mini-handle-right');
-          if (handle) {
+          element.querySelectorAll('.mini-handle').forEach((handle) => {
             handle.classList.add('disabled');
-          }
+          });
           return;
         }
         const cleanups = [];
+        const accessibleLabel = segment.locked ? 'Unlock mini-task length' : 'Lock mini-task length';
         const lockBtn = element.querySelector('.mini-lock-btn');
         if (lockBtn) {
           lockBtn.disabled = false;
           lockBtn.setAttribute('aria-pressed', segment.locked ? 'true' : 'false');
-          lockBtn.title = segment.locked ? 'Unlock mini-task length' : 'Lock mini-task length';
+          lockBtn.title = accessibleLabel;
+          lockBtn.setAttribute('aria-label', accessibleLabel);
           const onClick = (event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -2013,19 +2024,28 @@ function adjustGanttOffset() {
           lockBtn.addEventListener('click', onClick);
           cleanups.push(() => lockBtn.removeEventListener('click', onClick));
         }
-        const handle = element.querySelector('.mini-handle-right');
-        if (handle) {
-          if (segment.locked) {
-            handle.classList.add('disabled');
-          } else {
-            handle.classList.remove('disabled');
-            const onPointerDown = (event) => {
-              beginMiniSegmentResize(event, task, segment.id, barElement);
-            };
-            handle.addEventListener('pointerdown', onPointerDown);
-            cleanups.push(() => handle.removeEventListener('pointerdown', onPointerDown));
+        const previousEnabled = (() => {
+          if (index <= 0) return null;
+          for (let i = index - 1; i >= 0; i -= 1) {
+            const candidate = segments[i];
+            if (candidate && !candidate.isUndefined) return candidate;
           }
-        }
+          return null;
+        })();
+        element.querySelectorAll('.mini-handle').forEach((handle) => {
+          const edge = handle.dataset.edge || 'right';
+          const needsNeighbor = edge === 'left';
+          if (segment.locked || (needsNeighbor && !previousEnabled)) {
+            handle.classList.add('disabled');
+            return;
+          }
+          handle.classList.remove('disabled');
+          const onPointerDown = (event) => {
+            beginMiniSegmentResize(event, task, segment.id, barElement, edge, previousEnabled?.id || null);
+          };
+          handle.addEventListener('pointerdown', onPointerDown);
+          cleanups.push(() => handle.removeEventListener('pointerdown', onPointerDown));
+        });
         element._miniCleanup = () => {
           cleanups.forEach((fn) => fn());
         };
@@ -2048,6 +2068,15 @@ function adjustGanttOffset() {
 
         while (miniLayer.children.length < segments.length) {
           miniLayer.appendChild(createMiniSegmentElement());
+        }
+
+        if (!interactive) {
+          miniLayer.querySelectorAll('.mini-segment').forEach((element) => {
+            if (element._miniCleanup) {
+              element._miniCleanup();
+              element._miniCleanup = null;
+            }
+          });
         }
 
         const miniElements = Array.from(miniLayer.querySelectorAll('.mini-segment'));
@@ -2084,19 +2113,21 @@ function adjustGanttOffset() {
           if (lockBtn) {
             lockBtn.disabled = Boolean(segment.isUndefined);
             lockBtn.setAttribute('aria-pressed', segment.locked ? 'true' : 'false');
+            lockBtn.title = segment.locked ? 'Unlock mini-task length' : 'Lock mini-task length';
+            lockBtn.setAttribute('aria-label', lockBtn.title);
           }
-          const handle = element.querySelector('.mini-handle-right');
-          if (handle) {
-            handle.classList.toggle('disabled', Boolean(segment.locked || segment.isUndefined));
-          }
+          element.querySelectorAll('.mini-handle').forEach((handleEl) => {
+            const isDisabled = Boolean(segment.locked || segment.isUndefined);
+            handleEl.classList.toggle('disabled', isDisabled);
+          });
           if (interactive && task && !segment.isUndefined) {
-            bindMiniSegmentEvents(element, segment, task, barElement);
+            bindMiniSegmentEvents(element, segment, task, barElement, segments, index);
             element.dataset.boundSegmentId = segment.id || '';
           }
           workingPointer += requiredSpan;
         });
 
-      for (let i = segments.length; i < miniElements.length; i += 1) {
+        for (let i = segments.length; i < miniElements.length; i += 1) {
           const element = miniElements[i];
           if (!element) continue;
           if (interactive && element._miniCleanup) {
@@ -2190,10 +2221,22 @@ function adjustGanttOffset() {
         return false;
       }
 
-      function beginMiniSegmentResize(event, task, segmentId, barElement) {
+      function beginMiniSegmentResize(event, task, segmentId, barElement, edge = 'right', neighborId = null) {
         if (!task || !segmentId) return;
-        const segment = task.miniTasks.find((mini) => mini.id === segmentId);
-        if (!segment || !segment.enabled || segment.locked) return;
+        const handleEdge = edge === 'left' ? 'left' : 'right';
+        const segmentOrder = task.miniTasks.filter((mini) => mini.enabled);
+        const targetIndex = segmentOrder.findIndex((mini) => mini.id === segmentId);
+        if (targetIndex === -1) return;
+        const segment = segmentOrder[targetIndex];
+        if (!segment || segment.locked) return;
+        let activeSegmentId = segmentId;
+        if (handleEdge === 'left') {
+          const previous = neighborId
+            ? segmentOrder.find((mini) => mini.id === neighborId)
+            : segmentOrder[targetIndex - 1];
+          if (!previous || previous.locked) return;
+          activeSegmentId = previous.id;
+        }
         event.preventDefault();
         event.stopPropagation();
         const handle = event.currentTarget;
@@ -2243,7 +2286,7 @@ function adjustGanttOffset() {
           if (!diff) return;
           while (diff !== 0) {
             const step = diff > 0 ? 1 : -1;
-            const success = adjustMiniDurationStep(state, segmentId, step);
+            const success = adjustMiniDurationStep(state, activeSegmentId, step);
             if (!success) break;
             appliedDelta += step;
             diff -= step;
