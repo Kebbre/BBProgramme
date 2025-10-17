@@ -124,14 +124,14 @@
     .mini-segment{position:absolute;top:0;bottom:0;opacity:.92;pointer-events:auto;border-radius:10px;box-shadow:inset 0 0 0 1px rgba(15,23,42,.12);cursor:pointer;transition:box-shadow .15s ease;}
     .mini-segment.locked{box-shadow:inset 0 0 0 3px rgba(17,24,39,.65);}
     .mini-segment.undefined{background:repeating-linear-gradient(135deg, rgba(99,102,241,.65) 0 6px, rgba(79,70,229,.35) 6px 12px);}
-    .mini-segment .mini-handle{position:absolute;top:50%;transform:translateY(-50%);width:16px;height:70%;border-radius:10px;cursor:col-resize;background:rgba(255,255,255,.92);border:1px solid rgba(15,23,42,.2);box-shadow:0 10px 16px rgba(15,23,42,.18);display:flex;align-items:center;justify-content:center;z-index:5;transition:transform .15s ease,box-shadow .15s ease;}
-    .mini-segment .mini-handle::before{content:\"\";display:block;width:2px;height:60%;border-radius:2px;background:rgba(15,23,42,.45);box-shadow:-4px 0 0 rgba(15,23,42,.15),4px 0 0 rgba(15,23,42,.15);}
-    .mini-segment .mini-handle:hover{transform:translateY(-50%) scale(1.05);box-shadow:0 12px 24px rgba(15,23,42,.26);}
+    .mini-segment .mini-handle{position:absolute;top:50%;transform:translateY(-50%);width:16px;height:70%;border-radius:10px;cursor:col-resize;background:transparent;border:1px solid transparent;box-shadow:none;display:flex;align-items:center;justify-content:center;z-index:5;transition:transform .15s ease;}
+    .mini-segment .mini-handle::before{display:none;}
+    .mini-segment .mini-handle:hover{transform:translateY(-50%) scale(1.05);}
     .mini-segment .mini-handle-left{left:-7px;}
     .mini-segment .mini-handle-right{right:-7px;}
-    .mini-segment .mini-handle.disabled{cursor:not-allowed;opacity:.4;box-shadow:none;background:rgba(236,239,244,.8);}
-    .mini-segment.locked .mini-handle{cursor:not-allowed;background:rgba(255,255,255,0);opacity:.35;}
-    .mini-segment.locked .mini-handle:hover{background:rgba(255,255,255,0);}
+    .mini-segment .mini-handle.disabled{cursor:not-allowed;opacity:.2;background:transparent;box-shadow:none;}
+    .mini-segment.locked .mini-handle{cursor:not-allowed;background:transparent;opacity:.2;}
+    .mini-segment.locked .mini-handle:hover{background:transparent;}
     .standdown-layer{position:absolute;inset:0;pointer-events:none;z-index:3;}
     .standdown-gap{position:absolute;top:-1px;bottom:-1px;background:rgba(55,65,81,.7);border-left:1px dashed rgba(31,41,55,.8);border-right:1px dashed rgba(31,41,55,.8);box-shadow:inset 0 0 0 1px rgba(17,24,39,.36);}
     .mini-0{background:rgba(48,86,211,.88);} .mini-1{background:rgba(46,160,67,.85);} .mini-2{background:rgba(191,135,0,.85);} .mini-3{background:rgba(219,97,162,.85);} .mini-4{background:rgba(137,87,229,.85);} .mini-5{background:rgba(64,193,213,.85);} .mini-6{background:rgba(231,120,67,.85);}
@@ -237,7 +237,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>Architecture Project 12.5 Planner</h1>
+        <h1>Architecture Project 12.6 Planner</h1>
         <div class="sidebar-actions">
           <button id="addTaskBtn" type="button">＋ New Task</button>
           <button id="editTaskBtn" class="secondary" type="button" disabled>Edit</button>
