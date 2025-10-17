@@ -231,7 +231,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>Architecture Project 12.3 Planner</h1>
+        <h1>Architecture Project 12.4 Planner</h1>
         <div class="sidebar-actions">
           <button id="addTaskBtn" type="button">＋ New Task</button>
           <button id="editTaskBtn" class="secondary" type="button" disabled>Edit</button>
@@ -1966,7 +1966,7 @@ function adjustGanttOffset() {
 
       function createMiniSegmentElement() {
         const element = document.createElement('div');
-        element.className = 'mini-segment';
+        element.className = 'mini-segment mini-control';
         const handleLeft = document.createElement('div');
         handleLeft.className = 'mini-handle mini-handle-left mini-control';
         handleLeft.dataset.edge = 'left';
