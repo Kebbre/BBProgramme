@@ -123,7 +123,7 @@
     .mini-layer{position:absolute;inset:0;pointer-events:auto;border-radius:8px;overflow:visible;z-index:4;}
     .mini-segment{position:absolute;top:0;bottom:0;opacity:.92;pointer-events:auto;border-radius:10px;box-shadow:inset 0 0 0 1px rgba(15,23,42,.12);cursor:pointer;transition:box-shadow .15s ease;}
     .mini-segment.locked{box-shadow:inset 0 0 0 3px rgba(17,24,39,.65);}
-    .mini-segment.undefined{background:repeating-linear-gradient(135deg, rgba(99,102,241,.65) 0 6px, rgba(79,70,229,.35) 6px 12px);}
+    .mini-segment.undefined{background:rgb(245,245,245);box-shadow:inset 0 0 0 1px rgba(107,114,128,.35);}
     .mini-segment .mini-handle{position:absolute;top:50%;transform:translateY(-50%);width:16px;height:70%;border-radius:10px;cursor:col-resize;background:transparent;border:1px solid transparent;box-shadow:none;display:flex;align-items:center;justify-content:center;z-index:5;transition:transform .15s ease;}
     .mini-segment .mini-handle::before{display:none;}
     .mini-segment .mini-handle:hover{transform:translateY(-50%) scale(1.05);}
@@ -153,6 +153,12 @@
     .mini-task-section{border:1px solid rgba(15,23,42,.08);border-radius:12px;background:rgba(48,86,211,.05);padding:1.1rem 1.4rem;display:flex;flex-direction:column;gap:1rem;}
     .mini-task-section h3{font-size:1rem;font-weight:700;}
     .mini-task-section p{margin:0;font-size:.85rem;color:var(--text-muted);}
+    .mini-task-header{display:flex;justify-content:space-between;align-items:flex-start;gap:.8rem;flex-wrap:wrap;}
+    .mini-task-heading{flex:1 1 auto;min-width:220px;}
+    .mini-task-toolbar{display:inline-flex;align-items:center;gap:.4rem;}
+    .mini-task-toolbar button{border:1px solid var(--border);background:#fff;color:var(--text);border-radius:8px;padding:.32rem .65rem;font-size:.82rem;font-weight:600;cursor:pointer;transition:color .15s ease,border-color .15s ease,transform .15s ease;}
+    .mini-task-toolbar button:hover:not(:disabled){color:var(--primary);border-color:var(--primary);transform:translateY(-1px);}
+    .mini-task-toolbar button:disabled{cursor:not-allowed;opacity:.45;transform:none;}
     .mini-task-list{display:flex;flex-direction:column;gap:.8rem;}
     .mini-task-item{display:grid;grid-template-columns:auto 1fr 110px auto;gap:.65rem;align-items:center;padding:.6rem .8rem;border-radius:10px;background:rgba(255,255,255,.85);border:1px solid rgba(15,23,42,.05);}
     .mini-task-item.locked{border-color:rgba(48,86,211,.6);box-shadow:0 0 0 2px rgba(48,86,211,.45) inset;}
@@ -237,7 +243,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>Architecture Project 12.6 Planner</h1>
+        <h1>Architecture Project 12.7 Planner</h1>
         <div class="sidebar-actions">
           <button id="addTaskBtn" type="button">＋ New Task</button>
           <button id="editTaskBtn" class="secondary" type="button" disabled>Edit</button>
@@ -310,9 +316,15 @@
           </div>
 
           <div class="mini-task-section">
-            <div>
-              <h3>Sequenced steps</h3>
-              <p>Enable up to seven sequential steps. Their durations always add up to the main task and display as segments on the Gantt bar.</p>
+            <div class="mini-task-header">
+              <div class="mini-task-heading">
+                <h3>Sequenced steps</h3>
+                <p>Use ＋/− to add or remove steps. Durations always add up to the main task and display on the Gantt bar.</p>
+              </div>
+              <div class="mini-task-toolbar" role="group" aria-label="Mini-task controls">
+                <button type="button" id="addMiniTaskBtn" aria-label="Add mini-task">＋</button>
+                <button type="button" id="removeMiniTaskBtn" aria-label="Remove mini-task">−</button>
+              </div>
             </div>
             <div class="mini-task-list" id="miniTaskList"></div>
           </div>
@@ -357,7 +369,7 @@
       const ZOOM_TOLERANCE = 0.01;
       let dayWidthScale = 1;
       const MAX_MINI_TASKS = 7;
-      const MINI_TASK_OPTIONS = ['Bond Bryan Design', 'Bond Bryan review', 'CDP', 'Client Comments', 'Delays'];
+      const MINI_TASK_OPTIONS = ['Bond Bryan Design', 'Bond Bryan review', 'CDP', 'Client Comments', 'Delays', 'Undefined'];
       const DEFAULT_SEQUENCE_STEPS = [
         { name: 'Bond Bryan Design', weight: 50 },
         { name: 'CDP', weight: 10 },
@@ -370,7 +382,8 @@
         'Bond Bryan review': 'rgb(255, 192, 203)',
         'CDP': 'rgb(196, 235, 214)',
         'Client Comments': 'rgb(255, 223, 186)',
-        'Delays': 'rgb(220, 220, 230)'
+        'Delays': 'rgb(220, 220, 230)',
+        'Undefined': 'rgb(245, 245, 245)'
       };
       const DEFAULT_SEGMENT_COLOR = '#3056d3';
       // Graph configuration for OneDrive storage
@@ -455,6 +468,8 @@
       const viewModeButtons = Array.from(document.querySelectorAll('.view-mode-btn'));
       const zoomInBtn = document.getElementById('zoomInBtn');
       const zoomOutBtn = document.getElementById('zoomOutBtn');
+      const addMiniTaskBtn = document.getElementById('addMiniTaskBtn');
+      const removeMiniTaskBtn = document.getElementById('removeMiniTaskBtn');
       const saveTaskBtn = document.getElementById('saveTaskBtn');
       const configForm = document.getElementById('configForm');
       const buildingTypeSelect = document.getElementById('buildingTypeSelect');
@@ -1736,7 +1751,7 @@ function adjustGanttOffset() {
           segments.push({
             id: `${task.id || 'task'}-undefined`,
             enabled: true,
-            name: 'Undefined time',
+            name: 'Undefined',
             duration: undefinedDuration,
             locked: false,
             isUndefined: true,
@@ -1801,7 +1816,7 @@ function adjustGanttOffset() {
           segments.push({
             id: `${task.id || 'task'}-undefined`,
             enabled: true,
-            name: 'Undefined time',
+            name: 'Undefined',
             duration: undefinedDuration,
             locked: false,
             isUndefined: true,
@@ -2140,11 +2155,8 @@ function adjustGanttOffset() {
           element.classList.toggle('locked', Boolean(segment.locked));
           element.classList.toggle('undefined', Boolean(segment.isUndefined));
           element.title = `${segment.name || 'Step'} • ${requiredSpan} day${requiredSpan !== 1 ? 's' : ''}`;
-          if (segment.isUndefined) {
-            element.style.background = '';
-          } else {
-            element.style.background = getMiniColor(segment.name);
-          }
+          const segmentColor = getMiniColor(segment.name);
+          element.style.background = segmentColor;
           const accessibleLabel = segment.locked ? 'Unlock mini-task length' : 'Lock mini-task length';
           if (segment.isUndefined) {
             element.removeAttribute('aria-label');
@@ -3671,6 +3683,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           miniTaskList.appendChild(item);
         }
         updateMiniTaskMoveButtons();
+        updateMiniTaskToolbar();
       }
 
       function getMiniFields(index) {
@@ -3716,6 +3729,70 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         }
       }
 
+      function getEnabledMiniTaskIndices() {
+        const indices = [];
+        for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
+          const checkbox = document.getElementById(`miniEnabled${i}`);
+          if (checkbox && checkbox.checked) indices.push(i);
+        }
+        return indices;
+      }
+
+      function updateMiniTaskToolbar() {
+        if (!addMiniTaskBtn || !removeMiniTaskBtn) return;
+        const enabledIndices = getEnabledMiniTaskIndices();
+        addMiniTaskBtn.disabled = enabledIndices.length >= MAX_MINI_TASKS;
+        removeMiniTaskBtn.disabled = enabledIndices.length === 0;
+      }
+
+      function addMiniTaskRow(prefill = {}, options = {}) {
+        for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
+          const fields = getMiniFields(i);
+          if (!fields || !fields.checkbox || fields.checkbox.checked) continue;
+          fields.checkbox.checked = true;
+          handleMiniTaskToggle(i);
+          const { nameSelect, durationInput, item } = fields;
+          if (nameSelect) {
+            const hasOption = Array.from(nameSelect.options || []).some((opt) => opt.value === prefill.name);
+            if (prefill.name && hasOption) nameSelect.value = prefill.name;
+          }
+          if (durationInput && Number.isFinite(prefill.duration)) {
+            const duration = Math.max(1, Math.round(prefill.duration));
+            durationInput.value = String(duration);
+          }
+          if (item && prefill.locked) {
+            item.dataset.locked = 'true';
+            item.classList.add('locked');
+          }
+          if (options.focus !== false && nameSelect) {
+            nameSelect.focus();
+          }
+          updateDurationPreview();
+          updateMiniTaskToolbar();
+          return true;
+        }
+        updateMiniTaskToolbar();
+        return false;
+      }
+
+      function removeMiniTaskRow() {
+        const enabled = getEnabledMiniTaskIndices();
+        if (!enabled.length) {
+          updateMiniTaskToolbar();
+          return false;
+        }
+        const index = enabled[enabled.length - 1];
+        const fields = getMiniFields(index);
+        if (!fields || !fields.checkbox) {
+          updateMiniTaskToolbar();
+          return false;
+        }
+        fields.checkbox.checked = false;
+        handleMiniTaskToggle(index);
+        updateMiniTaskToolbar();
+        return true;
+      }
+
       function updateMiniTaskMoveButtons() {
         for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
           const fields = getMiniFields(i);
@@ -3757,6 +3834,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         }
         updateDurationPreview();
         updateMiniTaskMoveButtons();
+        updateMiniTaskToolbar();
       }
 
       function handleMiniDurationChange(index) {
@@ -3832,7 +3910,18 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         modalProgress.value = task ? task.progress : 0;
         modalStartDate.value = task ? task.startDate : formatDate(defaultStart);
         modalEndDate.value = task ? task.endDate : formatDate(defaultStart);
-        const baseMini = task ? task.miniTasks : [];
+        const baseMini = task ? task.miniTasks.map((mini) => ({ ...mini })) : [];
+        let pendingUndefinedDuration = task ? Math.max(0, Math.round(task.undefinedDuration || 0)) : 0;
+        baseMini.forEach((mini) => {
+          if (!mini || !mini.enabled) return;
+          if (mini.name === 'Undefined') {
+            pendingUndefinedDuration += Math.max(1, Math.round(mini.duration || 1));
+            mini.enabled = false;
+            mini.name = '';
+            mini.duration = 1;
+            mini.locked = false;
+          }
+        });
         for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
           const checkbox = document.getElementById(`miniEnabled${i}`);
           const nameInput = document.getElementById(`miniName${i}`);
@@ -3856,18 +3945,37 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
             item.classList.add('disabled');
           }
         }
+        if (pendingUndefinedDuration > 0) {
+          addMiniTaskRow({ name: 'Undefined', duration: pendingUndefinedDuration }, { focus: false });
+        }
         updateMiniTaskMoveButtons();
         updateDurationPreview();
+        updateMiniTaskToolbar();
       }
 
       function collectMiniTasks(taskId) {
         const results = [];
+        let undefinedDuration = 0;
         for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
-          const enabled = document.getElementById(`miniEnabled${i}`).checked;
-          const name = document.getElementById(`miniName${i}`).value;
-          let duration = parseInt(document.getElementById(`miniDuration${i}`).value, 10);
+          const checkbox = document.getElementById(`miniEnabled${i}`);
+          const nameField = document.getElementById(`miniName${i}`);
+          const durationField = document.getElementById(`miniDuration${i}`);
+          const enabled = Boolean(checkbox && checkbox.checked);
+          const name = nameField ? nameField.value : '';
+          let duration = durationField ? parseInt(durationField.value, 10) : 1;
           if (Number.isNaN(duration) || duration < 1) duration = 1;
           const item = miniTaskList.querySelector(`.mini-task-item[data-index="${i}"]`);
+          if (enabled && name === 'Undefined') {
+            undefinedDuration += duration;
+            results.push({
+              id: `${taskId || 'new'}-mini-${i + 1}`,
+              enabled: false,
+              name: '',
+              duration: 1,
+              locked: false
+            });
+            continue;
+          }
           results.push({
             id: `${taskId || 'new'}-mini-${i + 1}`,
             enabled,
@@ -3876,7 +3984,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
             locked: item?.dataset.locked === 'true'
           });
         }
-        return results;
+        return { miniTasks: results, undefinedDuration };
       }
       function handleFormSubmit(event) {
         event.preventDefault();
@@ -3890,17 +3998,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         if (Number.isNaN(progress)) progress = 0;
         progress = Math.min(100, Math.max(0, progress));
         const taskId = editingTaskId || `task-${Date.now()}`;
-        const miniTasks = collectMiniTasks(taskId);
-        let existingUndefinedDuration = 0;
-        if (currentMode === 'edit' && editingTaskId) {
-          const originalTask = tasks.find((task) => task.id === editingTaskId);
-          if (originalTask) {
-            const parsed = Number(originalTask.undefinedDuration);
-            if (!Number.isNaN(parsed) && parsed > 0) {
-              existingUndefinedDuration = parsed;
-            }
-          }
-        }
+        const { miniTasks, undefinedDuration: formUndefinedDuration } = collectMiniTasks(taskId);
         const enabledCount = miniTasks.filter((mini) => mini.enabled).length;
         let totalDuration = Math.max(1, diffInWeekdays(start, end));
         if (enabledCount > 0) {
@@ -3912,7 +4010,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           end = shiftWeekdays(start, totalDuration - 1);
         }
         const { undefinedDuration: adjustedUndefinedDuration } = normalizeMiniDurations(miniTasks, totalDuration, {
-          undefinedDuration: existingUndefinedDuration
+          undefinedDuration: formUndefinedDuration
         });
         const payload = {
           id: taskId,
@@ -3959,6 +4057,12 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         }
         if (zoomOutBtn) {
           zoomOutBtn.addEventListener('click', () => adjustZoom(-ZOOM_STEP));
+        }
+        if (addMiniTaskBtn) {
+          addMiniTaskBtn.addEventListener('click', () => addMiniTaskRow());
+        }
+        if (removeMiniTaskBtn) {
+          removeMiniTaskBtn.addEventListener('click', () => removeMiniTaskRow());
         }
         if (savePdfBtn) {
           savePdfBtn.addEventListener('click', handleSavePdf);
