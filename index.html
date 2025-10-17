@@ -179,12 +179,12 @@
     .mini-task-controls button{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--text);font-size:.8rem;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:color .15s ease,border-color .15s ease,transform .15s ease;}
     .mini-task-controls button:hover:not(:disabled){color:var(--primary);border-color:var(--primary);transform:translateY(-1px);}
     .mini-task-controls button:disabled{opacity:.35;cursor:not-allowed;transform:none;}
-    .mini-delay-extras{display:none;grid-column:1 / -1;grid-template-columns:auto auto;gap:.6rem;align-items:flex-start;margin-top:.3rem;}
-    .mini-task-item.delay-active .mini-delay-extras{display:grid;}
+    .mini-delay-extras{display:none;grid-column:1 / -1;flex-direction:column;align-items:flex-start;gap:.5rem;margin-top:.4rem;}
+    .mini-task-item.delay-active .mini-delay-extras{display:flex;}
     .mini-task-item.delay-active .mini-task-duration{margin-bottom:.2rem;}
-    .mini-delay-extras textarea{font-size:.8rem;padding:.35rem .5rem;border:1px solid var(--border);border-radius:6px;width:300px;min-height:72px;resize:vertical;}
+    .mini-delay-extras textarea{font-size:.8rem;padding:.35rem .5rem;border:1px solid var(--border);border-radius:6px;width:300px;min-height:96px;resize:vertical;}
     .mini-delay-extras textarea:disabled{background:#f9fafb;color:var(--text-muted);cursor:not-allowed;}
-    .mini-delay-extras .mini-delay-charge{display:inline-flex;align-items:center;gap:.35rem;font-size:.76rem;color:var(--text-muted);align-self:flex-start;}
+    .mini-delay-extras .mini-delay-charge{display:flex;align-items:center;gap:.4rem;font-size:.76rem;color:var(--text-muted);}
     .delay-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);z-index:14;}
     .delay-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:15;padding:2rem;}
     .delay-modal.hidden,.delay-modal-backdrop.hidden{display:none;}
@@ -199,8 +199,9 @@
     .delay-table thead{background:rgba(48,86,211,.08);font-weight:700;}
     .delay-table tbody tr:nth-child(even){background:rgba(248,250,255,.7);}
     .delay-table tbody tr:hover{background:rgba(48,86,211,.1);}
-    .delay-table tbody textarea{width:300px;max-width:100%;box-sizing:border-box;font-size:.82rem;padding:.3rem .45rem;border:1px solid rgba(15,23,42,.2);border-radius:6px;min-height:72px;resize:vertical;}
-    .delay-charge-cell{display:flex;justify-content:center;align-items:center;}
+    .delay-table tbody textarea{width:300px;max-width:100%;box-sizing:border-box;font-size:.82rem;padding:.3rem .45rem;border:1px solid rgba(15,23,42,.2);border-radius:6px;min-height:96px;resize:vertical;}
+    .delay-charge-cell{padding:0;text-align:center;vertical-align:middle;}
+    .delay-charge-cell .delay-charge-wrapper{display:flex;justify-content:center;align-items:center;height:100%;padding:.55rem 0;}
     .delay-table-empty{text-align:center;color:var(--text-muted);font-style:italic;}
     .modal-footer{padding:1rem 1.75rem 1.35rem;border-top:1px solid rgba(15,23,42,.08);display:flex;justify-content:flex-end;gap:.75rem;}
     .modal-footer .secondary{background:#fff;color:var(--text);border:1px solid var(--border);}
@@ -273,7 +274,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>Architecture Project 12.13 Planner</h1>
+        <h1>Architecture Project 12.14 Planner</h1>
         <div class="sidebar-actions">
           <button id="addTaskBtn" type="button">＋ New Task</button>
           <button id="editTaskBtn" class="secondary" type="button" disabled>Edit</button>
@@ -582,8 +583,20 @@
 
       function autoResizeTextarea(textarea) {
         if (!textarea) return;
-        textarea.style.height = 'auto';
-        textarea.style.height = `${textarea.scrollHeight}px`;
+        const applyResize = () => {
+          textarea.style.height = 'auto';
+          const computed = window.getComputedStyle(textarea);
+          const borderHeight = (parseFloat(computed.borderTopWidth) || 0) + (parseFloat(computed.borderBottomWidth) || 0);
+          const minHeight = parseFloat(computed.minHeight) || 0;
+          const contentHeight = textarea.scrollHeight + borderHeight;
+          const nextHeight = Math.max(minHeight, contentHeight);
+          textarea.style.height = `${nextHeight}px`;
+        };
+        if (!textarea.isConnected) {
+          requestAnimationFrame(applyResize);
+          return;
+        }
+        applyResize();
       }
 
       function getTodayUtc() {
@@ -3748,7 +3761,6 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
             autoResizeTextarea(descriptionInput);
           });
           autoResizeTextarea(descriptionInput);
-          requestAnimationFrame(() => autoResizeTextarea(descriptionInput));
           const chargeLabel = document.createElement('label');
           chargeLabel.className = 'mini-delay-charge';
           const chargeCheckbox = document.createElement('input');
@@ -4101,10 +4113,12 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           ? mini.delayDescription.trim()
           : '';
         const title = description || fallbackTitle;
-        const elements = document.querySelectorAll(`.mini-segment[data-segment-id="${mini.id}"]`);
+        const elements = document.querySelectorAll('.mini-segment');
         elements.forEach((element) => {
           if (element instanceof HTMLElement) {
-            element.title = title;
+            if ((element.dataset.segmentId || '') === (mini.id || '')) {
+              element.title = title;
+            }
           }
         });
       }
@@ -4140,13 +4154,15 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
             autoResizeTextarea(descInput);
           });
           autoResizeTextarea(descInput);
-          requestAnimationFrame(() => autoResizeTextarea(descInput));
           descriptionCell.appendChild(descInput);
 
           const durationCell = document.createElement('td');
           durationCell.textContent = `${row.durationDays} day${row.durationDays !== 1 ? 's' : ''}`;
 
           const chargeCell = document.createElement('td');
+          chargeCell.className = 'delay-charge-cell';
+          const chargeWrapper = document.createElement('div');
+          chargeWrapper.className = 'delay-charge-wrapper';
           const chargeCheckbox = document.createElement('input');
           chargeCheckbox.type = 'checkbox';
           chargeCheckbox.checked = row.chargeToClient;
@@ -4156,8 +4172,8 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
               mini.chargeToClient = chargeCheckbox.checked;
             });
           });
-          chargeCell.className = 'delay-charge-cell';
-          chargeCell.appendChild(chargeCheckbox);
+          chargeWrapper.appendChild(chargeCheckbox);
+          chargeCell.appendChild(chargeWrapper);
 
           tr.appendChild(taskCell);
           tr.appendChild(descriptionCell);
