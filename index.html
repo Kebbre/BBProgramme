@@ -175,11 +175,11 @@
     .mini-task-item select:disabled{background:#fff;}
     .mini-task-duration{display:flex;align-items:center;gap:.3rem;font-size:.75rem;color:var(--text-muted);}
     .mini-task-duration input{width:58px;text-align:right;padding-right:.3rem;font-size:.75rem;height:28px;}
-    .mini-task-controls{display:flex;flex-direction:column;gap:.35rem;align-items:center;}
+    .mini-task-controls{display:flex;flex-direction:column;gap:.35rem;align-items:center;align-self:flex-start;}
     .mini-task-controls button{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--text);font-size:.8rem;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:color .15s ease,border-color .15s ease,transform .15s ease;}
     .mini-task-controls button:hover:not(:disabled){color:var(--primary);border-color:var(--primary);transform:translateY(-1px);}
     .mini-task-controls button:disabled{opacity:.35;cursor:not-allowed;transform:none;}
-    .mini-delay-extras{display:none;grid-column:1 / -1;flex-direction:column;align-items:flex-start;gap:.5rem;margin-top:.4rem;}
+    .mini-delay-extras{display:none;grid-column:1 / -1;width:100%;flex-direction:column;align-items:flex-start;gap:.5rem;margin-top:.4rem;}
     .mini-task-item.delay-active .mini-delay-extras{display:flex;}
     .mini-task-item.delay-active .mini-task-duration{margin-bottom:.2rem;}
     .mini-delay-extras textarea{font-size:.8rem;padding:.35rem .5rem;border:1px solid var(--border);border-radius:6px;width:300px;min-height:96px;resize:vertical;}
@@ -274,7 +274,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>Architecture Project 12.14 Planner</h1>
+        <h1>Architecture Project 12.15 Planner</h1>
         <div class="sidebar-actions">
           <button id="addTaskBtn" type="button">＋ New Task</button>
           <button id="editTaskBtn" class="secondary" type="button" disabled>Edit</button>
@@ -2588,10 +2588,10 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
 
       function enableBarDrag(barElement, task) {
         barElement.addEventListener('pointerdown', (event) => {
-          if (event.target.closest('.handle')) return;
-          if (event.target.closest('.mini-control')) return;
+          if (event.button && event.button !== 0) return;
+          if (event.target.closest('.handle') || event.target.closest('.mini-handle')) return;
+          if (event.target.closest('button, input, select, textarea, label')) return;
           event.stopPropagation();
-          event.preventDefault();
           const initialStart = parseDate(task.startDate);
           const initialEnd = parseDate(task.endDate);
           if (!initialStart || !initialEnd) return;
@@ -2600,11 +2600,33 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           const initialPointer = event.clientX + calendarEl.scrollLeft;
           const initialLeft = barElement.style.left;
           let latestShift = 0;
+          let dragActive = false;
+
+          const activateDrag = () => {
+            if (dragActive) return;
+            dragActive = true;
+            barElement.setPointerCapture(event.pointerId);
+          };
+
+          const cleanup = () => {
+            barElement.removeEventListener('pointermove', onPointerMove);
+            barElement.removeEventListener('pointerup', onPointerUp);
+            barElement.removeEventListener('pointercancel', onPointerUp);
+            if (dragActive && barElement.hasPointerCapture(event.pointerId)) {
+              barElement.releasePointerCapture(event.pointerId);
+            }
+          };
 
           const onPointerMove = (moveEvent) => {
             const currentPointer = moveEvent.clientX + calendarEl.scrollLeft;
             const deltaPx = currentPointer - initialPointer;
-            const shift = Math.round(deltaPx / getDayWidth());
+            const dayWidth = getDayWidth();
+            if (!dragActive && Math.abs(deltaPx) >= Math.max(6, dayWidth * 0.35)) {
+              activateDrag();
+            }
+            if (!dragActive) return;
+            moveEvent.preventDefault();
+            const shift = Math.round(deltaPx / dayWidth);
             if (shift === latestShift) return;
             latestShift = shift;
             const previewStart = shiftWeekdays(initialStart, shift);
@@ -2612,7 +2634,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
             const previewStartIndex = timelineDayIndexMap.get(formatDate(previewStart));
             const previewEndIndex = timelineDayIndexMap.get(formatDate(previewEnd));
             if (typeof previewStartIndex !== 'number' || typeof previewEndIndex !== 'number') return;
-            barElement.style.left = `${previewStartIndex * getDayWidth()}px`;
+            barElement.style.left = `${previewStartIndex * dayWidth}px`;
             barElement.dataset.startIndex = String(previewStartIndex);
             barElement.dataset.endIndex = String(previewEndIndex);
             refreshStanddownLayer(barElement);
@@ -2620,37 +2642,35 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           };
 
           const onPointerUp = () => {
-            barElement.removeEventListener('pointermove', onPointerMove);
-            barElement.removeEventListener('pointerup', onPointerUp);
-            barElement.removeEventListener('pointercancel', onPointerUp);
-            barElement.releasePointerCapture(event.pointerId);
-            if (latestShift !== 0) {
-              const newStart = shiftWeekdays(initialStart, latestShift);
-              const newEnd = shiftWeekdays(initialEnd, latestShift);
-              task.startDate = formatDate(newStart);
-              task.endDate = formatDate(newEnd);
-              renderAll();
-              selectTask(task.id);
-            } else {
-              barElement.style.left = initialLeft;
-              const originalStartIndex = timelineDayIndexMap.get(task.startDate);
-              const originalEndIndex = timelineDayIndexMap.get(task.endDate);
-              if (typeof originalStartIndex === 'number') {
-                barElement.dataset.startIndex = String(originalStartIndex);
+            if (dragActive) {
+              if (latestShift !== 0) {
+                const newStart = shiftWeekdays(initialStart, latestShift);
+                const newEnd = shiftWeekdays(initialEnd, latestShift);
+                task.startDate = formatDate(newStart);
+                task.endDate = formatDate(newEnd);
+                renderAll();
+                selectTask(task.id);
               } else {
-                delete barElement.dataset.startIndex;
+                barElement.style.left = initialLeft;
+                const originalStartIndex = timelineDayIndexMap.get(task.startDate);
+                const originalEndIndex = timelineDayIndexMap.get(task.endDate);
+                if (typeof originalStartIndex === 'number') {
+                  barElement.dataset.startIndex = String(originalStartIndex);
+                } else {
+                  delete barElement.dataset.startIndex;
+                }
+                if (typeof originalEndIndex === 'number') {
+                  barElement.dataset.endIndex = String(originalEndIndex);
+                } else {
+                  delete barElement.dataset.endIndex;
+                }
+                refreshStanddownLayer(barElement);
+                setBarLabel(barElement, task, initialStart, initialEnd);
               }
-              if (typeof originalEndIndex === 'number') {
-                barElement.dataset.endIndex = String(originalEndIndex);
-              } else {
-                delete barElement.dataset.endIndex;
-              }
-              refreshStanddownLayer(barElement);
-              setBarLabel(barElement, task, initialStart, initialEnd);
             }
+            cleanup();
           };
 
-          barElement.setPointerCapture(event.pointerId);
           barElement.addEventListener('pointermove', onPointerMove);
           barElement.addEventListener('pointerup', onPointerUp);
           barElement.addEventListener('pointercancel', onPointerUp);
@@ -3761,22 +3781,6 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
             autoResizeTextarea(descriptionInput);
           });
           autoResizeTextarea(descriptionInput);
-          const chargeLabel = document.createElement('label');
-          chargeLabel.className = 'mini-delay-charge';
-          const chargeCheckbox = document.createElement('input');
-          chargeCheckbox.type = 'checkbox';
-          chargeCheckbox.checked = isDelay ? Boolean(mini.chargeToClient) : false;
-          chargeCheckbox.disabled = !isDelay;
-          chargeCheckbox.addEventListener('change', () => {
-            setMiniTaskCharge(index, chargeCheckbox.checked);
-          });
-          const chargeText = document.createElement('span');
-          chargeText.textContent = 'Charge to client';
-          chargeLabel.appendChild(chargeCheckbox);
-          chargeLabel.appendChild(chargeText);
-          delayExtras.appendChild(descriptionInput);
-          delayExtras.appendChild(chargeLabel);
-
           const controls = document.createElement('div');
           controls.className = 'mini-task-controls';
           const upButton = document.createElement('button');
@@ -3800,11 +3804,27 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           controls.appendChild(upButton);
           controls.appendChild(downButton);
 
+          const chargeLabel = document.createElement('label');
+          chargeLabel.className = 'mini-delay-charge';
+          const chargeCheckbox = document.createElement('input');
+          chargeCheckbox.type = 'checkbox';
+          chargeCheckbox.checked = isDelay ? Boolean(mini.chargeToClient) : false;
+          chargeCheckbox.disabled = !isDelay;
+          chargeCheckbox.addEventListener('change', () => {
+            setMiniTaskCharge(index, chargeCheckbox.checked);
+          });
+          const chargeText = document.createElement('span');
+          chargeText.textContent = 'Charge to client';
+          chargeLabel.appendChild(chargeCheckbox);
+          chargeLabel.appendChild(chargeText);
+          delayExtras.appendChild(descriptionInput);
+          delayExtras.appendChild(chargeLabel);
+
           item.appendChild(toggleLabel);
           item.appendChild(nameSelect);
           item.appendChild(durationWrapper);
-          item.appendChild(delayExtras);
           item.appendChild(controls);
+          item.appendChild(delayExtras);
           miniTaskList.appendChild(item);
         });
         updateMiniTaskToolbar();
