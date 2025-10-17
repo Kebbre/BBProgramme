@@ -179,11 +179,12 @@
     .mini-task-controls button{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--text);font-size:.8rem;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:color .15s ease,border-color .15s ease,transform .15s ease;}
     .mini-task-controls button:hover:not(:disabled){color:var(--primary);border-color:var(--primary);transform:translateY(-1px);}
     .mini-task-controls button:disabled{opacity:.35;cursor:not-allowed;transform:none;}
-    .mini-delay-extras{display:none;grid-column:1 / -1;grid-template-columns:minmax(0,1fr) auto;gap:.4rem;align-items:center;margin-top:.3rem;}
+    .mini-delay-extras{display:none;grid-column:1 / -1;grid-template-columns:auto auto;gap:.6rem;align-items:flex-start;margin-top:.3rem;}
     .mini-task-item.delay-active .mini-delay-extras{display:grid;}
     .mini-task-item.delay-active .mini-task-duration{margin-bottom:.2rem;}
-    .mini-delay-extras input[type="text"]{font-size:.8rem;padding:.3rem .45rem;border:1px solid var(--border);border-radius:6px;}
-    .mini-delay-extras .mini-delay-charge{display:inline-flex;align-items:center;gap:.35rem;font-size:.76rem;color:var(--text-muted);}
+    .mini-delay-extras textarea{font-size:.8rem;padding:.35rem .5rem;border:1px solid var(--border);border-radius:6px;width:300px;min-height:72px;resize:vertical;}
+    .mini-delay-extras textarea:disabled{background:#f9fafb;color:var(--text-muted);cursor:not-allowed;}
+    .mini-delay-extras .mini-delay-charge{display:inline-flex;align-items:center;gap:.35rem;font-size:.76rem;color:var(--text-muted);align-self:flex-start;}
     .delay-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);z-index:14;}
     .delay-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:15;padding:2rem;}
     .delay-modal.hidden,.delay-modal-backdrop.hidden{display:none;}
@@ -194,11 +195,11 @@
     .delay-close-btn:hover{color:var(--primary);}
     .delay-modal-body{padding:1.2rem 1.5rem;overflow:auto;}
     .delay-table{width:100%;border-collapse:collapse;font-size:.85rem;}
-    .delay-table th,.delay-table td{border:1px solid rgba(15,23,42,.12);padding:.55rem .6rem;text-align:left;vertical-align:middle;}
+    .delay-table th,.delay-table td{border:1px solid rgba(15,23,42,.12);padding:.55rem .6rem;text-align:left;vertical-align:middle;white-space:normal;word-break:break-word;}
     .delay-table thead{background:rgba(48,86,211,.08);font-weight:700;}
     .delay-table tbody tr:nth-child(even){background:rgba(248,250,255,.7);}
     .delay-table tbody tr:hover{background:rgba(48,86,211,.1);}
-    .delay-table tbody input[type="text"]{width:100%;box-sizing:border-box;font-size:.82rem;padding:.25rem .35rem;border:1px solid rgba(15,23,42,.2);border-radius:6px;}
+    .delay-table tbody textarea{width:300px;max-width:100%;box-sizing:border-box;font-size:.82rem;padding:.3rem .45rem;border:1px solid rgba(15,23,42,.2);border-radius:6px;min-height:72px;resize:vertical;}
     .delay-charge-cell{display:flex;justify-content:center;align-items:center;}
     .delay-table-empty{text-align:center;color:var(--text-muted);font-style:italic;}
     .modal-footer{padding:1rem 1.75rem 1.35rem;border-top:1px solid rgba(15,23,42,.08);display:flex;justify-content:flex-end;gap:.75rem;}
@@ -272,7 +273,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>Architecture Project 12.12 Planner</h1>
+        <h1>Architecture Project 12.13 Planner</h1>
         <div class="sidebar-actions">
           <button id="addTaskBtn" type="button">＋ New Task</button>
           <button id="editTaskBtn" class="secondary" type="button" disabled>Edit</button>
@@ -577,6 +578,12 @@
         const day = String(date.getUTCDate()).padStart(2, '0');
         const month = String(date.getUTCMonth() + 1).padStart(2, '0');
         return `${day}/${month}`;
+      }
+
+      function autoResizeTextarea(textarea) {
+        if (!textarea) return;
+        textarea.style.height = 'auto';
+        textarea.style.height = `${textarea.scrollHeight}px`;
       }
 
       function getTodayUtc() {
@@ -2221,7 +2228,15 @@ function adjustGanttOffset() {
           const isUndefinedSegment = Boolean(segment.isUndefined || segment.name === 'Undefined');
           element.classList.toggle('locked', Boolean(segment.locked));
           element.classList.toggle('undefined', isUndefinedSegment);
-          element.title = `${segment.name || 'Step'} • ${requiredSpan} day${requiredSpan !== 1 ? 's' : ''}`;
+          const segmentLabel = `${segment.name || 'Step'} • ${requiredSpan} day${requiredSpan !== 1 ? 's' : ''}`;
+          if (!isUndefinedSegment && segment.name === 'Delays') {
+            const description = typeof segment.delayDescription === 'string'
+              ? segment.delayDescription.trim()
+              : '';
+            element.title = description || segmentLabel;
+          } else {
+            element.title = segmentLabel;
+          }
           const segmentColor = getMiniColor(segment.name);
           element.style.background = segmentColor;
           const accessibleLabel = segment.locked ? 'Unlock mini-task length' : 'Lock mini-task length';
@@ -3724,14 +3739,16 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
 
           const delayExtras = document.createElement('div');
           delayExtras.className = 'mini-delay-extras';
-          const descriptionInput = document.createElement('input');
-          descriptionInput.type = 'text';
+          const descriptionInput = document.createElement('textarea');
           descriptionInput.placeholder = 'Delay description';
           descriptionInput.value = mini.delayDescription || '';
           descriptionInput.disabled = !isDelay;
           descriptionInput.addEventListener('input', () => {
             setMiniTaskDelayDescription(index, descriptionInput.value);
+            autoResizeTextarea(descriptionInput);
           });
+          autoResizeTextarea(descriptionInput);
+          requestAnimationFrame(() => autoResizeTextarea(descriptionInput));
           const chargeLabel = document.createElement('label');
           chargeLabel.className = 'mini-delay-charge';
           const chargeCheckbox = document.createElement('input');
@@ -3910,7 +3927,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         requestAnimationFrame(() => {
           let selector = 'select';
           if (field === 'duration') selector = '.mini-task-duration input';
-          if (field === 'delayDescription') selector = '.mini-delay-extras input[type="text"]';
+          if (field === 'delayDescription') selector = '.mini-delay-extras textarea';
           const target = miniTaskList.querySelector(`.mini-task-item[data-index="${index}"] ${selector}`);
           if (target) target.focus();
         });
@@ -4073,6 +4090,23 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         const mini = task.miniTasks.find((entry) => entry.id === miniId);
         if (!mini) return;
         updater(mini);
+        refreshDelayTooltip(task, mini);
+      }
+
+      function refreshDelayTooltip(task, mini) {
+        if (!mini || mini.name !== 'Delays') return;
+        const durationDays = Math.max(1, Math.round(mini.duration || 1));
+        const fallbackTitle = `${mini.name || 'Step'} • ${durationDays} day${durationDays !== 1 ? 's' : ''}`;
+        const description = typeof mini.delayDescription === 'string'
+          ? mini.delayDescription.trim()
+          : '';
+        const title = description || fallbackTitle;
+        const elements = document.querySelectorAll(`.mini-segment[data-segment-id="${mini.id}"]`);
+        elements.forEach((element) => {
+          if (element instanceof HTMLElement) {
+            element.title = title;
+          }
+        });
       }
 
       function renderDelaySchedule() {
@@ -4095,8 +4129,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           taskCell.textContent = row.taskName || '--';
 
           const descriptionCell = document.createElement('td');
-          const descInput = document.createElement('input');
-          descInput.type = 'text';
+          const descInput = document.createElement('textarea');
           descInput.value = row.description;
           descInput.placeholder = 'Describe delay';
           descInput.setAttribute('aria-label', `Delay description for ${row.taskName || 'task'}`);
@@ -4104,7 +4137,10 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
             updateDelayMiniTask(row.taskId, row.miniId, (mini) => {
               mini.delayDescription = descInput.value;
             });
+            autoResizeTextarea(descInput);
           });
+          autoResizeTextarea(descInput);
+          requestAnimationFrame(() => autoResizeTextarea(descInput));
           descriptionCell.appendChild(descInput);
 
           const durationCell = document.createElement('td');
