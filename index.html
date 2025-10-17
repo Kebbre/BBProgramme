@@ -160,15 +160,15 @@
     .mini-task-toolbar button:hover:not(:disabled){color:var(--primary);border-color:var(--primary);transform:translateY(-1px);}
     .mini-task-toolbar button:disabled{cursor:not-allowed;opacity:.45;transform:none;}
     .mini-task-list{display:flex;flex-direction:column;gap:.8rem;}
-    .mini-task-item{display:grid;grid-template-columns:auto 1fr 110px auto;gap:.65rem;align-items:center;padding:.6rem .8rem;border-radius:10px;background:rgba(255,255,255,.85);border:1px solid rgba(15,23,42,.05);}
+    .mini-task-item{display:grid;grid-template-columns:auto 1fr 110px auto;gap:.55rem;align-items:center;padding:.45rem .65rem;border-radius:10px;background:rgba(255,255,255,.9);border:1px solid rgba(15,23,42,.05);}
     .mini-task-item.locked{border-color:rgba(48,86,211,.6);box-shadow:0 0 0 2px rgba(48,86,211,.45) inset;}
     .mini-task-item.disabled{opacity:.4;}
-    .mini-task-item label{display:flex;align-items:center;gap:.45rem;font-weight:600;font-size:.85rem;}
+    .mini-task-item label{display:flex;align-items:center;gap:.4rem;font-weight:600;font-size:.82rem;}
     .mini-task-item input[type="checkbox"]{width:18px;height:18px;accent-color:var(--primary);}
     .mini-task-item select{font:inherit;border-radius:6px;border:1px solid var(--border);padding:.4rem .5rem;background:#fff;color:inherit;}
     .mini-task-item select:disabled{background:#fff;}
-    .mini-task-duration{display:flex;align-items:center;gap:.35rem;font-size:.78rem;color:var(--text-muted);}
-    .mini-task-duration input{width:60px;text-align:right;padding-right:.35rem;font-size:.78rem;height:32px;}
+    .mini-task-duration{display:flex;align-items:center;gap:.3rem;font-size:.75rem;color:var(--text-muted);}
+    .mini-task-duration input{width:58px;text-align:right;padding-right:.3rem;font-size:.75rem;height:28px;}
     .mini-task-controls{display:flex;flex-direction:column;gap:.35rem;align-items:center;}
     .mini-task-controls button{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--text);font-size:.8rem;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:color .15s ease,border-color .15s ease,transform .15s ease;}
     .mini-task-controls button:hover:not(:disabled){color:var(--primary);border-color:var(--primary);transform:translateY(-1px);}
@@ -243,7 +243,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>Architecture Project 12.7 Planner</h1>
+        <h1>Architecture Project 12.8 Planner</h1>
         <div class="sidebar-actions">
           <button id="addTaskBtn" type="button">＋ New Task</button>
           <button id="editTaskBtn" class="secondary" type="button" disabled>Edit</button>
@@ -368,7 +368,6 @@
       const ZOOM_STEP = 0.2;
       const ZOOM_TOLERANCE = 0.01;
       let dayWidthScale = 1;
-      const MAX_MINI_TASKS = 7;
       const MINI_TASK_OPTIONS = ['Bond Bryan Design', 'Bond Bryan review', 'CDP', 'Client Comments', 'Delays', 'Undefined'];
       const DEFAULT_SEQUENCE_STEPS = [
         { name: 'Bond Bryan Design', weight: 50 },
@@ -470,6 +469,7 @@
       const zoomOutBtn = document.getElementById('zoomOutBtn');
       const addMiniTaskBtn = document.getElementById('addMiniTaskBtn');
       const removeMiniTaskBtn = document.getElementById('removeMiniTaskBtn');
+      let miniTaskDrafts = [];
       const saveTaskBtn = document.getElementById('saveTaskBtn');
       const configForm = document.getElementById('configForm');
       const buildingTypeSelect = document.getElementById('buildingTypeSelect');
@@ -2152,13 +2152,14 @@ function adjustGanttOffset() {
           element.style.width = `${width}px`;
           element.dataset.segmentId = segment.id || '';
           element.dataset.sourceIndex = Number.isFinite(segment.sourceIndex) ? String(segment.sourceIndex) : '';
+          const isUndefinedSegment = Boolean(segment.isUndefined || segment.name === 'Undefined');
           element.classList.toggle('locked', Boolean(segment.locked));
-          element.classList.toggle('undefined', Boolean(segment.isUndefined));
+          element.classList.toggle('undefined', isUndefinedSegment);
           element.title = `${segment.name || 'Step'} • ${requiredSpan} day${requiredSpan !== 1 ? 's' : ''}`;
           const segmentColor = getMiniColor(segment.name);
           element.style.background = segmentColor;
           const accessibleLabel = segment.locked ? 'Unlock mini-task length' : 'Lock mini-task length';
-          if (segment.isUndefined) {
+          if (isUndefinedSegment) {
             element.removeAttribute('aria-label');
             element.removeAttribute('aria-pressed');
             element.removeAttribute('role');
@@ -2175,10 +2176,10 @@ function adjustGanttOffset() {
             }
           }
           element.querySelectorAll('.mini-handle').forEach((handleEl) => {
-            const isDisabled = Boolean(segment.locked || segment.isUndefined);
+            const isDisabled = Boolean(segment.locked || isUndefinedSegment);
             handleEl.classList.toggle('disabled', isDisabled);
           });
-          if (interactive && task && !segment.isUndefined) {
+          if (interactive && task && !isUndefinedSegment) {
             bindMiniSegmentEvents(element, segment, task, barElement, segments, index);
             element.dataset.boundSegmentId = segment.id || '';
           }
@@ -3458,32 +3459,14 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         renderAll();
       }
 
-      function createBlankMiniTasks(taskId) {
-        const miniTasks = [];
-        for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
-          miniTasks.push({
-            id: `${taskId}-mini-${i + 1}`,
-            enabled: false,
-            name: '',
-            duration: 1,
-            locked: false
-          });
-        }
-        return miniTasks;
-      }
-
       function createDefaultSequencedMiniTasks(taskId) {
-        const miniTasks = createBlankMiniTasks(taskId);
-        DEFAULT_SEQUENCE_STEPS.slice(0, MAX_MINI_TASKS).forEach((step, index) => {
-          miniTasks[index] = {
-            id: `${taskId}-mini-${index + 1}`,
-            enabled: true,
-            name: step.name,
-            duration: step.weight,
-            locked: false
-          };
-        });
-        return miniTasks;
+        return DEFAULT_SEQUENCE_STEPS.map((step, index) => ({
+          id: `${taskId}-mini-${index + 1}`,
+          enabled: true,
+          name: step.name,
+          duration: step.weight,
+          locked: false
+        }));
       }
 
       function renderLegend() {
@@ -3606,29 +3589,29 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
       }
 
       function renderMiniTaskInputs() {
+        if (!miniTaskList) return;
         miniTaskList.innerHTML = '';
-        for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
+        miniTaskDrafts.forEach((mini, index) => {
           const item = document.createElement('div');
-          item.className = 'mini-task-item disabled';
-          item.dataset.index = String(i);
-          item.dataset.locked = 'false';
+          item.className = 'mini-task-item';
+          item.dataset.index = String(index);
+          if (!mini.enabled) item.classList.add('disabled');
+          if (mini.locked) item.classList.add('locked');
 
           const toggleLabel = document.createElement('label');
-          toggleLabel.htmlFor = `miniEnabled${i}`;
           const checkbox = document.createElement('input');
           checkbox.type = 'checkbox';
-          checkbox.id = `miniEnabled${i}`;
-          checkbox.name = `miniEnabled${i}`;
-          checkbox.addEventListener('change', () => handleMiniTaskToggle(i));
+          checkbox.checked = Boolean(mini.enabled);
+          checkbox.addEventListener('change', () => {
+            setMiniTaskEnabled(index, checkbox.checked);
+          });
           const labelText = document.createElement('span');
-          labelText.textContent = String(i + 1);
+          labelText.textContent = String(index + 1);
           toggleLabel.appendChild(checkbox);
           toggleLabel.appendChild(labelText);
 
           const nameSelect = document.createElement('select');
-          nameSelect.id = `miniName${i}`;
-          nameSelect.name = `miniName${i}`;
-          nameSelect.disabled = true;
+          nameSelect.disabled = !mini.enabled;
           const placeholderOption = document.createElement('option');
           placeholderOption.value = '';
           placeholderOption.textContent = 'Select description';
@@ -3639,19 +3622,25 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
             optionEl.textContent = option;
             nameSelect.appendChild(optionEl);
           });
-          nameSelect.addEventListener('change', updateDurationPreview);
+          nameSelect.value = MINI_TASK_OPTIONS.includes(mini.name) ? mini.name : '';
+          nameSelect.addEventListener('change', () => {
+            setMiniTaskName(index, nameSelect.value);
+          });
 
           const durationWrapper = document.createElement('div');
           durationWrapper.className = 'mini-task-duration';
           const durationInput = document.createElement('input');
           durationInput.type = 'number';
-          durationInput.id = `miniDuration${i}`;
-          durationInput.name = `miniDuration${i}`;
           durationInput.min = '1';
           durationInput.step = '1';
-          durationInput.value = '1';
-          durationInput.disabled = true;
-          durationInput.addEventListener('input', () => handleMiniDurationChange(i));
+          durationInput.value = String(Math.max(1, Math.round(mini.duration || 1)));
+          durationInput.disabled = !mini.enabled;
+          durationInput.addEventListener('change', () => {
+            setMiniTaskDuration(index, parseInt(durationInput.value, 10));
+          });
+          durationInput.addEventListener('blur', () => {
+            setMiniTaskDuration(index, parseInt(durationInput.value, 10));
+          });
           const durationSuffix = document.createElement('span');
           durationSuffix.textContent = 'days';
           durationWrapper.appendChild(durationInput);
@@ -3664,15 +3653,19 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           upButton.className = 'mini-move mini-move-up';
           upButton.textContent = '↑';
           upButton.title = 'Move step up';
-          upButton.setAttribute('aria-label', `Move step ${i + 1} up`);
-          upButton.addEventListener('click', () => moveMiniTask(i, -1));
+          upButton.setAttribute('aria-label', `Move step ${index + 1} up`);
+          upButton.disabled = index === 0;
+          upButton.addEventListener('click', () => moveMiniTaskDraft(index, -1));
+
           const downButton = document.createElement('button');
           downButton.type = 'button';
           downButton.className = 'mini-move mini-move-down';
           downButton.textContent = '↓';
           downButton.title = 'Move step down';
-          downButton.setAttribute('aria-label', `Move step ${i + 1} down`);
-          downButton.addEventListener('click', () => moveMiniTask(i, 1));
+          downButton.setAttribute('aria-label', `Move step ${index + 1} down`);
+          downButton.disabled = index === miniTaskDrafts.length - 1;
+          downButton.addEventListener('click', () => moveMiniTaskDraft(index, 1));
+
           controls.appendChild(upButton);
           controls.appendChild(downButton);
 
@@ -3681,167 +3674,93 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           item.appendChild(durationWrapper);
           item.appendChild(controls);
           miniTaskList.appendChild(item);
-        }
-        updateMiniTaskMoveButtons();
+        });
         updateMiniTaskToolbar();
       }
 
-      function getMiniFields(index) {
-        const item = miniTaskList.querySelector(`.mini-task-item[data-index="${index}"]`);
-        if (!item) return null;
-        const checkbox = document.getElementById(`miniEnabled${index}`);
-        const nameSelect = document.getElementById(`miniName${index}`);
-        const durationInput = document.getElementById(`miniDuration${index}`);
-        const upButton = item.querySelector('.mini-move-up');
-        const downButton = item.querySelector('.mini-move-down');
-        return { item, checkbox, nameSelect, durationInput, upButton, downButton };
-      }
-
-      function captureMiniValues(fields) {
-        if (!fields) return null;
-        const durationRaw = fields.durationInput ? parseInt(fields.durationInput.value, 10) : 1;
+      function createMiniTaskDraft(overrides = {}) {
         return {
-          enabled: Boolean(fields.checkbox && fields.checkbox.checked),
-          name: fields.nameSelect ? fields.nameSelect.value : '',
-          duration: Number.isNaN(durationRaw) || durationRaw < 1 ? 1 : durationRaw,
-          locked: fields.item?.dataset.locked === 'true'
+          enabled: false,
+          name: '',
+          duration: 1,
+          locked: false,
+          ...overrides
         };
       }
 
-      function applyMiniValues(fields, values) {
-        if (!fields || !values) return;
-        const enabled = Boolean(values.enabled);
-        if (fields.checkbox) fields.checkbox.checked = enabled;
-        if (fields.nameSelect) {
-          const hasOption = Array.from(fields.nameSelect.options || []).some((opt) => opt.value === values.name);
-          fields.nameSelect.value = hasOption ? values.name : '';
-          fields.nameSelect.disabled = !enabled;
-        }
-        if (fields.durationInput) {
-          const duration = Number.isFinite(values.duration) && values.duration >= 1 ? Math.round(values.duration) : 1;
-          fields.durationInput.value = String(duration);
-          fields.durationInput.disabled = !enabled;
-        }
-        if (fields.item) {
-          fields.item.classList.toggle('disabled', !enabled);
-          fields.item.dataset.locked = values.locked ? 'true' : 'false';
-          fields.item.classList.toggle('locked', Boolean(values.locked));
-        }
-      }
-
-      function getEnabledMiniTaskIndices() {
-        const indices = [];
-        for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
-          const checkbox = document.getElementById(`miniEnabled${i}`);
-          if (checkbox && checkbox.checked) indices.push(i);
-        }
-        return indices;
+      function sanitizeMiniTaskDraft(draft) {
+        return {
+          enabled: Boolean(draft?.enabled),
+          name: typeof draft?.name === 'string' ? draft.name : '',
+          duration: Math.max(1, Math.round(Number.isFinite(draft?.duration) ? draft.duration : 1)),
+          locked: Boolean(draft?.locked)
+        };
       }
 
       function updateMiniTaskToolbar() {
         if (!addMiniTaskBtn || !removeMiniTaskBtn) return;
-        const enabledIndices = getEnabledMiniTaskIndices();
-        addMiniTaskBtn.disabled = enabledIndices.length >= MAX_MINI_TASKS;
-        removeMiniTaskBtn.disabled = enabledIndices.length === 0;
+        addMiniTaskBtn.disabled = false;
+        removeMiniTaskBtn.disabled = miniTaskDrafts.length === 0;
       }
 
-      function addMiniTaskRow(prefill = {}, options = {}) {
-        for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
-          const fields = getMiniFields(i);
-          if (!fields || !fields.checkbox || fields.checkbox.checked) continue;
-          fields.checkbox.checked = true;
-          handleMiniTaskToggle(i);
-          const { nameSelect, durationInput, item } = fields;
-          if (nameSelect) {
-            const hasOption = Array.from(nameSelect.options || []).some((opt) => opt.value === prefill.name);
-            if (prefill.name && hasOption) nameSelect.value = prefill.name;
-          }
-          if (durationInput && Number.isFinite(prefill.duration)) {
-            const duration = Math.max(1, Math.round(prefill.duration));
-            durationInput.value = String(duration);
-          }
-          if (item && prefill.locked) {
-            item.dataset.locked = 'true';
-            item.classList.add('locked');
-          }
-          if (options.focus !== false && nameSelect) {
-            nameSelect.focus();
-          }
-          updateDurationPreview();
-          updateMiniTaskToolbar();
-          return true;
+      function setMiniTaskEnabled(index, enabled) {
+        if (!miniTaskDrafts[index]) return;
+        if (enabled) {
+          miniTaskDrafts[index] = sanitizeMiniTaskDraft({ ...miniTaskDrafts[index], enabled: true });
+        } else {
+          miniTaskDrafts[index] = sanitizeMiniTaskDraft({ enabled: false, name: '', duration: 1, locked: false });
         }
-        updateMiniTaskToolbar();
-        return false;
+        renderMiniTaskInputs();
+        updateDurationPreview();
+      }
+
+      function setMiniTaskName(index, name) {
+        if (!miniTaskDrafts[index]) return;
+        miniTaskDrafts[index] = sanitizeMiniTaskDraft({ ...miniTaskDrafts[index], name });
+        renderMiniTaskInputs();
+        updateDurationPreview();
+      }
+
+      function setMiniTaskDuration(index, value) {
+        if (!miniTaskDrafts[index]) return;
+        let duration = Number.isFinite(value) ? value : miniTaskDrafts[index].duration;
+        if (Number.isNaN(duration) || duration < 1) duration = 1;
+        miniTaskDrafts[index] = sanitizeMiniTaskDraft({ ...miniTaskDrafts[index], duration });
+        renderMiniTaskInputs();
+        updateDurationPreview();
+      }
+
+      function moveMiniTaskDraft(index, direction) {
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= miniTaskDrafts.length) return;
+        const nextDrafts = [...miniTaskDrafts];
+        const [moved] = nextDrafts.splice(index, 1);
+        nextDrafts.splice(targetIndex, 0, moved);
+        miniTaskDrafts = nextDrafts.map(sanitizeMiniTaskDraft);
+        renderMiniTaskInputs();
+        updateDurationPreview();
+      }
+
+      function focusMiniTask(index) {
+        if (!miniTaskList) return;
+        requestAnimationFrame(() => {
+          const select = miniTaskList.querySelector(`.mini-task-item[data-index="${index}"] select`);
+          if (select) select.focus();
+        });
+      }
+
+      function addMiniTaskRow(prefill = {}) {
+        const draft = sanitizeMiniTaskDraft({ enabled: true, ...prefill });
+        miniTaskDrafts = [...miniTaskDrafts, draft];
+        renderMiniTaskInputs();
+        updateDurationPreview();
+        focusMiniTask(miniTaskDrafts.length - 1);
       }
 
       function removeMiniTaskRow() {
-        const enabled = getEnabledMiniTaskIndices();
-        if (!enabled.length) {
-          updateMiniTaskToolbar();
-          return false;
-        }
-        const index = enabled[enabled.length - 1];
-        const fields = getMiniFields(index);
-        if (!fields || !fields.checkbox) {
-          updateMiniTaskToolbar();
-          return false;
-        }
-        fields.checkbox.checked = false;
-        handleMiniTaskToggle(index);
-        updateMiniTaskToolbar();
-        return true;
-      }
-
-      function updateMiniTaskMoveButtons() {
-        for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
-          const fields = getMiniFields(i);
-          if (!fields) continue;
-          if (fields.upButton) fields.upButton.disabled = i === 0;
-          if (fields.downButton) fields.downButton.disabled = i === MAX_MINI_TASKS - 1;
-        }
-      }
-
-      function moveMiniTask(index, direction) {
-        const targetIndex = index + direction;
-        if (targetIndex < 0 || targetIndex >= MAX_MINI_TASKS) return;
-        const currentFields = getMiniFields(index);
-        const targetFields = getMiniFields(targetIndex);
-        if (!currentFields || !targetFields) return;
-        const currentValues = captureMiniValues(currentFields);
-        const targetValues = captureMiniValues(targetFields);
-        applyMiniValues(currentFields, targetValues);
-        applyMiniValues(targetFields, currentValues);
-        updateDurationPreview();
-        updateMiniTaskMoveButtons();
-      }
-
-      function handleMiniTaskToggle(index) {
-        const item = miniTaskList.querySelector(`.mini-task-item[data-index="${index}"]`);
-        const checkbox = document.getElementById(`miniEnabled${index}`);
-        const nameSelect = document.getElementById(`miniName${index}`);
-        const durationInput = document.getElementById(`miniDuration${index}`);
-        const enabled = checkbox.checked;
-        nameSelect.disabled = !enabled;
-        durationInput.disabled = !enabled;
-        if (enabled) {
-          item.classList.remove('disabled');
-        } else {
-          item.classList.add('disabled');
-          nameSelect.value = '';
-          item.dataset.locked = 'false';
-          item.classList.remove('locked');
-        }
-        updateDurationPreview();
-        updateMiniTaskMoveButtons();
-        updateMiniTaskToolbar();
-      }
-
-      function handleMiniDurationChange(index) {
-        const input = document.getElementById(`miniDuration${index}`);
-        let value = parseInt(input.value, 10);
-        if (Number.isNaN(value) || value < 1) value = 1;
-        input.value = value;
+        if (!miniTaskDrafts.length) return;
+        miniTaskDrafts = miniTaskDrafts.slice(0, miniTaskDrafts.length - 1);
+        renderMiniTaskInputs();
         updateDurationPreview();
       }
 
@@ -3858,14 +3777,11 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         let baseDuration = Math.max(1, diffInWeekdays(start, end));
         let miniTotal = 0;
         let enabledCount = 0;
-        for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
-          const enabled = document.getElementById(`miniEnabled${i}`).checked;
-          const duration = parseInt(document.getElementById(`miniDuration${i}`).value, 10);
-          if (enabled) {
-            enabledCount += 1;
-            miniTotal += Number.isNaN(duration) ? 0 : duration;
-          }
-        }
+        miniTaskDrafts.forEach((mini) => {
+          if (!mini?.enabled) return;
+          enabledCount += 1;
+          miniTotal += Math.max(1, Math.round(mini.duration || 1));
+        });
         if (enabledCount > 0) {
           baseDuration = Math.max(miniTotal, enabledCount);
         }
@@ -3878,7 +3794,6 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         currentMode = mode;
         editingTaskId = taskId;
         taskForm.reset();
-        renderMiniTaskInputs();
         if (mode === 'edit' && taskId) {
           const task = tasks.find((item) => item.id === taskId);
           if (task) populateModal(task);
@@ -3901,6 +3816,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         modalEl.classList.add('hidden');
         editingTaskId = null;
         currentMode = 'create';
+        miniTaskDrafts = [];
       }
 
       function populateModal(task = null) {
@@ -3910,81 +3826,46 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         modalProgress.value = task ? task.progress : 0;
         modalStartDate.value = task ? task.startDate : formatDate(defaultStart);
         modalEndDate.value = task ? task.endDate : formatDate(defaultStart);
-        const baseMini = task ? task.miniTasks.map((mini) => ({ ...mini })) : [];
-        let pendingUndefinedDuration = task ? Math.max(0, Math.round(task.undefinedDuration || 0)) : 0;
-        baseMini.forEach((mini) => {
-          if (!mini || !mini.enabled) return;
-          if (mini.name === 'Undefined') {
-            pendingUndefinedDuration += Math.max(1, Math.round(mini.duration || 1));
-            mini.enabled = false;
-            mini.name = '';
-            mini.duration = 1;
-            mini.locked = false;
+
+        if (task) {
+          const baseMini = Array.isArray(task.miniTasks) ? task.miniTasks : [];
+          miniTaskDrafts = baseMini.map((mini) => sanitizeMiniTaskDraft(mini));
+          const pendingUndefinedDuration = Math.max(0, Math.round(task.undefinedDuration || 0));
+          const hasExplicitUndefined = miniTaskDrafts.some((mini) => mini.enabled && mini.name === 'Undefined');
+          if (pendingUndefinedDuration > 0 && !hasExplicitUndefined) {
+            miniTaskDrafts.push(sanitizeMiniTaskDraft({
+              enabled: true,
+              name: 'Undefined',
+              duration: pendingUndefinedDuration,
+              locked: false
+            }));
           }
-        });
-        for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
-          const checkbox = document.getElementById(`miniEnabled${i}`);
-          const nameInput = document.getElementById(`miniName${i}`);
-          const durationInput = document.getElementById(`miniDuration${i}`);
-          const mini = baseMini[i] || { enabled: false, name: '', duration: 1, locked: false };
-          checkbox.checked = Boolean(mini.enabled);
-          const incomingName = mini.name || '';
-          nameInput.value = MINI_TASK_OPTIONS.includes(incomingName) ? incomingName : '';
-          durationInput.value = mini.duration || 1;
-          nameInput.disabled = !checkbox.checked;
-          durationInput.disabled = !checkbox.checked;
-          const item = miniTaskList.querySelector(`.mini-task-item[data-index="${i}"]`);
-          const locked = Boolean(mini.locked);
-          if (item) {
-            item.dataset.locked = locked ? 'true' : 'false';
-            item.classList.toggle('locked', locked);
-          }
-          if (checkbox.checked) {
-            item.classList.remove('disabled');
-          } else {
-            item.classList.add('disabled');
-          }
+        } else {
+          miniTaskDrafts = DEFAULT_SEQUENCE_STEPS.map((step) => sanitizeMiniTaskDraft({
+            enabled: true,
+            name: step.name,
+            duration: step.weight,
+            locked: false
+          }));
         }
-        if (pendingUndefinedDuration > 0) {
-          addMiniTaskRow({ name: 'Undefined', duration: pendingUndefinedDuration }, { focus: false });
+
+        if (!miniTaskDrafts.length) {
+          miniTaskDrafts = [sanitizeMiniTaskDraft(createMiniTaskDraft({ enabled: true }))];
         }
-        updateMiniTaskMoveButtons();
+
+        renderMiniTaskInputs();
         updateDurationPreview();
         updateMiniTaskToolbar();
       }
 
       function collectMiniTasks(taskId) {
-        const results = [];
-        let undefinedDuration = 0;
-        for (let i = 0; i < MAX_MINI_TASKS; i += 1) {
-          const checkbox = document.getElementById(`miniEnabled${i}`);
-          const nameField = document.getElementById(`miniName${i}`);
-          const durationField = document.getElementById(`miniDuration${i}`);
-          const enabled = Boolean(checkbox && checkbox.checked);
-          const name = nameField ? nameField.value : '';
-          let duration = durationField ? parseInt(durationField.value, 10) : 1;
-          if (Number.isNaN(duration) || duration < 1) duration = 1;
-          const item = miniTaskList.querySelector(`.mini-task-item[data-index="${i}"]`);
-          if (enabled && name === 'Undefined') {
-            undefinedDuration += duration;
-            results.push({
-              id: `${taskId || 'new'}-mini-${i + 1}`,
-              enabled: false,
-              name: '',
-              duration: 1,
-              locked: false
-            });
-            continue;
-          }
-          results.push({
-            id: `${taskId || 'new'}-mini-${i + 1}`,
-            enabled,
-            name,
-            duration,
-            locked: item?.dataset.locked === 'true'
-          });
-        }
-        return { miniTasks: results, undefinedDuration };
+        return miniTaskDrafts.map((mini, index) => ({
+          id: `${taskId || 'new'}-mini-${index + 1}`,
+          enabled: Boolean(mini.enabled),
+          name: typeof mini.name === 'string' ? mini.name : '',
+          duration: Math.max(1, Math.round(mini.duration || 1)),
+          locked: Boolean(mini.locked && mini.enabled)
+        }));
       }
       function handleFormSubmit(event) {
         event.preventDefault();
@@ -3998,7 +3879,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         if (Number.isNaN(progress)) progress = 0;
         progress = Math.min(100, Math.max(0, progress));
         const taskId = editingTaskId || `task-${Date.now()}`;
-        const { miniTasks, undefinedDuration: formUndefinedDuration } = collectMiniTasks(taskId);
+        const miniTasks = collectMiniTasks(taskId);
         const enabledCount = miniTasks.filter((mini) => mini.enabled).length;
         let totalDuration = Math.max(1, diffInWeekdays(start, end));
         if (enabledCount > 0) {
@@ -4010,7 +3891,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           end = shiftWeekdays(start, totalDuration - 1);
         }
         const { undefinedDuration: adjustedUndefinedDuration } = normalizeMiniDurations(miniTasks, totalDuration, {
-          undefinedDuration: formUndefinedDuration
+          undefinedDuration: 0
         });
         const payload = {
           id: taskId,
