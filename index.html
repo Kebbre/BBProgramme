@@ -48,6 +48,8 @@
     .task-row > *:nth-child(n+2){display:flex;align-items:center;justify-content:flex-end;}
     .task-row:hover{background:rgba(48,86,211,.08);}
     .task-row.selected{background:rgba(48,86,211,.14);box-shadow:inset 4px 0 0 var(--primary);}
+    .task-row.dragging{opacity:.55;}
+    .task-row.drag-over{background:rgba(48,86,211,.18);box-shadow:inset 0 0 0 2px rgba(48,86,211,.35);}
     .task-name{display:flex;align-items:center;font-size:inherit;font-weight:600;color:var(--text);}
     .task-duration{font-size:.7rem;font-weight:600;text-align:center;padding:.3rem .5rem;border-radius:999px;background:rgba(48,86,211,.12);color:var(--primary);height:30px;display:inline-flex;align-items:center;justify-content:center;line-height:1;}
     .task-progress{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:.2rem;height:100%;}
@@ -276,9 +278,10 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>Architecture Project 12.17 Planner</h1>
+        <h1>Architecture Project 12.18 Planner</h1>
         <div class="sidebar-actions">
-          <button id="addTaskBtn" type="button">＋ New Task</button>
+          <button id="addTaskBtn" type="button">＋ New</button>
+          <button id="removeTaskBtn" class="secondary" type="button" disabled>- Remove</button>
           <button id="editTaskBtn" class="secondary" type="button" disabled>Edit</button>
           <button id="moveUpBtn" class="secondary icon-btn" type="button" disabled title="Move task up" aria-label="Move task up">↑</button>
           <button id="moveDownBtn" class="secondary icon-btn" type="button" disabled title="Move task down" aria-label="Move task down">↓</button>
@@ -529,6 +532,7 @@
 
       let tasks = [];
       let selectedTaskId = null;
+      let draggedTaskId = null;
       let timelineDays = [];
       let timelineRangeStart = null;
       let timelineRangeEnd = null;
@@ -552,6 +556,7 @@
 
       const taskListEl = document.getElementById('taskList');
       const addTaskBtn = document.getElementById('addTaskBtn');
+      const removeTaskBtn = document.getElementById('removeTaskBtn');
       const editTaskBtn = document.getElementById('editTaskBtn');
       const moveUpBtn = document.getElementById('moveUpBtn');
       const moveDownBtn = document.getElementById('moveDownBtn');
@@ -2078,6 +2083,50 @@ function adjustGanttOffset() {
           if (task.id === selectedTaskId) row.classList.add('selected');
           row.dataset.taskId = task.id;
           const isSingleEvent = Boolean(task.singleEvent);
+
+          row.draggable = true;
+          row.addEventListener('dragstart', (event) => {
+            if (event.target && event.target.closest('input')) {
+              event.preventDefault();
+              return;
+            }
+            draggedTaskId = task.id;
+            row.classList.add('dragging');
+            if (event.dataTransfer) {
+              event.dataTransfer.effectAllowed = 'move';
+              try {
+                event.dataTransfer.setData('text/plain', task.id);
+              } catch (error) {
+                // ignore dataTransfer errors
+              }
+            }
+          });
+          row.addEventListener('dragend', () => {
+            row.classList.remove('dragging');
+            row.classList.remove('drag-over');
+            draggedTaskId = null;
+          });
+          row.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            const sourceId = draggedTaskId || (event.dataTransfer ? event.dataTransfer.getData('text/plain') : null);
+            if (!sourceId || sourceId === task.id) return;
+            row.classList.add('drag-over');
+            if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+          });
+          row.addEventListener('dragleave', () => {
+            row.classList.remove('drag-over');
+          });
+          row.addEventListener('drop', (event) => {
+            event.preventDefault();
+            const sourceId = draggedTaskId || (event.dataTransfer ? event.dataTransfer.getData('text/plain') : null);
+            row.classList.remove('drag-over');
+            if (!sourceId || sourceId === task.id) return;
+            const draggingRow = taskListEl.querySelector('.task-row.dragging');
+            if (draggingRow) draggingRow.classList.remove('dragging');
+            const bounds = row.getBoundingClientRect();
+            const insertAfter = (event.clientY - bounds.top) > (bounds.height / 2);
+            moveTaskRelative(sourceId, task.id, insertAfter);
+          });
 
           const nameCell = document.createElement('div');
           nameCell.className = 'task-name';
@@ -3741,6 +3790,22 @@ ${formatDisplayDate(startDate)} (Single event)`;
         const currentIndex = hasSelection ? tasks.findIndex((task) => task.id === selectedTaskId) : -1;
         moveUpBtn.disabled = !hasSelection || currentIndex <= 0;
         moveDownBtn.disabled = !hasSelection || currentIndex === -1 || currentIndex >= tasks.length - 1;
+        if (removeTaskBtn) removeTaskBtn.disabled = !hasSelection;
+      }
+
+      function moveTaskRelative(sourceId, targetId, insertAfter = false) {
+        if (!sourceId || !targetId || sourceId === targetId) return;
+        const sourceIndex = tasks.findIndex((task) => task.id === sourceId);
+        const targetIndex = tasks.findIndex((task) => task.id === targetId);
+        if (sourceIndex === -1 || targetIndex === -1) return;
+        const [movedTask] = tasks.splice(sourceIndex, 1);
+        let insertIndex = targetIndex;
+        if (insertAfter) insertIndex += 1;
+        if (sourceIndex < insertIndex) insertIndex -= 1;
+        tasks.splice(insertIndex, 0, movedTask);
+        draggedTaskId = null;
+        selectedTaskId = movedTask.id;
+        renderAll();
       }
 
       function moveSelectedTask(direction) {
@@ -3752,6 +3817,20 @@ ${formatDisplayDate(startDate)} (Single event)`;
         const [task] = tasks.splice(currentIndex, 1);
         tasks.splice(targetIndex, 0, task);
         selectedTaskId = task.id;
+        renderAll();
+      }
+
+      function removeSelectedTask() {
+        if (!selectedTaskId) return;
+        const index = tasks.findIndex((task) => task.id === selectedTaskId);
+        if (index === -1) return;
+        tasks.splice(index, 1);
+        if (tasks.length) {
+          const nextIndex = Math.min(index, tasks.length - 1);
+          selectedTaskId = tasks[nextIndex].id;
+        } else {
+          selectedTaskId = null;
+        }
         renderAll();
       }
 
@@ -4613,6 +4692,9 @@ ${formatDisplayDate(startDate)} (Single event)`;
           }
         });
         addTaskBtn.addEventListener('click', () => openTaskModal('create'));
+        if (removeTaskBtn) {
+          removeTaskBtn.addEventListener('click', () => removeSelectedTask());
+        }
         editTaskBtn.addEventListener('click', () => {
           if (!selectedTaskId) return;
           openTaskModal('edit', selectedTaskId);
