@@ -159,6 +159,11 @@
     .mini-task-toolbar button{border:1px solid var(--border);background:#fff;color:var(--text);border-radius:8px;padding:.32rem .65rem;font-size:.82rem;font-weight:600;cursor:pointer;transition:color .15s ease,border-color .15s ease,transform .15s ease;}
     .mini-task-toolbar button:hover:not(:disabled){color:var(--primary);border-color:var(--primary);transform:translateY(-1px);}
     .mini-task-toolbar button:disabled{cursor:not-allowed;opacity:.45;transform:none;}
+    .mini-task-controls-row{display:flex;justify-content:flex-end;align-items:center;gap:.6rem;flex-wrap:wrap;margin-top:-.3rem;}
+    .mini-unit-toggle{display:inline-flex;align-items:center;background:#fff;border:1px solid var(--border);border-radius:999px;padding:2px;}
+    .mini-unit-toggle .mini-unit-btn{border:0;background:transparent;color:var(--text-muted);font-size:.74rem;font-weight:600;padding:.28rem .6rem;border-radius:999px;cursor:pointer;transition:background .15s ease,color .15s ease;}
+    .mini-unit-toggle .mini-unit-btn.active{background:var(--primary);color:#fff;}
+    .mini-unit-toggle .mini-unit-btn:focus-visible{outline:2px solid rgba(48,86,211,.35);outline-offset:2px;}
     .mini-task-list{display:flex;flex-direction:column;gap:.8rem;}
     .mini-task-item{display:grid;grid-template-columns:auto 1fr 110px auto;gap:.55rem;align-items:center;padding:.45rem .65rem;border-radius:10px;background:rgba(255,255,255,.9);border:1px solid rgba(15,23,42,.05);}
     .mini-task-item.locked{border-color:rgba(48,86,211,.6);box-shadow:0 0 0 2px rgba(48,86,211,.45) inset;}
@@ -173,6 +178,28 @@
     .mini-task-controls button{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--text);font-size:.8rem;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:color .15s ease,border-color .15s ease,transform .15s ease;}
     .mini-task-controls button:hover:not(:disabled){color:var(--primary);border-color:var(--primary);transform:translateY(-1px);}
     .mini-task-controls button:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+    .mini-delay-extras{display:none;grid-column:1 / -1;grid-template-columns:minmax(0,1fr) auto;gap:.4rem;align-items:center;margin-top:.3rem;}
+    .mini-task-item.delay-active .mini-delay-extras{display:grid;}
+    .mini-task-item.delay-active .mini-task-duration{margin-bottom:.2rem;}
+    .mini-delay-extras input[type="text"]{font-size:.8rem;padding:.3rem .45rem;border:1px solid var(--border);border-radius:6px;}
+    .mini-delay-extras .mini-delay-charge{display:inline-flex;align-items:center;gap:.35rem;font-size:.76rem;color:var(--text-muted);}
+    .delay-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);z-index:14;}
+    .delay-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:15;padding:2rem;}
+    .delay-modal.hidden,.delay-modal-backdrop.hidden{display:none;}
+    .delay-modal-content{background:#fff;border-radius:14px;width:min(720px,95vw);max-height:92vh;display:flex;flex-direction:column;box-shadow:0 28px 64px rgba(15,23,42,.3);overflow:hidden;}
+    .delay-modal-header{display:flex;align-items:center;justify-content:space-between;padding:1.2rem 1.5rem;border-bottom:1px solid rgba(15,23,42,.08);}
+    .delay-modal-header h2{margin:0;font-size:1.2rem;font-weight:700;}
+    .delay-close-btn{border:none;background:transparent;font-size:1.4rem;line-height:1;cursor:pointer;color:var(--text-muted);padding:.2rem .4rem;border-radius:6px;}
+    .delay-close-btn:hover{color:var(--primary);}
+    .delay-modal-body{padding:1.2rem 1.5rem;overflow:auto;}
+    .delay-table{width:100%;border-collapse:collapse;font-size:.85rem;}
+    .delay-table th,.delay-table td{border:1px solid rgba(15,23,42,.12);padding:.55rem .6rem;text-align:left;vertical-align:middle;}
+    .delay-table thead{background:rgba(48,86,211,.08);font-weight:700;}
+    .delay-table tbody tr:nth-child(even){background:rgba(248,250,255,.7);}
+    .delay-table tbody tr:hover{background:rgba(48,86,211,.1);}
+    .delay-table tbody input[type="text"]{width:100%;box-sizing:border-box;font-size:.82rem;padding:.25rem .35rem;border:1px solid rgba(15,23,42,.2);border-radius:6px;}
+    .delay-charge-cell{display:flex;justify-content:center;align-items:center;}
+    .delay-table-empty{text-align:center;color:var(--text-muted);font-style:italic;}
     .modal-footer{padding:1rem 1.75rem 1.35rem;border-top:1px solid rgba(15,23,42,.08);display:flex;justify-content:flex-end;gap:.75rem;}
     .modal-footer .secondary{background:#fff;color:var(--text);border:1px solid var(--border);}
     .modal-footer .secondary:hover{color:var(--primary);border-color:var(--primary);transform:none;}
@@ -234,6 +261,7 @@
         <button type="button" id="savePdfBtn">Save PDF</button>
         <button type="button" id="scheduleSettingsBtn" class="secondary">Schedule Settings</button>
         <button type="button" id="saveProgrammeBtn" class="secondary">Save Programme</button>
+        <button type="button" id="delayScheduleBtn" class="secondary">Delays Schedule</button>
         <button type="button" id="loadProgrammeBtn" class="secondary">Load Programme</button>
         <button type="button" id="graphAuthBtn" class="secondary">Sign in to OneDrive</button>
       </div>
@@ -243,7 +271,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>Architecture Project 12.8 Planner</h1>
+        <h1>Architecture Project 12.9 Planner</h1>
         <div class="sidebar-actions">
           <button id="addTaskBtn" type="button">＋ New Task</button>
           <button id="editTaskBtn" class="secondary" type="button" disabled>Edit</button>
@@ -326,6 +354,12 @@
                 <button type="button" id="removeMiniTaskBtn" aria-label="Remove mini-task">−</button>
               </div>
             </div>
+            <div class="mini-task-controls-row">
+              <div class="mini-unit-toggle" role="group" aria-label="Mini-task duration unit">
+                <button type="button" class="mini-unit-btn active" data-unit="days" aria-pressed="true">Days</button>
+                <button type="button" class="mini-unit-btn" data-unit="weeks" aria-pressed="false">Weeks</button>
+              </div>
+            </div>
             <div class="mini-task-list" id="miniTaskList"></div>
           </div>
         </div>
@@ -358,6 +392,29 @@
     </div>
   </div>
 
+  <div class="delay-modal-backdrop hidden" id="delayModalBackdrop"></div>
+  <div class="delay-modal hidden" id="delayModal" role="dialog" aria-modal="true" aria-labelledby="delayModalTitle">
+    <div class="delay-modal-content">
+      <div class="delay-modal-header">
+        <h2 id="delayModalTitle">Delays Schedule</h2>
+        <button type="button" class="delay-close-btn" id="closeDelayModalBtn" aria-label="Close delays schedule">×</button>
+      </div>
+      <div class="delay-modal-body">
+        <table class="delay-table">
+          <thead>
+            <tr>
+              <th>Task Name</th>
+              <th>Delay Description</th>
+              <th>Duration (days)</th>
+              <th>Charge to Client</th>
+            </tr>
+          </thead>
+          <tbody id="delayTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <script src="https://alcdn.msauth.net/browser/2.37.0/js/msal-browser.min.js" crossorigin="anonymous"></script>
   <script src="https://res.cdn.office.net/teams-js/v2.17.0/js/MicrosoftTeams.min.js" crossorigin="anonymous"></script>
   <script type="module">
@@ -376,6 +433,7 @@
         { name: 'Client Comments', weight: 10 },
         { name: 'Bond Bryan review', weight: 15 }
       ];
+      const WORKING_DAYS_PER_WEEK = 5;
       const TASK_COLOR_MAP = {
         'Bond Bryan Design': 'rgb(176, 207, 255)',
         'Bond Bryan review': 'rgb(255, 192, 203)',
@@ -469,7 +527,9 @@
       const zoomOutBtn = document.getElementById('zoomOutBtn');
       const addMiniTaskBtn = document.getElementById('addMiniTaskBtn');
       const removeMiniTaskBtn = document.getElementById('removeMiniTaskBtn');
+      const miniUnitButtons = Array.from(document.querySelectorAll('.mini-unit-btn'));
       let miniTaskDrafts = [];
+      let miniTaskUnit = 'days';
       const saveTaskBtn = document.getElementById('saveTaskBtn');
       const configForm = document.getElementById('configForm');
       const buildingTypeSelect = document.getElementById('buildingTypeSelect');
@@ -480,6 +540,7 @@
       const scheduleSettingsBtn = document.getElementById('scheduleSettingsBtn');
       const saveProgrammeBtn = document.getElementById('saveProgrammeBtn');
       const loadProgrammeBtn = document.getElementById('loadProgrammeBtn');
+      const delayScheduleBtn = document.getElementById('delayScheduleBtn');
       const graphAuthBtn = document.getElementById('graphAuthBtn');
       const legendContainer = document.getElementById('taskLegend');
       const scheduleModalBackdrop = document.getElementById('scheduleModalBackdrop');
@@ -489,6 +550,10 @@
       const milestoneListEl = document.getElementById('milestoneList');
       const cancelScheduleBtn = document.getElementById('cancelScheduleBtn');
       const saveScheduleBtn = document.getElementById('saveScheduleBtn');
+      const delayModalBackdrop = document.getElementById('delayModalBackdrop');
+      const delayModal = document.getElementById('delayModal');
+      const closeDelayModalBtn = document.getElementById('closeDelayModalBtn');
+      const delayTableBody = document.getElementById('delayTableBody');
 
       function parseDate(value) {
         if (!value) return null;
@@ -3627,24 +3692,53 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
             setMiniTaskName(index, nameSelect.value);
           });
 
+          const isDelay = mini.enabled && mini.name === 'Delays';
+          item.classList.toggle('delay-active', isDelay);
+
           const durationWrapper = document.createElement('div');
           durationWrapper.className = 'mini-task-duration';
           const durationInput = document.createElement('input');
           durationInput.type = 'number';
-          durationInput.min = '1';
-          durationInput.step = '1';
-          durationInput.value = String(Math.max(1, Math.round(mini.duration || 1)));
+          durationInput.min = miniTaskUnit === 'weeks' ? '0.2' : '1';
+          durationInput.step = miniTaskUnit === 'weeks' ? '0.2' : '1';
+          durationInput.value = String(getDraftDurationInCurrentUnit(mini.duration));
           durationInput.disabled = !mini.enabled;
           durationInput.addEventListener('change', () => {
-            setMiniTaskDuration(index, parseInt(durationInput.value, 10));
+            setMiniTaskDuration(index, parseFloat(durationInput.value));
           });
           durationInput.addEventListener('blur', () => {
-            setMiniTaskDuration(index, parseInt(durationInput.value, 10));
+            setMiniTaskDuration(index, parseFloat(durationInput.value));
           });
           const durationSuffix = document.createElement('span');
-          durationSuffix.textContent = 'days';
+          durationSuffix.textContent = miniTaskUnit === 'weeks' ? 'weeks' : 'days';
           durationWrapper.appendChild(durationInput);
           durationWrapper.appendChild(durationSuffix);
+
+          const delayExtras = document.createElement('div');
+          delayExtras.className = 'mini-delay-extras';
+          const descriptionInput = document.createElement('input');
+          descriptionInput.type = 'text';
+          descriptionInput.placeholder = 'Delay description';
+          descriptionInput.value = mini.delayDescription || '';
+          descriptionInput.disabled = !isDelay;
+          descriptionInput.addEventListener('input', () => {
+            setMiniTaskDelayDescription(index, descriptionInput.value);
+          });
+          const chargeLabel = document.createElement('label');
+          chargeLabel.className = 'mini-delay-charge';
+          const chargeCheckbox = document.createElement('input');
+          chargeCheckbox.type = 'checkbox';
+          chargeCheckbox.checked = isDelay ? Boolean(mini.chargeToClient) : false;
+          chargeCheckbox.disabled = !isDelay;
+          chargeCheckbox.addEventListener('change', () => {
+            setMiniTaskCharge(index, chargeCheckbox.checked);
+          });
+          const chargeText = document.createElement('span');
+          chargeText.textContent = 'Charge to client';
+          chargeLabel.appendChild(chargeCheckbox);
+          chargeLabel.appendChild(chargeText);
+          delayExtras.appendChild(descriptionInput);
+          delayExtras.appendChild(chargeLabel);
 
           const controls = document.createElement('div');
           controls.className = 'mini-task-controls';
@@ -3672,6 +3766,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           item.appendChild(toggleLabel);
           item.appendChild(nameSelect);
           item.appendChild(durationWrapper);
+          item.appendChild(delayExtras);
           item.appendChild(controls);
           miniTaskList.appendChild(item);
         });
@@ -3679,28 +3774,59 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
       }
 
       function createMiniTaskDraft(overrides = {}) {
-        return {
+        return sanitizeMiniTaskDraft({
           enabled: false,
           name: '',
           duration: 1,
           locked: false,
+          delayDescription: '',
+          chargeToClient: false,
           ...overrides
-        };
+        });
       }
 
       function sanitizeMiniTaskDraft(draft) {
-        return {
+        const result = {
           enabled: Boolean(draft?.enabled),
           name: typeof draft?.name === 'string' ? draft.name : '',
           duration: Math.max(1, Math.round(Number.isFinite(draft?.duration) ? draft.duration : 1)),
-          locked: Boolean(draft?.locked)
+          locked: Boolean(draft?.locked),
+          delayDescription: typeof draft?.delayDescription === 'string' ? draft.delayDescription : '',
+          chargeToClient: Boolean(draft?.chargeToClient)
         };
+        if (result.name !== 'Delays') {
+          result.delayDescription = '';
+          result.chargeToClient = false;
+        }
+        return result;
+      }
+
+      function getDraftDurationInCurrentUnit(durationDays) {
+        const safeDays = Math.max(1, Math.round(Number.isFinite(durationDays) ? durationDays : 1));
+        if (miniTaskUnit === 'weeks') {
+          return Number((safeDays / WORKING_DAYS_PER_WEEK).toFixed(2));
+        }
+        return safeDays;
+      }
+
+      function setMiniTaskUnit(unit) {
+        if (unit !== 'days' && unit !== 'weeks') return;
+        if (miniTaskUnit === unit) return;
+        miniTaskUnit = unit;
+        updateMiniTaskToolbar();
+        renderMiniTaskInputs();
+        updateDurationPreview();
       }
 
       function updateMiniTaskToolbar() {
         if (!addMiniTaskBtn || !removeMiniTaskBtn) return;
         addMiniTaskBtn.disabled = false;
         removeMiniTaskBtn.disabled = miniTaskDrafts.length === 0;
+        miniUnitButtons.forEach((button) => {
+          const isActive = button.dataset.unit === miniTaskUnit;
+          button.classList.toggle('active', isActive);
+          button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
       }
 
       function setMiniTaskEnabled(index, enabled) {
@@ -3708,26 +3834,38 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         if (enabled) {
           miniTaskDrafts[index] = sanitizeMiniTaskDraft({ ...miniTaskDrafts[index], enabled: true });
         } else {
-          miniTaskDrafts[index] = sanitizeMiniTaskDraft({ enabled: false, name: '', duration: 1, locked: false });
+          miniTaskDrafts[index] = sanitizeMiniTaskDraft({ enabled: false, name: '', duration: 1, locked: false, delayDescription: '', chargeToClient: false });
         }
         renderMiniTaskInputs();
         updateDurationPreview();
+        if (enabled) focusMiniTask(index, 'name');
       }
 
       function setMiniTaskName(index, name) {
         if (!miniTaskDrafts[index]) return;
-        miniTaskDrafts[index] = sanitizeMiniTaskDraft({ ...miniTaskDrafts[index], name });
+        const isDelay = name === 'Delays';
+        miniTaskDrafts[index] = sanitizeMiniTaskDraft({
+          ...miniTaskDrafts[index],
+          name,
+          delayDescription: isDelay ? miniTaskDrafts[index].delayDescription : '',
+          chargeToClient: isDelay ? miniTaskDrafts[index].chargeToClient : false
+        });
         renderMiniTaskInputs();
         updateDurationPreview();
+        focusMiniTask(index, isDelay ? 'delayDescription' : 'name');
       }
 
       function setMiniTaskDuration(index, value) {
         if (!miniTaskDrafts[index]) return;
-        let duration = Number.isFinite(value) ? value : miniTaskDrafts[index].duration;
-        if (Number.isNaN(duration) || duration < 1) duration = 1;
-        miniTaskDrafts[index] = sanitizeMiniTaskDraft({ ...miniTaskDrafts[index], duration });
+        let durationValue = Number(value);
+        if (!Number.isFinite(durationValue) || durationValue < 1) durationValue = 1;
+        const durationInDays = miniTaskUnit === 'weeks'
+          ? durationValue * WORKING_DAYS_PER_WEEK
+          : durationValue;
+        miniTaskDrafts[index] = sanitizeMiniTaskDraft({ ...miniTaskDrafts[index], duration: durationInDays });
         renderMiniTaskInputs();
         updateDurationPreview();
+        focusMiniTask(index, 'duration');
       }
 
       function moveMiniTaskDraft(index, direction) {
@@ -3739,22 +3877,51 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         miniTaskDrafts = nextDrafts.map(sanitizeMiniTaskDraft);
         renderMiniTaskInputs();
         updateDurationPreview();
+        focusMiniTask(targetIndex, 'name');
       }
 
-      function focusMiniTask(index) {
+      function setMiniTaskDelayDescription(index, value) {
+        if (!miniTaskDrafts[index]) return;
+        if (miniTaskDrafts[index].name !== 'Delays') {
+          miniTaskDrafts[index].delayDescription = '';
+          return;
+        }
+        miniTaskDrafts[index].delayDescription = value;
+      }
+
+      function setMiniTaskCharge(index, checked) {
+        if (!miniTaskDrafts[index]) return;
+        if (miniTaskDrafts[index].name !== 'Delays') {
+          miniTaskDrafts[index].chargeToClient = false;
+          return;
+        }
+        miniTaskDrafts[index].chargeToClient = Boolean(checked);
+      }
+
+      function focusMiniTask(index, field = 'name') {
         if (!miniTaskList) return;
         requestAnimationFrame(() => {
-          const select = miniTaskList.querySelector(`.mini-task-item[data-index="${index}"] select`);
-          if (select) select.focus();
+          let selector = 'select';
+          if (field === 'duration') selector = '.mini-task-duration input';
+          if (field === 'delayDescription') selector = '.mini-delay-extras input[type="text"]';
+          const target = miniTaskList.querySelector(`.mini-task-item[data-index="${index}"] ${selector}`);
+          if (target) target.focus();
         });
       }
 
       function addMiniTaskRow(prefill = {}) {
-        const draft = sanitizeMiniTaskDraft({ enabled: true, ...prefill });
+        const prefilled = { ...prefill };
+        if (prefilled.duration != null) {
+          const raw = Number(prefilled.duration);
+          prefilled.duration = Math.max(1, Math.round(raw));
+        } else {
+          prefilled.duration = miniTaskUnit === 'weeks' ? WORKING_DAYS_PER_WEEK : 1;
+        }
+        const draft = sanitizeMiniTaskDraft({ enabled: true, ...prefilled });
         miniTaskDrafts = [...miniTaskDrafts, draft];
         renderMiniTaskInputs();
         updateDurationPreview();
-        focusMiniTask(miniTaskDrafts.length - 1);
+        focusMiniTask(miniTaskDrafts.length - 1, 'name');
       }
 
       function removeMiniTaskRow() {
@@ -3817,6 +3984,8 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         editingTaskId = null;
         currentMode = 'create';
         miniTaskDrafts = [];
+        miniTaskUnit = 'days';
+        updateMiniTaskToolbar();
       }
 
       function populateModal(task = null) {
@@ -3826,6 +3995,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         modalProgress.value = task ? task.progress : 0;
         modalStartDate.value = task ? task.startDate : formatDate(defaultStart);
         modalEndDate.value = task ? task.endDate : formatDate(defaultStart);
+        miniTaskUnit = 'days';
 
         if (task) {
           const baseMini = Array.isArray(task.miniTasks) ? task.miniTasks : [];
@@ -3864,8 +4034,107 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           enabled: Boolean(mini.enabled),
           name: typeof mini.name === 'string' ? mini.name : '',
           duration: Math.max(1, Math.round(mini.duration || 1)),
-          locked: Boolean(mini.locked && mini.enabled)
+          locked: Boolean(mini.locked && mini.enabled),
+          delayDescription: (mini.delayDescription || '').trim(),
+          chargeToClient: Boolean(mini.chargeToClient)
         }));
+      }
+
+      function gatherDelayRows() {
+        const rows = [];
+        tasks.forEach((task) => {
+          (task.miniTasks || []).forEach((mini) => {
+            if (!mini || !mini.enabled || mini.name !== 'Delays') return;
+            const durationDays = Math.max(1, Math.round(mini.duration || 1));
+            rows.push({
+              taskId: task.id,
+              taskName: task.name,
+              miniId: mini.id,
+              description: mini.delayDescription || '',
+              durationDays,
+              chargeToClient: Boolean(mini.chargeToClient)
+            });
+          });
+        });
+        return rows;
+      }
+
+      function updateDelayMiniTask(taskId, miniId, updater) {
+        if (typeof updater !== 'function') return;
+        const task = tasks.find((item) => item.id === taskId);
+        if (!task || !Array.isArray(task.miniTasks)) return;
+        const mini = task.miniTasks.find((entry) => entry.id === miniId);
+        if (!mini) return;
+        updater(mini);
+      }
+
+      function renderDelaySchedule() {
+        if (!delayTableBody) return;
+        const rows = gatherDelayRows();
+        delayTableBody.innerHTML = '';
+        if (!rows.length) {
+          const emptyRow = document.createElement('tr');
+          const emptyCell = document.createElement('td');
+          emptyCell.colSpan = 4;
+          emptyCell.className = 'delay-table-empty';
+          emptyCell.textContent = 'No recorded delays.';
+          emptyRow.appendChild(emptyCell);
+          delayTableBody.appendChild(emptyRow);
+          return;
+        }
+        rows.forEach((row, index) => {
+          const tr = document.createElement('tr');
+          const taskCell = document.createElement('td');
+          taskCell.textContent = row.taskName || '--';
+
+          const descriptionCell = document.createElement('td');
+          const descInput = document.createElement('input');
+          descInput.type = 'text';
+          descInput.value = row.description;
+          descInput.placeholder = 'Describe delay';
+          descInput.setAttribute('aria-label', `Delay description for ${row.taskName || 'task'}`);
+          descInput.addEventListener('input', () => {
+            updateDelayMiniTask(row.taskId, row.miniId, (mini) => {
+              mini.delayDescription = descInput.value;
+            });
+          });
+          descriptionCell.appendChild(descInput);
+
+          const durationCell = document.createElement('td');
+          durationCell.textContent = `${row.durationDays} day${row.durationDays !== 1 ? 's' : ''}`;
+
+          const chargeCell = document.createElement('td');
+          const chargeCheckbox = document.createElement('input');
+          chargeCheckbox.type = 'checkbox';
+          chargeCheckbox.checked = row.chargeToClient;
+          chargeCheckbox.setAttribute('aria-label', `Charge delay ${index + 1} to client`);
+          chargeCheckbox.addEventListener('change', () => {
+            updateDelayMiniTask(row.taskId, row.miniId, (mini) => {
+              mini.chargeToClient = chargeCheckbox.checked;
+            });
+          });
+          chargeCell.className = 'delay-charge-cell';
+          chargeCell.appendChild(chargeCheckbox);
+
+          tr.appendChild(taskCell);
+          tr.appendChild(descriptionCell);
+          tr.appendChild(durationCell);
+          tr.appendChild(chargeCell);
+          delayTableBody.appendChild(tr);
+        });
+      }
+
+      function openDelayModal() {
+        if (!delayModal || !delayModalBackdrop) return;
+        renderDelaySchedule();
+        delayModal.classList.remove('hidden');
+        delayModalBackdrop.classList.remove('hidden');
+      }
+
+      function closeDelayModal() {
+        if (!delayModal || !delayModalBackdrop) return;
+        delayModal.classList.add('hidden');
+        delayModalBackdrop.classList.add('hidden');
       }
       function handleFormSubmit(event) {
         event.preventDefault();
@@ -3923,9 +4192,17 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         renderGantt();
         updateActionButtons();
         adjustGanttOffset();
+        if (delayModal && !delayModal.classList.contains('hidden')) {
+          renderDelaySchedule();
+        }
       }
 
       function attachEventListeners() {
+        miniUnitButtons.forEach((button) => {
+          button.addEventListener('click', () => {
+            setMiniTaskUnit(button.dataset.unit || 'days');
+          });
+        });
         configForm.addEventListener('submit', (event) => {
           event.preventDefault();
           generateScheduleFromConfig();
@@ -3991,13 +4268,29 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         if (loadProgrammeBtn) {
           loadProgrammeBtn.addEventListener('click', handleLoadProgramme);
         }
+        if (delayScheduleBtn) {
+          delayScheduleBtn.addEventListener('click', () => openDelayModal());
+        }
+        if (delayModalBackdrop) {
+          delayModalBackdrop.addEventListener('click', () => closeDelayModal());
+        }
+        if (closeDelayModalBtn) {
+          closeDelayModalBtn.addEventListener('click', () => closeDelayModal());
+        }
         if (graphAuthBtn) {
           graphAuthBtn.addEventListener('click', handleGraphAuthBtnClick);
         }
         document.addEventListener('keydown', (event) => {
-          if (event.key === 'Escape' && scheduleModal && !scheduleModal.classList.contains('hidden')) {
-            event.preventDefault();
-            closeScheduleModal();
+          if (event.key === 'Escape') {
+            if (scheduleModal && !scheduleModal.classList.contains('hidden')) {
+              event.preventDefault();
+              closeScheduleModal();
+              return;
+            }
+            if (delayModal && !delayModal.classList.contains('hidden')) {
+              event.preventDefault();
+              closeDelayModal();
+            }
           }
         });
         addTaskBtn.addEventListener('click', () => openTaskModal('create'));
@@ -4036,6 +4329,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           console.warn('Unable to initialise Microsoft authentication on startup.', error);
         });
         renderMiniTaskInputs();
+        updateMiniTaskToolbar();
         attachEventListeners();
         renderLegend();
         updateViewModeButtons();
