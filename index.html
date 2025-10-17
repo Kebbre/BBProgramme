@@ -2474,6 +2474,43 @@ function adjustGanttOffset() {
 
           taskListEl.appendChild(row);
         });
+        // --- Stage list-row summary (Step 3) ---
+if (task.entryType === 'stage') {
+  row.classList.add('stage-row');
+  const summary = computeStageSummary(task);
+
+  const startCell = row.children[1];
+  const endCell   = row.children[2];
+  const progCell  = row.children[4];
+
+  if (summary.hasDatedChildren) {
+    startCell.textContent = formatShortDate(summary.start);
+    endCell.textContent   = formatShortDate(summary.end);
+  } else {
+    startCell.textContent = '';
+    endCell.textContent   = '';
+  }
+
+  if (summary.hasChildren && summary.progress != null) {
+    progCell.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'task-progress';
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = '0';
+    input.max = '100';
+    input.value = String(summary.progress);
+    input.disabled = true;
+    const pct = document.createElement('span');
+    pct.textContent = '%';
+    wrap.appendChild(input);
+    wrap.appendChild(pct);
+    progCell.appendChild(wrap);
+  } else {
+    progCell.textContent = '';
+  }
+}
+
       }
       function computeTimelineRange() {
         if (!tasks.length) {
@@ -3151,6 +3188,71 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         milestoneSegments.forEach((segment) => {
           highlightSegments.push(segment);
         });
+        // --- Stage Gantt summary application (Step 3) ---
+if (task.entryType === 'stage' || task.isStage === true) {
+  rowEl.classList.add('stage-row');
+
+  const summary = computeStageSummary(task);
+
+  // Clear any previous content in this row's bar layer
+  // (Assuming you create a container for bars; adjust selector if needed)
+  // e.g., const barLayer = rowEl.querySelector('.bar-layer') || rowEl;
+
+  if (!summary.hasDatedChildren) {
+    // No bar for empty/undated stages (optional placeholder is left to Step 10 polish)
+    return;
+  }
+
+  // Compute indices on the current timeline
+  const startIdx = timelineDayIndexMap.get(summary.startStr);
+  const endIdx   = timelineDayIndexMap.get(summary.endStr);
+  if (startIdx == null || endIdx == null || startIdx > endIdx) return;
+
+  const dayWidth = getDayWidth();
+  const left = startIdx * dayWidth;
+  const width = (endIdx - startIdx + 1) * dayWidth;
+
+  const bar = document.createElement('div');
+  bar.className = 'task-bar stage-bar';
+  bar.style.left = `${left}px`;
+  bar.style.width = `${width}px`;
+  bar.dataset.startIndex = String(startIdx);
+  bar.dataset.endIndex = String(endIdx);
+
+  const label = document.createElement('div');
+  label.className = 'task-label';
+  label.textContent = task.name || 'Stage';
+
+  const dates = document.createElement('div');
+  dates.className = 'task-dates';
+  dates.textContent = `${formatDisplayDate(summary.start)} → ${formatDisplayDate(summary.end)}`;
+
+  const progressFill = document.createElement('div');
+  progressFill.className = 'progress';
+  if (summary.progress != null) {
+    progressFill.style.width = `${Math.max(0, Math.min(100, summary.progress))}%`;
+  } else {
+    progressFill.style.width = '0';
+  }
+
+  bar.appendChild(progressFill);
+  bar.appendChild(label);
+  bar.appendChild(dates);
+
+  // Optional: standdown mask repaint
+  const miniLayer = document.createElement('div');
+  miniLayer.className = 'mini-layer';
+  bar.appendChild(miniLayer);
+
+  const standdownLayer = document.createElement('div');
+  standdownLayer.className = 'standdown-layer';
+  bar.appendChild(standdownLayer);
+
+  rowEl.appendChild(bar);
+  refreshStanddownLayer(bar);
+  return;
+}
+
         const normalizedSegments = highlightSegments
           .map((segment) => {
             const startIndex = Math.max(0, Math.min(timelineDays.length - 1, segment.startIndex));
@@ -4916,6 +5018,110 @@ ${formatDisplayDate(startDate)} (Single event)`;
             stageCustomName: customName,
             entryType: 'stage'
           });
+          // --- Stage summary helpers (Step 3) ---
+
+function toUtc(dateStr) {
+  const d = parseDate(dateStr);
+  return d instanceof Date ? d : null;
+}
+
+function workingDaysBetweenInc(startStr, endStr) {
+  const s = toUtc(startStr);
+  const e = toUtc(endStr);
+  if (!s || !e) return 0;
+  let days = 0;
+  const cur = new Date(s.getTime());
+  const guardLimit = 5000;
+  let guard = 0;
+  while (cur <= e && guard < guardLimit) {
+    const dow = cur.getUTCDay(); // 0..6 (Sun..Sat)
+    if (dow !== 0 && dow !== 6) days++;
+    cur.setUTCDate(cur.getUTCDate() + 1);
+    guard++;
+  }
+  return days;
+}
+
+function getStageChildren(stageId) {
+  return tasks.filter(t => t && t.parentId === stageId);
+}
+
+/**
+ * Computes start, end, progress for a Stage from its child tasks.
+ * Progress is duration-weighted (single events = 1 working day).
+ * Returns:
+ * {
+ *   hasChildren, hasDatedChildren,
+ *   start: Date|null, end: Date|null,
+ *   startStr: 'YYYY-MM-DD'|'', endStr: 'YYYY-MM-DD'|'',
+ *   progress: number|null, durationDays: number
+ * }
+ */
+function computeStageSummary(stageTask) {
+  const children = getStageChildren(stageTask.id);
+  const result = {
+    hasChildren: children.length > 0,
+    hasDatedChildren: false,
+    start: null,
+    end: null,
+    startStr: '',
+    endStr: '',
+    progress: null,
+    durationDays: 0
+  };
+  if (children.length === 0) return result;
+
+  // Gather dated children
+  let earliest = null;
+  let latest = null;
+  let weightedProgressSum = 0;
+  let totalWeight = 0;
+
+  for (const c of children) {
+    // Determine duration weight
+    let weight = 0;
+    if (c.entryType === 'single') {
+      weight = 1;
+    } else if (c.startDate && c.endDate) {
+      weight = Math.max(workingDaysBetweenInc(c.startDate, c.endDate), 0);
+    } else {
+      weight = 0;
+    }
+
+    // Track earliest / latest using actual dates if present
+    const cs = toUtc(c.startDate);
+    const ce = toUtc(c.endDate);
+    if (cs && (!earliest || cs < earliest)) earliest = cs;
+    if (ce && (!latest || ce > latest)) latest = ce;
+
+    // Progress weight
+    const p = typeof c.progress === 'number'
+      ? c.progress
+      : (typeof c.taskProgress === 'number' ? c.taskProgress : 0);
+    if (weight > 0) {
+      weightedProgressSum += (Math.max(0, Math.min(100, p)) * weight);
+      totalWeight += weight;
+    }
+  }
+
+  result.hasDatedChildren = !!(earliest && latest);
+  if (result.hasDatedChildren) {
+    result.start = earliest;
+    result.end = latest;
+    result.startStr = formatDate(earliest);
+    result.endStr = formatDate(latest);
+    result.durationDays = Math.max(workingDaysBetweenInc(result.startStr, result.endStr), 0);
+  }
+
+  if (totalWeight > 0) {
+    result.progress = Math.round(weightedProgressSum / totalWeight);
+  } else {
+    result.progress = null;
+  }
+
+  return result;
+}
+
           payload = {
             ...payload,
             ...stageMetadata,
