@@ -165,7 +165,8 @@
     .mini-unit-toggle .mini-unit-btn.active{background:var(--primary);color:#fff;}
     .mini-unit-toggle .mini-unit-btn:focus-visible{outline:2px solid rgba(48,86,211,.35);outline-offset:2px;}
     .mini-task-list{display:flex;flex-direction:column;gap:.8rem;}
-    .mini-task-item{display:grid;grid-template-columns:auto 1fr 110px auto;gap:.55rem;align-items:center;padding:.45rem .65rem;border-radius:10px;background:rgba(255,255,255,.9);border:1px solid rgba(15,23,42,.05);}
+    .mini-task-item{display:grid;grid-template-columns:auto 1fr 110px auto;gap:.55rem;align-items:center;padding:.45rem .65rem;border-radius:10px;background:rgba(255,255,255,.9);border:1px solid rgba(15,23,42,.05);transition:box-shadow .15s ease, border-color .15s ease;}
+    .mini-task-item.duration-focused{box-shadow:0 0 0 2px rgba(48,86,211,.35);border-color:rgba(48,86,211,.55);}
     .mini-task-item.locked{border-color:rgba(48,86,211,.6);box-shadow:0 0 0 2px rgba(48,86,211,.45) inset;}
     .mini-task-item.disabled{opacity:.4;}
     .mini-task-item label{display:flex;align-items:center;gap:.4rem;font-weight:600;font-size:.82rem;}
@@ -271,7 +272,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>Architecture Project 12.9 Planner</h1>
+        <h1>Architecture Project 12.10 Planner</h1>
         <div class="sidebar-actions">
           <button id="addTaskBtn" type="button">＋ New Task</button>
           <button id="editTaskBtn" class="secondary" type="button" disabled>Edit</button>
@@ -3700,14 +3701,21 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           const durationInput = document.createElement('input');
           durationInput.type = 'number';
           durationInput.min = miniTaskUnit === 'weeks' ? '0.2' : '1';
-          durationInput.step = miniTaskUnit === 'weeks' ? '0.2' : '1';
+          durationInput.step = miniTaskUnit === 'weeks' ? '0.5' : '1';
           durationInput.value = String(getDraftDurationInCurrentUnit(mini.duration));
           durationInput.disabled = !mini.enabled;
-          durationInput.addEventListener('change', () => {
+          const handleDurationChange = () => {
             setMiniTaskDuration(index, parseFloat(durationInput.value));
-          });
+          };
+          durationInput.addEventListener('change', handleDurationChange);
           durationInput.addEventListener('blur', () => {
-            setMiniTaskDuration(index, parseFloat(durationInput.value));
+            handleDurationChange();
+            const wrapper = durationInput.closest('.mini-task-item');
+            if (wrapper) wrapper.classList.remove('duration-focused');
+          });
+          durationInput.addEventListener('focus', () => {
+            const wrapper = durationInput.closest('.mini-task-item');
+            if (wrapper) wrapper.classList.add('duration-focused');
           });
           const durationSuffix = document.createElement('span');
           durationSuffix.textContent = miniTaskUnit === 'weeks' ? 'weeks' : 'days';
