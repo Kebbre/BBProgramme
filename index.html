@@ -121,6 +121,9 @@
     .task-bar .progress{position:absolute;top:0;bottom:0;left:0;width:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,.9)0,rgba(255,255,255,.9)6px,rgba(255,255,255,.25)6px,rgba(255,255,255,.25)12px);background-color:rgba(255,255,255,.25);border-radius:8px 0 0 8px;pointer-events:none;transition:width .2s ease;z-index:2;box-shadow:inset -1px 0 0 rgba(0,0,0,.08);overflow:hidden;}
     .task-bar .progress.is-full{border-radius:8px;}
     .mini-layer{position:absolute;inset:0;pointer-events:auto;border-radius:8px;overflow:visible;z-index:4;}
+    .single-event-marker{position:absolute;top:50%;transform:translate(-50%,-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:16px solid #2fb879;cursor:pointer;pointer-events:auto;z-index:6;}
+    .single-event-marker:hover{filter:brightness(1.05);}
+    .single-event-marker.selected{border-bottom-color:#228a5f;}
     .mini-segment{position:absolute;top:0;bottom:0;opacity:.92;pointer-events:auto;border-radius:10px;box-shadow:inset 0 0 0 1px rgba(15,23,42,.12);cursor:pointer;transition:box-shadow .15s ease;}
     .mini-segment.locked{box-shadow:inset 0 0 0 3px rgba(17,24,39,.65);}
     .mini-segment.undefined{background:rgb(245,245,245);box-shadow:inset 0 0 0 1px rgba(107,114,128,.35);}
@@ -179,6 +182,8 @@
     .mini-task-controls button{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--text);font-size:.8rem;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:color .15s ease,border-color .15s ease,transform .15s ease;}
     .mini-task-controls button:hover:not(:disabled){color:var(--primary);border-color:var(--primary);transform:translateY(-1px);}
     .mini-task-controls button:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+    .single-event-toggle{display:inline-flex;align-items:center;gap:.5rem;font-weight:600;color:var(--text);}
+    .single-event-toggle input{width:18px;height:18px;accent-color:var(--primary);}
     .mini-delay-extras{display:none;grid-column:1 / -1;width:100%;flex-direction:column;align-items:flex-start;gap:.5rem;margin-top:.4rem;}
     .mini-task-item.delay-active .mini-delay-extras{display:flex;}
     .mini-task-item.delay-active .mini-task-duration{margin-bottom:.2rem;}
@@ -274,7 +279,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>Architecture Project 12.15 Planner</h1>
+        <h1>Architecture Project 12.16 Planner</h1>
         <div class="sidebar-actions">
           <button id="addTaskBtn" type="button">＋ New Task</button>
           <button id="editTaskBtn" class="secondary" type="button" disabled>Edit</button>
@@ -332,6 +337,12 @@
               <label for="modalTaskProgress">Progress (%)</label>
               <input id="modalTaskProgress" name="taskProgress" type="number" min="0" max="100" value="0">
             </div>
+            <div class="form-group single-event-group" style="grid-column:span 2;">
+              <label class="single-event-toggle">
+                <input id="modalSingleEvent" name="singleEvent" type="checkbox">
+                <span>Single event</span>
+              </label>
+            </div>
             <div class="form-group" style="grid-column:span 2;">
               <label for="modalTaskDescription">Description</label>
               <textarea id="modalTaskDescription" name="taskDescription" placeholder="Task goals, deliverables, or notes"></textarea>
@@ -340,13 +351,13 @@
               <label for="modalStartDate">Start date</label>
               <input id="modalStartDate" name="taskStart" type="date" required>
             </div>
-            <div class="form-group">
+            <div class="form-group" id="modalEndDateGroup">
               <label for="modalEndDate">End date</label>
               <input id="modalEndDate" name="taskEnd" type="date" required>
             </div>
           </div>
 
-          <div class="mini-task-section">
+          <div class="mini-task-section" id="miniTaskSection">
             <div class="mini-task-header">
               <div class="mini-task-heading">
                 <h3>Sequenced steps</h3>
@@ -524,6 +535,9 @@
       const modalTaskDescription = document.getElementById('modalTaskDescription');
       const modalStartDate = document.getElementById('modalStartDate');
       const modalEndDate = document.getElementById('modalEndDate');
+      const modalSingleEvent = document.getElementById('modalSingleEvent');
+      const modalEndDateGroup = document.getElementById('modalEndDateGroup');
+      const miniTaskSection = document.getElementById('miniTaskSection');
       const modalProgress = document.getElementById('modalTaskProgress');
       const viewModeButtons = Array.from(document.querySelectorAll('.view-mode-btn'));
       const zoomInBtn = document.getElementById('zoomInBtn');
@@ -597,6 +611,40 @@
           return;
         }
         applyResize();
+      }
+
+      function isSingleEventActive() {
+        return Boolean(modalSingleEvent && modalSingleEvent.checked);
+      }
+
+      function updateSingleEventUI(options = {}) {
+        if (!modalSingleEvent) {
+          updateMiniTaskToolbar();
+          return;
+        }
+        const isSingle = isSingleEventActive();
+        if (modalEndDateGroup) {
+          modalEndDateGroup.style.display = isSingle ? 'none' : '';
+        }
+        if (miniTaskSection) {
+          miniTaskSection.style.display = isSingle ? 'none' : '';
+        }
+        if (modalEndDate) {
+          modalEndDate.disabled = isSingle;
+          if (isSingle && modalStartDate && modalStartDate.value) {
+            modalEndDate.value = modalStartDate.value;
+          }
+        }
+        if (addMiniTaskBtn) addMiniTaskBtn.disabled = isSingle;
+        if (removeMiniTaskBtn) removeMiniTaskBtn.disabled = isSingle || miniTaskDrafts.length === 0;
+        miniUnitButtons.forEach((button) => {
+          button.disabled = isSingle;
+          button.setAttribute('aria-disabled', isSingle ? 'true' : 'false');
+        });
+        updateMiniTaskToolbar();
+        if (!options.deferPreview) {
+          updateDurationPreview();
+        }
       }
 
       function getTodayUtc() {
@@ -914,14 +962,18 @@
         const loadedMilestones = Array.isArray(data.milestones) ? data.milestones : [];
         tasks = loadedTasks.map((task) => {
           const undefinedDuration = Math.max(0, Math.round(task?.undefinedDuration || 0));
-          const miniTasks = Array.isArray(task.miniTasks)
-            ? task.miniTasks.map((mini) => ({
-              ...mini,
-              locked: Boolean(mini.locked)
-            }))
-            : [];
+          const singleEvent = Boolean(task?.singleEvent);
+          const miniTasks = singleEvent
+            ? []
+            : Array.isArray(task.miniTasks)
+              ? task.miniTasks.map((mini) => ({
+                ...mini,
+                locked: Boolean(mini.locked)
+              }))
+              : [];
           return {
             ...task,
+            singleEvent,
             undefinedDuration,
             miniTasks
           };
@@ -1744,10 +1796,12 @@ function adjustGanttOffset() {
       }
 
       function countEnabledMiniTasks(task) {
+        if (task?.singleEvent) return 0;
         return (task.miniTasks || []).filter((mini) => mini.enabled).length;
       }
 
       function minimumTaskDuration(task) {
+        if (task?.singleEvent) return 1;
         return Math.max(1, countEnabledMiniTasks(task));
       }
 
@@ -1824,6 +1878,7 @@ function adjustGanttOffset() {
         return result;
       }
       function buildMiniSegments(task) {
+        if (task?.singleEvent) return [];
         const totalDuration = getTaskDuration(task);
         const clones = task.miniTasks.map((mini, index) => ({ ...mini, __sourceIndex: index }));
         const { undefinedDuration } = normalizeMiniDurations(clones, totalDuration, {
@@ -1862,6 +1917,15 @@ function adjustGanttOffset() {
       }
 
       function reconcileMiniDurationsForTask(task, totalDuration, options = {}) {
+        if (task?.singleEvent) {
+          const start = ensureWeekday(parseDate(task.startDate) || new Date(), 1);
+          const normalized = formatDate(start);
+          task.startDate = normalized;
+          task.endDate = normalized;
+          task.miniTasks = [];
+          task.undefinedDuration = 0;
+          return 1;
+        }
         const settings = {
           anchor: options.anchor === 'end' ? 'end' : 'start',
           referenceStart: options.referenceStart instanceof Date ? options.referenceStart : null,
@@ -1890,6 +1954,7 @@ function adjustGanttOffset() {
       }
 
       function buildMiniSegmentsPreview(task, duration) {
+        if (task?.singleEvent) return [];
         const clones = task.miniTasks.map((mini, index) => ({ ...mini, __sourceIndex: index }));
         const { undefinedDuration } = normalizeMiniDurations(clones, duration, {
           undefinedDuration: Math.max(0, Math.round(task?.undefinedDuration || 0))
@@ -1920,6 +1985,15 @@ function adjustGanttOffset() {
       }
 
       function ensureTaskDates(task) {
+        if (task?.singleEvent) {
+          const start = ensureWeekday(parseDate(task.startDate) || new Date(), 1);
+          const normalized = formatDate(start);
+          task.startDate = normalized;
+          task.endDate = normalized;
+          task.miniTasks = [];
+          task.undefinedDuration = 0;
+          return;
+        }
         let start = ensureWeekday(parseDate(task.startDate) || new Date(), 1);
         let end = ensureWeekday(parseDate(task.endDate) || new Date(start.getTime()), -1);
         if (compareDates(end, start) < 0) {
@@ -1949,6 +2023,7 @@ function adjustGanttOffset() {
           row.className = 'task-row';
           if (task.id === selectedTaskId) row.classList.add('selected');
           row.dataset.taskId = task.id;
+          const isSingleEvent = Boolean(task.singleEvent);
 
           const nameCell = document.createElement('div');
           nameCell.className = 'task-name';
@@ -1977,24 +2052,29 @@ function adjustGanttOffset() {
           const endInput = document.createElement('input');
           endInput.type = 'date';
           endInput.value = task.endDate;
-          endInput.addEventListener('click', (event) => event.stopPropagation());
-          endInput.addEventListener('change', (event) => {
-            event.stopPropagation();
-            const newEnd = ensureWeekday(parseDate(event.target.value), -1);
-            if (!newEnd) {
-              event.target.value = task.endDate;
-              return;
-            }
-            updateTaskEndDate(task, newEnd);
-            renderAll();
-          });
+          endInput.disabled = isSingleEvent;
+          if (!isSingleEvent) {
+            endInput.addEventListener('click', (event) => event.stopPropagation());
+            endInput.addEventListener('change', (event) => {
+              event.stopPropagation();
+              const newEnd = ensureWeekday(parseDate(event.target.value), -1);
+              if (!newEnd) {
+                event.target.value = task.endDate;
+                return;
+              }
+              updateTaskEndDate(task, newEnd);
+              renderAll();
+            });
+          } else {
+            endInput.title = 'Single event';
+          }
           endCell.appendChild(endInput);
           row.appendChild(endCell);
 
           const durationCell = document.createElement('div');
           const badge = document.createElement('div');
           badge.className = 'task-duration';
-          badge.textContent = `${duration} day${duration !== 1 ? 's' : ''}`;
+          badge.textContent = isSingleEvent ? 'Single event' : `${duration} day${duration !== 1 ? 's' : ''}`;
           durationCell.appendChild(badge);
           row.appendChild(durationCell);
 
@@ -2853,11 +2933,35 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
             grid.appendChild(cell);
           });
 
+          row.appendChild(grid);
+
           const startDate = parseDate(task.startDate);
-          const endDate = parseDate(task.endDate);
           const startIndex = timelineDayIndexMap.get(task.startDate);
+          if (!startDate || typeof startIndex !== 'number') {
+            return;
+          }
+          const isSingleEvent = Boolean(task.singleEvent);
+          if (isSingleEvent) {
+            const marker = document.createElement('div');
+            marker.className = 'single-event-marker';
+            if (task.id === selectedTaskId) marker.classList.add('selected');
+            const markerLeft = (startIndex * dayWidth) + (dayWidth / 2);
+            marker.style.left = `${markerLeft}px`;
+            marker.dataset.startIndex = String(startIndex);
+            marker.dataset.endIndex = String(startIndex);
+            marker.title = `${task.name}
+${formatDisplayDate(startDate)} (Single event)`;
+            marker.addEventListener('click', (event) => {
+              event.stopPropagation();
+              selectTask(task.id);
+            });
+            row.appendChild(marker);
+            ganttBodyEl.appendChild(row);
+            return;
+          }
+          const endDate = parseDate(task.endDate);
           const endIndex = timelineDayIndexMap.get(task.endDate);
-          if (typeof startIndex !== 'number' || typeof endIndex !== 'number' || startIndex > endIndex) {
+          if (typeof endIndex !== 'number' || startIndex > endIndex) {
             return;
           }
           const barLeft = startIndex * dayWidth;
@@ -2913,7 +3017,6 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           attachResizeHandles(bar, task);
           enableBarDrag(bar, task);
 
-          row.appendChild(grid);
           row.appendChild(bar);
           ganttBodyEl.appendChild(row);
         });
@@ -3490,6 +3593,13 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
       }
 
       function updateTaskStartDate(task, newStartDate) {
+        if (task?.singleEvent) {
+          const start = ensureWeekday(newStartDate, 1);
+          const normalized = formatDate(start);
+          task.startDate = normalized;
+          task.endDate = normalized;
+          return;
+        }
         const currentEnd = parseDate(task.endDate) || newStartDate;
         let duration = diffInWeekdays(newStartDate, currentEnd);
         const minDuration = minimumTaskDuration(task);
@@ -3505,6 +3615,12 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
       }
 
       function updateTaskEndDate(task, newEndDate) {
+        if (task?.singleEvent) {
+          const normalizedStart = formatDate(ensureWeekday(parseDate(task.startDate) || newEndDate, 1));
+          task.startDate = normalizedStart;
+          task.endDate = normalizedStart;
+          return;
+        }
         const currentStart = parseDate(task.startDate) || newEndDate;
         let duration = diffInWeekdays(currentStart, newEndDate);
         const minDuration = minimumTaskDuration(task);
@@ -3519,6 +3635,12 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
       }
 
       function applyNewStartDate(task, newStartDate, fixedEndDate) {
+        if (task?.singleEvent) {
+          const normalized = formatDate(ensureWeekday(newStartDate, 1));
+          task.startDate = normalized;
+          task.endDate = normalized;
+          return;
+        }
         let start = ensureWeekday(newStartDate, 1);
         let end = ensureWeekday(fixedEndDate, -1);
         if (compareDates(end, start) < 0) {
@@ -3533,6 +3655,12 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
       }
 
       function applyNewEndDate(task, fixedStartDate, newEndDate) {
+        if (task?.singleEvent) {
+          const normalized = formatDate(ensureWeekday(parseDate(task.startDate) || fixedStartDate, 1));
+          task.startDate = normalized;
+          task.endDate = normalized;
+          return;
+        }
         let start = ensureWeekday(fixedStartDate, 1);
         let end = ensureWeekday(newEndDate, -1);
         if (compareDates(end, start) < 0) {
@@ -3693,7 +3821,8 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
             endDate: formatDate(taskEnd),
             progress: 0,
             miniTasks,
-            undefinedDuration: 0
+            undefinedDuration: 0,
+            singleEvent: false
           };
           ensureTaskDates(task);
           return task;
@@ -3867,6 +3996,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
       }
 
       function setMiniTaskUnit(unit) {
+        if (isSingleEventActive()) return;
         if (unit !== 'days' && unit !== 'weeks') return;
         if (miniTaskUnit === unit) return;
         miniTaskUnit = unit;
@@ -3877,12 +4007,20 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
 
       function updateMiniTaskToolbar() {
         if (!addMiniTaskBtn || !removeMiniTaskBtn) return;
-        addMiniTaskBtn.disabled = false;
-        removeMiniTaskBtn.disabled = miniTaskDrafts.length === 0;
+        const singleActive = isSingleEventActive();
+        addMiniTaskBtn.disabled = singleActive;
+        removeMiniTaskBtn.disabled = singleActive || miniTaskDrafts.length === 0;
         miniUnitButtons.forEach((button) => {
           const isActive = button.dataset.unit === miniTaskUnit;
           button.classList.toggle('active', isActive);
           button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+          button.disabled = singleActive;
+          button.setAttribute('aria-disabled', singleActive ? 'true' : 'false');
+          if (singleActive) {
+            button.setAttribute('tabindex', '-1');
+          } else {
+            button.removeAttribute('tabindex');
+          }
         });
       }
 
@@ -3966,6 +4104,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
       }
 
       function addMiniTaskRow(prefill = {}) {
+        if (isSingleEventActive()) return;
         const prefilled = { ...prefill };
         if (prefilled.duration != null) {
           const raw = Number(prefilled.duration);
@@ -3981,6 +4120,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
       }
 
       function removeMiniTaskRow() {
+        if (isSingleEventActive()) return;
         if (!miniTaskDrafts.length) return;
         miniTaskDrafts = miniTaskDrafts.slice(0, miniTaskDrafts.length - 1);
         renderMiniTaskInputs();
@@ -3989,11 +4129,17 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
 
       function updateDurationPreview() {
         let start = ensureWeekday(parseDate(modalStartDate.value), 1);
-        let end = ensureWeekday(parseDate(modalEndDate.value), -1);
         if (!start) {
           durationPreview.textContent = '0 working days';
           return;
         }
+        if (isSingleEventActive()) {
+          const normalized = formatDate(start);
+          if (modalEndDate) modalEndDate.value = normalized;
+          durationPreview.textContent = 'Single event (1 working day)';
+          return;
+        }
+        let end = ensureWeekday(parseDate(modalEndDate.value), -1);
         if (!end || compareDates(end, start) < 0) {
           end = new Date(start.getTime());
         }
@@ -4052,6 +4198,10 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         modalStartDate.value = task ? task.startDate : formatDate(defaultStart);
         modalEndDate.value = task ? task.endDate : formatDate(defaultStart);
         miniTaskUnit = 'days';
+        const singleEvent = task ? Boolean(task.singleEvent) : false;
+        if (modalSingleEvent) {
+          modalSingleEvent.checked = singleEvent;
+        }
 
         if (task) {
           const baseMini = Array.isArray(task.miniTasks) ? task.miniTasks : [];
@@ -4075,16 +4225,17 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           }));
         }
 
-        if (!miniTaskDrafts.length) {
+        if (!miniTaskDrafts.length && !singleEvent) {
           miniTaskDrafts = [sanitizeMiniTaskDraft(createMiniTaskDraft({ enabled: true }))];
         }
 
         renderMiniTaskInputs();
+        updateSingleEventUI({ deferPreview: true });
         updateDurationPreview();
-        updateMiniTaskToolbar();
       }
 
       function collectMiniTasks(taskId) {
+        if (isSingleEventActive()) return [];
         return miniTaskDrafts.map((mini, index) => ({
           id: `${taskId || 'new'}-mini-${index + 1}`,
           enabled: Boolean(mini.enabled),
@@ -4099,6 +4250,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
       function gatherDelayRows() {
         const rows = [];
         tasks.forEach((task) => {
+          if (task.singleEvent) return;
           (task.miniTasks || []).forEach((mini) => {
             if (!mini || !mini.enabled || mini.name !== 'Delays') return;
             const durationDays = Math.max(1, Math.round(mini.duration || 1));
@@ -4227,20 +4379,28 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         if (Number.isNaN(progress)) progress = 0;
         progress = Math.min(100, Math.max(0, progress));
         const taskId = editingTaskId || `task-${Date.now()}`;
-        const miniTasks = collectMiniTasks(taskId);
-        const enabledCount = miniTasks.filter((mini) => mini.enabled).length;
+        const isSingleEvent = isSingleEventActive();
+        let miniTasks = [];
+        let adjustedUndefinedDuration = 0;
         let totalDuration = Math.max(1, diffInWeekdays(start, end));
-        if (enabledCount > 0) {
-          let miniSum = 0;
-          miniTasks.forEach((mini) => {
-            if (mini.enabled) miniSum += mini.duration;
-          });
-          totalDuration = Math.max(miniSum, enabledCount);
-          end = shiftWeekdays(start, totalDuration - 1);
+        if (isSingleEvent) {
+          end = new Date(start.getTime());
+          totalDuration = 1;
+        } else {
+          miniTasks = collectMiniTasks(taskId);
+          const enabledCount = miniTasks.filter((mini) => mini.enabled).length;
+          if (enabledCount > 0) {
+            let miniSum = 0;
+            miniTasks.forEach((mini) => {
+              if (mini.enabled) miniSum += mini.duration;
+            });
+            totalDuration = Math.max(miniSum, enabledCount);
+            end = shiftWeekdays(start, totalDuration - 1);
+          }
+          ({ undefinedDuration: adjustedUndefinedDuration } = normalizeMiniDurations(miniTasks, totalDuration, {
+            undefinedDuration: 0
+          }));
         }
-        const { undefinedDuration: adjustedUndefinedDuration } = normalizeMiniDurations(miniTasks, totalDuration, {
-          undefinedDuration: 0
-        });
         const payload = {
           id: taskId,
           name,
@@ -4249,7 +4409,8 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           endDate: formatDate(end),
           progress,
           miniTasks,
-          undefinedDuration: adjustedUndefinedDuration
+          undefinedDuration: adjustedUndefinedDuration,
+          singleEvent: isSingleEvent
         };
         ensureTaskDates(payload);
         if (currentMode === 'edit' && editingTaskId) {
@@ -4300,6 +4461,11 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         }
         if (removeMiniTaskBtn) {
           removeMiniTaskBtn.addEventListener('click', () => removeMiniTaskRow());
+        }
+        if (modalSingleEvent) {
+          modalSingleEvent.addEventListener('change', () => {
+            updateSingleEventUI();
+          });
         }
         if (savePdfBtn) {
           savePdfBtn.addEventListener('click', handleSavePdf);
