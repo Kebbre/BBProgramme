@@ -298,7 +298,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>Architecture Project 13.6 Planner</h1>
+        <h1>Architecture Project 13.7 Planner</h1>
         <div class="sidebar-actions">
           <button id="addTaskBtn" type="button">＋ New</button>
           <button id="removeTaskBtn" class="secondary" type="button" disabled>- Remove</button>
@@ -4366,7 +4366,10 @@ ${formatDisplayDate(startDate)} (Single event)`;
           return;
         }
         const timestampBase = Date.now();
-        tasks = filtered.map((record, index) => {
+        const stageCache = new Map();
+        let stageIndex = 0;
+        const generatedTasks = [];
+        filtered.forEach((record, index) => {
           const baseWeekdays = Number(record.weekdays) || 0;
           const sqFactor = Number(record.squareMeterFactor) || 0;
           const diffFactor = Number(record.difficultyFactor) || 0;
@@ -4380,10 +4383,35 @@ ${formatDisplayDate(startDate)} (Single event)`;
           const taskEnd = shiftWeekdays(taskStart, totalDuration - 1);
           const taskId = `gen-${timestampBase}-${index}`;
           const miniTasks = createDefaultSequencedMiniTasks(taskId);
+          const stageLabelRaw = typeof record.Stage === 'string' ? record.Stage.trim() : '';
+          let parentId = null;
+          if (stageLabelRaw) {
+            const stageKey = stageLabelRaw.toLowerCase();
+            let stageEntry = stageCache.get(stageKey);
+            if (!stageEntry) {
+              const stageId = `gen-stage-${timestampBase}-${stageIndex}`;
+              stageIndex += 1;
+              const stagePreset = mapStagePresetFromLabel(stageLabelRaw);
+              const stageMetadata = normalizeStageMetadata({
+                id: stageId,
+                name: stageLabelRaw,
+                stagePreset,
+                stageCustomName: stagePreset === 'other' ? stageLabelRaw : ''
+              });
+              stageMetadata.description = '';
+              stageMetadata.startDate = '';
+              stageMetadata.endDate = '';
+              stageMetadata.progress = 0;
+              generatedTasks.push(stageMetadata);
+              stageEntry = { id: stageId };
+              stageCache.set(stageKey, stageEntry);
+            }
+            parentId = stageEntry.id;
+          }
           const task = {
             id: taskId,
             entryType: 'task',
-            parentId: null,
+            parentId,
             stagePreset: '',
             stageCustomName: '',
             isStage: false,
@@ -4397,8 +4425,9 @@ ${formatDisplayDate(startDate)} (Single event)`;
             singleEvent: false
           };
           ensureTaskDates(task);
-          return task;
+          generatedTasks.push(task);
         });
+        tasks = generatedTasks;
         selectedTaskId = tasks.length ? tasks[0].id : null;
         renderAll();
       }
