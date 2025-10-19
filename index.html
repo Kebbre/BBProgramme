@@ -48,7 +48,7 @@
     .task-list{flex:1;overflow:visible;padding:0;min-height:0;}
     .task-row{align-items:center;padding:0 1.5rem;height:var(--row-height);border-bottom:1px solid rgba(15,23,42,.06);cursor:pointer;transition:background .15s ease,box-shadow .15s ease;font-size:.7rem;}
     .task-row > *{width:100%;box-sizing:border-box;height:100%;display:flex;align-items:center;padding:0 .35rem;}
-    .task-row .task-identifier{justify-content:center;font-weight:700;font-size:.5rem;text-transform:uppercase;font-variant-numeric:tabular-nums;color:var(--text);}
+    .task-row .task-identifier{justify-content:center;font-weight:700;font-size:.35rem;text-transform:uppercase;font-variant-numeric:tabular-nums;color:var(--text);}
     .task-row.stage-row .task-identifier{color:#7c6c1f;}
     .task-row .task-identifier.identifier-placeholder{color:var(--text-muted);font-weight:600;}
     .task-row .task-name{justify-content:flex-start;}
@@ -303,7 +303,7 @@
     <div class="planner-viewport" id="plannerViewport">
       <aside class="sidebar">
         <div class="sidebar-header">
-          <h1>Architecture Project 13.11 Planner</h1>
+          <h1>Architecture Project 13.12 Planner</h1>
           <div class="sidebar-actions">
             <button id="addTaskBtn" type="button">＋ New</button>
             <button id="removeTaskBtn" class="secondary" type="button" disabled>- Remove</button>
@@ -3313,6 +3313,20 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         timelineDays.forEach((day, index) => {
           timelineDayIndexMap.set(formatDate(day), index);
         });
+        const getTimelineIndex = (value) => {
+          if (typeof value === 'number' && Number.isFinite(value)) return value;
+          const key = typeof value === 'string' ? value : formatDate(value instanceof Date ? value : parseDate(value));
+          if (typeof key === 'string' && timelineDayIndexMap.has(key)) {
+            const stored = timelineDayIndexMap.get(key);
+            if (typeof stored === 'number') return stored;
+          }
+          const date = typeof value === 'string' ? parseDate(value) : (value instanceof Date ? value : null);
+          if (!(date instanceof Date)) return -1;
+          for (let i = 0; i < timelineDays.length; i += 1) {
+            if (compareDates(timelineDays[i], date) === 0) return i;
+          }
+          return -1;
+        };
         const dayHighlightMap = timelineDays.map(() => new Set());
         const highlightSegments = [];
         if (todayIndex !== -1) {
@@ -3486,7 +3500,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           row.appendChild(grid);
 
           const startDate = parseDate(task.startDate);
-          const startIndex = typeof task.startDate === 'string' ? timelineDayIndexMap.get(task.startDate) : undefined;
+          const startIndex = getTimelineIndex(task.startDate);
           if (isStage && (!startDate || typeof startIndex !== 'number')) {
             row.addEventListener('click', () => selectTask(task.id));
             ganttBodyEl.appendChild(row);
@@ -3515,7 +3529,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
             return;
           }
           const endDate = parseDate(task.endDate);
-          const endIndex = timelineDayIndexMap.get(task.endDate);
+          const endIndex = getTimelineIndex(task.endDate);
           if (typeof endIndex !== 'number' || startIndex > endIndex) {
             return;
           }
@@ -3634,7 +3648,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
         const dayCount = timelineDays.length;
         const dayWidth = dayCount ? rightColumnWidth / dayCount : rightColumnWidth;
         const timelineRowHeight = 6;
-        const timelineRowCount = 3;
+        const timelineRowCount = 2;
         const timelineHeaderHeight = timelineRowHeight * timelineRowCount;
         const textPadding = 1.5;
         const timelineStartX = margin + leftColumnWidth;
@@ -3658,6 +3672,15 @@ ${formatDisplayDate(startDate)} (Single event)`;
         timelineDays.forEach((day, index) => {
           pdfTimelineIndexMap.set(formatDate(day), index);
         });
+        const getPdfDayIndex = (date) => {
+          if (!(date instanceof Date)) return -1;
+          const key = formatDate(date);
+          if (pdfTimelineIndexMap.has(key)) return pdfTimelineIndexMap.get(key);
+          for (let i = 0; i < timelineDays.length; i += 1) {
+            if (compareDates(timelineDays[i], date) === 0) return i;
+          }
+          return -1;
+        };
         const highlightPriority = { standdown: 0, deadline: 1, today: 2 };
         const highlightPalette = {
           today: { fill: { r: 255, g: 228, b: 232 }, border: { r: 220, g: 38, b: 38 } },
@@ -3908,7 +3931,6 @@ ${formatDisplayDate(startDate)} (Single event)`;
           doc.rect(timelineStartX, topY, rightColumnWidth, timelineHeaderHeight);
 
           const yearBaseline = topY + timelineRowHeight - 1;
-          const monthBaseline = topY + (timelineRowHeight * 2) - 1;
           const dateBaseline = topY + timelineHeaderHeight - 2;
 
           doc.setFont('helvetica', 'bold');
@@ -3918,13 +3940,6 @@ ${formatDisplayDate(startDate)} (Single event)`;
             const startX = timelineStartX + (group.startIndex * dayWidth);
             const centreX = startX + ((group.length * dayWidth) / 2);
             doc.text(String(group.year), centreX, yearBaseline, { align: 'center' });
-          });
-
-          const monthGroups = groupTimelineDaysByMonth(timelineDays);
-          monthGroups.forEach((group) => {
-            const startX = timelineStartX + (group.startIndex * dayWidth);
-            const centreX = startX + ((group.length * dayWidth) / 2);
-            doc.text(String(group.month + 1).padStart(2, '0'), centreX, monthBaseline, { align: 'center' });
           });
 
           doc.setFont('helvetica', 'normal');
@@ -4025,12 +4040,24 @@ ${formatDisplayDate(startDate)} (Single event)`;
           const endDate = parseDate(task.endDate);
           if (!startDate || !endDate || !dayCount) return;
 
-          const startIndex = timelineDayIndexMap.get(task.startDate);
-          const endIndex = timelineDayIndexMap.get(task.endDate);
+          let startIndex = getPdfDayIndex(startDate);
+          let endIndex = getPdfDayIndex(endDate);
+          if (startIndex === -1 || endIndex === -1) return;
+          const offset = timelineViewMode === 'days'
+            ? -1
+            : (timelineViewMode === 'weeks' ? 1 : 0);
+          if (offset !== 0) {
+            startIndex += offset;
+            endIndex += offset;
+          }
+          startIndex = Math.max(0, Math.min(dayCount - 1, startIndex));
+          endIndex = Math.max(startIndex, Math.min(dayCount - 1, endIndex));
           if (typeof startIndex !== 'number' || typeof endIndex !== 'number' || startIndex > endIndex) return;
 
-          const barX = timelineStartX + (startIndex * dayWidth);
-          const barWidth = Math.max(dayWidth, (endIndex - startIndex + 1) * dayWidth);
+          const rawBarX = timelineStartX + (startIndex * dayWidth);
+          const rawBarWidth = (endIndex - startIndex + 1) * dayWidth;
+          const barX = Math.round(rawBarX * 1000) / 1000;
+          const barWidth = Math.max(dayWidth, Math.round(rawBarWidth * 1000) / 1000);
           const barHeight = rowHeight * 0.6;
           const barY = topY + ((rowHeight - barHeight) / 2);
 
