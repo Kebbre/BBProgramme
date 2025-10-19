@@ -298,7 +298,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>Architecture Project 13.7 Planner</h1>
+        <h1>Architecture Project 13.8 Planner</h1>
         <div class="sidebar-actions">
           <button id="addTaskBtn" type="button">＋ New</button>
           <button id="removeTaskBtn" class="secondary" type="button" disabled>- Remove</button>
@@ -4366,10 +4366,115 @@ ${formatDisplayDate(startDate)} (Single event)`;
           return;
         }
         const timestampBase = Date.now();
-        const stageCache = new Map();
-        let stageIndex = 0;
-        const generatedTasks = [];
+        const stagePriorityMap = new Map(STAGE_PRESET_OPTIONS.map((option, index) => [option.value, index]));
+        const stageGroups = new Map();
+        const stageOrderList = [];
+        const unassignedRecords = [];
         filtered.forEach((record, index) => {
+          const stageLabelRaw = typeof record.Stage === 'string' ? record.Stage.trim() : '';
+          if (!stageLabelRaw) {
+            unassignedRecords.push({ record, index });
+            return;
+          }
+          const stageKey = stageLabelRaw.toLowerCase();
+          if (!stageGroups.has(stageKey)) {
+            const preset = mapStagePresetFromLabel(stageLabelRaw);
+            stageGroups.set(stageKey, {
+              key: stageKey,
+              label: stageLabelRaw,
+              preset,
+              order: stageOrderList.length,
+              records: []
+            });
+            stageOrderList.push(stageKey);
+          }
+          stageGroups.get(stageKey).records.push({ record, index });
+        });
+
+        const orderedStageGroups = Array.from(stageGroups.values()).sort((a, b) => {
+          const maxPriority = STAGE_PRESET_OPTIONS.length + 1;
+          const priorityA = stagePriorityMap.has(a.preset) ? stagePriorityMap.get(a.preset) : maxPriority;
+          const priorityB = stagePriorityMap.has(b.preset) ? stagePriorityMap.get(b.preset) : maxPriority;
+          if (priorityA !== priorityB) return priorityA - priorityB;
+          return a.order - b.order;
+        });
+
+        const generatedTasks = [];
+        let stageIndex = 0;
+        let taskCounter = 0;
+        let previousStageEnd = null;
+
+        orderedStageGroups.forEach((group) => {
+          const stageId = `gen-stage-${timestampBase}-${stageIndex}`;
+          stageIndex += 1;
+          const stageMetadata = normalizeStageMetadata({
+            id: stageId,
+            name: group.label,
+            stagePreset: group.preset,
+            stageCustomName: group.preset === 'other' ? group.label : ''
+          });
+          stageMetadata.description = '';
+          stageMetadata.startDate = '';
+          stageMetadata.endDate = '';
+          stageMetadata.progress = 0;
+          generatedTasks.push(stageMetadata);
+
+          const baseStageStart = previousStageEnd
+            ? shiftWeekdays(previousStageEnd, 1)
+            : ensureWeekday(new Date(baseStart.getTime()), 1);
+          let stageEarliest = null;
+          let stageLatest = null;
+
+          group.records.forEach(({ record }) => {
+            const baseWeekdays = Number(record.weekdays) || 0;
+            const sqFactor = Number(record.squareMeterFactor) || 0;
+            const diffFactor = Number(record.difficultyFactor) || 0;
+            const levelsFactor = Number(record.levelsFactor) || 0;
+            const adjusted = baseWeekdays
+              + projectSize * sqFactor * baseWeekdays
+              + projectDifficulty * diffFactor * baseWeekdays
+              + numberOfLevels * levelsFactor * baseWeekdays;
+            const totalDuration = Math.max(1, Math.ceil(adjusted));
+            const taskStart = new Date(baseStageStart.getTime());
+            const taskEnd = shiftWeekdays(taskStart, totalDuration - 1);
+            const taskId = `gen-${timestampBase}-${taskCounter}`;
+            taskCounter += 1;
+            const miniTasks = createDefaultSequencedMiniTasks(taskId);
+            const task = {
+              id: taskId,
+              entryType: 'task',
+              parentId: stageId,
+              stagePreset: '',
+              stageCustomName: '',
+              isStage: false,
+              name: record.task,
+              description: '',
+              startDate: formatDate(taskStart),
+              endDate: formatDate(taskEnd),
+              progress: 0,
+              miniTasks,
+              undefinedDuration: 0,
+              singleEvent: false
+            };
+            ensureTaskDates(task);
+            const normalizedStart = parseDate(task.startDate);
+            const normalizedEnd = parseDate(task.endDate);
+            if (normalizedStart && (!stageEarliest || compareDates(normalizedStart, stageEarliest) < 0)) {
+              stageEarliest = normalizedStart;
+            }
+            if (normalizedEnd && (!stageLatest || compareDates(normalizedEnd, stageLatest) > 0)) {
+              stageLatest = normalizedEnd;
+            }
+            generatedTasks.push(task);
+          });
+
+          if (stageEarliest) stageMetadata.startDate = formatDate(stageEarliest);
+          if (stageLatest) stageMetadata.endDate = formatDate(stageLatest);
+          previousStageEnd = stageLatest || previousStageEnd;
+        });
+
+        const defaultStart = ensureWeekday(new Date(baseStart.getTime()), 1);
+        unassignedRecords.forEach(({ record }) => {
           const baseWeekdays = Number(record.weekdays) || 0;
           const sqFactor = Number(record.squareMeterFactor) || 0;
           const diffFactor = Number(record.difficultyFactor) || 0;
@@ -4379,39 +4484,15 @@ ${formatDisplayDate(startDate)} (Single event)`;
             + projectDifficulty * diffFactor * baseWeekdays
             + numberOfLevels * levelsFactor * baseWeekdays;
           const totalDuration = Math.max(1, Math.ceil(adjusted));
-          const taskStart = ensureWeekday(new Date(baseStart.getTime()), 1);
+          const taskStart = new Date(defaultStart.getTime());
           const taskEnd = shiftWeekdays(taskStart, totalDuration - 1);
-          const taskId = `gen-${timestampBase}-${index}`;
+          const taskId = `gen-${timestampBase}-${taskCounter}`;
+          taskCounter += 1;
           const miniTasks = createDefaultSequencedMiniTasks(taskId);
-          const stageLabelRaw = typeof record.Stage === 'string' ? record.Stage.trim() : '';
-          let parentId = null;
-          if (stageLabelRaw) {
-            const stageKey = stageLabelRaw.toLowerCase();
-            let stageEntry = stageCache.get(stageKey);
-            if (!stageEntry) {
-              const stageId = `gen-stage-${timestampBase}-${stageIndex}`;
-              stageIndex += 1;
-              const stagePreset = mapStagePresetFromLabel(stageLabelRaw);
-              const stageMetadata = normalizeStageMetadata({
-                id: stageId,
-                name: stageLabelRaw,
-                stagePreset,
-                stageCustomName: stagePreset === 'other' ? stageLabelRaw : ''
-              });
-              stageMetadata.description = '';
-              stageMetadata.startDate = '';
-              stageMetadata.endDate = '';
-              stageMetadata.progress = 0;
-              generatedTasks.push(stageMetadata);
-              stageEntry = { id: stageId };
-              stageCache.set(stageKey, stageEntry);
-            }
-            parentId = stageEntry.id;
-          }
           const task = {
             id: taskId,
             entryType: 'task',
-            parentId,
+            parentId: null,
             stagePreset: '',
             stageCustomName: '',
             isStage: false,
@@ -4427,6 +4508,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
           ensureTaskDates(task);
           generatedTasks.push(task);
         });
+
         tasks = generatedTasks;
         selectedTaskId = tasks.length ? tasks[0].id : null;
         renderAll();
