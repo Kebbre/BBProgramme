@@ -6,7 +6,7 @@
   <title>Architecture Project Planner</title>
   <style>
     *,*::before,*::after{box-sizing:border-box;}
-    :root{--sidebar-width:470px;--day-width:32px;--row-height:54px;--primary:#3056d3;--surface:#fff;--surface-alt:#f2f4f9;--border:#d6dbe7;--text:#1f2937;--text-muted:#4b5563;--header-offset-days:.8rem;--header-offset-weeks:4.5rem;}
+    :root{--sidebar-width:600px;--day-width:32px;--row-height:54px;--primary:#3056d3;--surface:#fff;--surface-alt:#f2f4f9;--border:#d6dbe7;--text:#1f2937;--text-muted:#4b5563;--header-offset-days:.8rem;--header-offset-weeks:4.5rem;}
     body{margin:0;font-family:"Inter","Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;background:#eef1f7;color:var(--text);min-height:100vh;display:flex;flex-direction:column;font-size:.94rem;}
     h1,h2,h3{margin:0;}
     button{border:0;background:var(--primary);color:#fff;border-radius:8px;padding:.5rem 1rem;font-size:.95rem;font-weight:600;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;}
@@ -39,7 +39,7 @@
     .sidebar-actions .secondary{background:var(--surface-alt);color:var(--text);border:1px solid var(--border);box-shadow:none;}
     .sidebar-actions .secondary:hover{transform:none;color:var(--primary);border-color:var(--primary);}
     .task-list-header,
-    .task-row{display:grid;grid-template-columns:80px minmax(0,1fr) 110px 110px 110px 90px;column-gap:1px;align-items:center;}
+    .task-row{display:grid;grid-template-columns:50px 170px 110px 110px 100px 90px;column-gap:1px;align-items:center;}
     .task-list-header{padding:.6rem 1.5rem;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);background:rgba(48,86,211,.08);position:sticky;top:0;z-index:2;align-items:center;}
     .task-list-header span{display:flex;align-items:center;justify-content:flex-end;padding:0 .35rem;}
     .task-header-identifier{justify-content:center;}
@@ -47,7 +47,7 @@
     .task-list{flex:1;overflow-y:auto;padding:0;}
     .task-row{align-items:center;padding:0 1.5rem;height:var(--row-height);border-bottom:1px solid rgba(15,23,42,.06);cursor:pointer;transition:background .15s ease,box-shadow .15s ease;font-size:.7rem;}
     .task-row > *{width:100%;box-sizing:border-box;height:100%;display:flex;align-items:center;padding:0 .35rem;}
-    .task-row .task-identifier{justify-content:center;font-weight:700;font-size:.75rem;text-transform:uppercase;font-variant-numeric:tabular-nums;color:var(--text);}
+    .task-row .task-identifier{justify-content:center;font-weight:700;font-size:.5rem;text-transform:uppercase;font-variant-numeric:tabular-nums;color:var(--text);}
     .task-row.stage-row .task-identifier{color:#7c6c1f;}
     .task-row .task-identifier.identifier-placeholder{color:var(--text-muted);font-weight:600;}
     .task-row .task-name{justify-content:flex-start;}
@@ -119,7 +119,7 @@
     .timeline-header.week-view .timeline-month{background:rgba(48,86,211,.04);}
     .gantt-body{margin-top:0;display:flex;flex-direction:column;gap:0;transition:margin-top .2s ease;}
     .gantt-row{position:relative;height:var(--row-height);min-width:100%;overflow:visible;}
-    .gantt-row.stage-row{background:rgb(250,250,210);}
+    .gantt-row.stage-row{background:transparent;}
     .gantt-row.stage-child .task-label{padding-left:1rem;}
     .gantt-grid{position:absolute;inset:0;display:grid;pointer-events:none;z-index:0;}
     .gantt-grid .day-cell{position:relative;border-left:1px solid rgba(15,23,42,.05);background:rgba(240,243,248,.9);}
@@ -296,7 +296,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>Architecture Project 13.3 Planner</h1>
+        <h1>Architecture Project 13.4 Planner</h1>
         <div class="sidebar-actions">
           <button id="addTaskBtn" type="button">＋ New</button>
           <button id="removeTaskBtn" class="secondary" type="button" disabled>- Remove</button>
@@ -1066,6 +1066,7 @@
         const identifiers = new Map();
         const stageMeta = new Map();
         let stageIndex = 0;
+        let unassignedCounter = 0;
         orderedEntries.forEach((entry) => {
           const task = entry?.task;
           if (!task) return;
@@ -1083,7 +1084,9 @@
             identifiers.set(task.id, `${parentInfo.letter}-${sequence}`);
             return;
           }
-          identifiers.set(task.id, '—');
+          unassignedCounter += 1;
+          const sequence = String(unassignedCounter).padStart(3, '0');
+          identifiers.set(task.id, `X-${sequence}`);
         });
         return identifiers;
       }
