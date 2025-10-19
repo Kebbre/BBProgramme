@@ -84,7 +84,8 @@
     .zoom-controls button:hover:not(:disabled){color:var(--primary);background:rgba(48,86,211,.12);}
     .zoom-controls button:disabled{cursor:not-allowed;opacity:.45;}
     .zoom-controls button:focus-visible{outline:2px solid rgba(48,86,211,.35);outline-offset:2px;}
-    .gantt-calendar{flex:1;background:var(--surface);border-top:1px solid var(--border);overflow:auto;position:relative;}
+    .gantt-calendar{flex:1;background:var(--surface);border-top:1px solid var(--border);position:relative;overflow:hidden;display:flex;flex-direction:column;}
+    .gantt-scroll{flex:1;overflow:auto;position:relative;display:flex;flex-direction:column;scrollbar-gutter:stable both-edges;}
     .timeline-header{position:sticky;top:0;z-index:4;display:grid;background:#fff;border-bottom:1px solid var(--border);box-shadow:0 4px 12px rgba(15,23,42,.08);grid-auto-flow:column;}
     .timeline-header .timeline-year,
     .timeline-header .timeline-month,
@@ -117,7 +118,7 @@
     .timeline-header .timeline-day-number:first-child{border-left:none;}
     .timeline-header.week-view .timeline-year,
     .timeline-header.week-view .timeline-month{background:rgba(48,86,211,.04);}
-    .gantt-body{margin-top:0;display:flex;flex-direction:column;gap:0;transition:margin-top .2s ease;}
+    .gantt-body{margin-top:0;display:flex;flex-direction:column;gap:0;transition:margin-top .2s ease;min-width:100%;}
     .gantt-row{position:relative;height:var(--row-height);min-width:100%;overflow:visible;}
     .gantt-row.stage-row{background:transparent;}
     .gantt-row.stage-child .task-label{padding-left:1rem;}
@@ -298,7 +299,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>Architecture Project 13.8 Planner</h1>
+        <h1>Architecture Project 13.9 Planner</h1>
         <div class="sidebar-actions">
           <button id="addTaskBtn" type="button">＋ New</button>
           <button id="removeTaskBtn" class="secondary" type="button" disabled>- Remove</button>
@@ -334,8 +335,10 @@
         </div>
       </div>
       <div class="gantt-calendar">
-        <div class="timeline-header" id="timelineHeader"></div>
-        <div class="gantt-body" id="ganttBody"></div>
+        <div class="gantt-scroll" id="ganttScroll">
+          <div class="timeline-header" id="timelineHeader"></div>
+          <div class="gantt-body" id="ganttBody"></div>
+        </div>
       </div>
     </main>
   </div>
@@ -584,6 +587,8 @@
       let currentAuthority = GRAPH_AUTHORITY_PRIMARY || GRAPH_AUTHORITY_FALLBACK;
       let authorityFallbackActive = !GRAPH_AUTHORITY_PRIMARY;
       let teamsInitializationPromise = null;
+      let renderFrameHandle = null;
+      let scrollSyncLock = null;
 
       const taskListEl = document.getElementById('taskList');
       const addTaskBtn = document.getElementById('addTaskBtn');
@@ -593,6 +598,8 @@
       const moveDownBtn = document.getElementById('moveDownBtn');
       const timelineHeaderEl = document.getElementById('timelineHeader');
       const ganttBodyEl = document.getElementById('ganttBody');
+      const ganttScrollEl = document.getElementById('ganttScroll');
+      const ganttCalendarEl = document.querySelector('.gantt-calendar');
       const modalBackdrop = document.getElementById('modalBackdrop');
       const modalEl = document.getElementById('taskModal');
       const taskForm = document.getElementById('taskForm');
@@ -2411,6 +2418,8 @@ function adjustGanttOffset() {
       }
 
       function renderTaskList() {
+        if (!taskListEl) return;
+        const previousScrollTop = taskListEl.scrollTop;
         taskListEl.innerHTML = '';
         const orderedEntries = getOrderedTasks();
         const identifierMap = buildTaskIdentifiers(orderedEntries);
@@ -2419,6 +2428,8 @@ function adjustGanttOffset() {
           empty.className = 'empty-state';
           empty.textContent = 'Add a task to populate the planner.';
           taskListEl.appendChild(empty);
+          taskListEl.scrollTop = 0;
+          if (ganttScrollEl) ganttScrollEl.scrollTop = 0;
           return;
         }
         orderedEntries.forEach(({ task, depth }) => {
@@ -2593,6 +2604,8 @@ function adjustGanttOffset() {
 
           taskListEl.appendChild(row);
         });
+        taskListEl.scrollTop = previousScrollTop;
+        if (ganttScrollEl) ganttScrollEl.scrollTop = previousScrollTop;
       }
       function computeTimelineRange() {
         if (!tasks.length) {
@@ -3088,7 +3101,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
             const progressEl = barElement.querySelector('.progress');
 
             const onPointerMove = (moveEvent) => {
-              const calendarEl = document.querySelector('.gantt-calendar');
+              const calendarEl = ganttScrollEl || ganttCalendarEl;
               const headerRect = timelineHeaderEl.getBoundingClientRect();
               const relativeX = moveEvent.clientX - headerRect.left + calendarEl.scrollLeft;
               const dayWidth = getDayWidth();
@@ -3161,7 +3174,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           const initialStart = parseDate(task.startDate);
           const initialEnd = parseDate(task.endDate);
           if (!initialStart || !initialEnd) return;
-          const calendarEl = document.querySelector('.gantt-calendar');
+          const calendarEl = ganttScrollEl || ganttCalendarEl;
           if (!calendarEl) return;
           const initialPointer = event.clientX + calendarEl.scrollLeft;
           const initialLeft = barElement.style.left;
@@ -3244,6 +3257,8 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
       }
 
       function renderGantt() {
+        const previousScrollTop = ganttScrollEl ? ganttScrollEl.scrollTop : 0;
+        const previousScrollLeft = ganttScrollEl ? ganttScrollEl.scrollLeft : 0;
         ganttBodyEl.innerHTML = '';
         timelineHeaderEl.innerHTML = '';
         const { start, end } = computeTimelineRange();
@@ -3290,6 +3305,10 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           emptyHeader.textContent = 'No working days to display.';
           timelineHeaderEl.appendChild(emptyHeader);
           updateZoomControls();
+          if (ganttScrollEl) {
+            ganttScrollEl.scrollTop = previousScrollTop;
+            ganttScrollEl.scrollLeft = previousScrollLeft;
+          }
           return;
         }
         const dayWidth = getDayWidth();
@@ -3396,6 +3415,10 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           empty.textContent = 'Create a task to visualise the schedule.';
           ganttBodyEl.appendChild(empty);
           updateZoomControls();
+          if (ganttScrollEl) {
+            ganttScrollEl.scrollTop = previousScrollTop;
+            ganttScrollEl.scrollLeft = previousScrollLeft;
+          }
           return;
         }
 
@@ -3528,6 +3551,10 @@ ${formatDisplayDate(startDate)} (Single event)`;
         });
         adjustGanttOffset();
         updateZoomControls();
+        if (ganttScrollEl) {
+          ganttScrollEl.scrollTop = previousScrollTop;
+          ganttScrollEl.scrollLeft = previousScrollLeft;
+        }
       }
 
       async function handleSavePdf() {
@@ -4182,9 +4209,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
 
       function selectTask(taskId) {
         selectedTaskId = taskId;
-        renderTaskList();
-        renderGantt();
-        updateActionButtons();
+        renderAll();
       }
 
       function updateActionButtons() {
@@ -5223,7 +5248,8 @@ ${formatDisplayDate(startDate)} (Single event)`;
         renderAll();
       }
 
-      function renderAll() {
+      function performRenderCycle() {
+        renderFrameHandle = null;
         updateAllStageSummaries();
         renderTaskList();
         renderGantt();
@@ -5232,6 +5258,30 @@ ${formatDisplayDate(startDate)} (Single event)`;
         if (delayModal && !delayModal.classList.contains('hidden')) {
           renderDelaySchedule();
         }
+      }
+
+      function renderAllImmediate() {
+        if (renderFrameHandle !== null) {
+          cancelAnimationFrame(renderFrameHandle);
+          renderFrameHandle = null;
+        }
+        performRenderCycle();
+      }
+
+      function renderAll() {
+        if (renderFrameHandle !== null) return;
+        renderFrameHandle = requestAnimationFrame(performRenderCycle);
+      }
+
+      function scheduleScrollSync(source, target) {
+        if (!source || !target) return;
+        scrollSyncLock = target;
+        requestAnimationFrame(() => {
+          target.scrollTop = source.scrollTop;
+        });
+        setTimeout(() => {
+          if (scrollSyncLock === target) scrollSyncLock = null;
+        }, 0);
       }
 
       function attachEventListeners() {
@@ -5278,6 +5328,22 @@ ${formatDisplayDate(startDate)} (Single event)`;
           modalEntryType.addEventListener('change', () => {
             setEntryType(modalEntryType.value);
           });
+        }
+        if (taskListEl && ganttScrollEl) {
+          taskListEl.addEventListener('scroll', () => {
+            if (scrollSyncLock === taskListEl) {
+              scrollSyncLock = null;
+              return;
+            }
+            scheduleScrollSync(taskListEl, ganttScrollEl);
+          }, { passive: true });
+          ganttScrollEl.addEventListener('scroll', () => {
+            if (scrollSyncLock === ganttScrollEl) {
+              scrollSyncLock = null;
+              return;
+            }
+            scheduleScrollSync(ganttScrollEl, taskListEl);
+          }, { passive: true });
         }
         if (modalStagePreset) {
           modalStagePreset.addEventListener('change', () => {
@@ -5406,7 +5472,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
         renderLegend();
         updateViewModeButtons();
         recomputeStanddownSet();
-        renderAll();
+        renderAllImmediate();
         loadDatabase().then(() => {
           const firstEnabled = Array.from(buildingTypeSelect.options || []).find((option) => !option.disabled);
           if (firstEnabled) {
@@ -5415,7 +5481,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
           } else {
             tasks = [];
             selectedTaskId = null;
-            renderAll();
+            renderAllImmediate();
           }
         });
       }
