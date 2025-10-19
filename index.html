@@ -39,13 +39,22 @@
     .sidebar-actions .secondary{background:var(--surface-alt);color:var(--text);border:1px solid var(--border);box-shadow:none;}
     .sidebar-actions .secondary:hover{transform:none;color:var(--primary);border-color:var(--primary);}
     .task-list-header,
-    .task-row{display:grid;grid-template-columns:105px 95px 95px 60px 80px;column-gap:1px;align-items:center;}
+    .task-row{display:grid;grid-template-columns:80px minmax(0,1fr) 110px 110px 110px 90px;column-gap:1px;align-items:center;}
     .task-list-header{padding:.6rem 1.5rem;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);background:rgba(48,86,211,.08);position:sticky;top:0;z-index:2;align-items:center;}
+    .task-list-header span{display:flex;align-items:center;justify-content:flex-end;padding:0 .35rem;}
+    .task-header-identifier{justify-content:center;}
+    .task-header-name{justify-content:flex-start;}
     .task-list{flex:1;overflow-y:auto;padding:0;}
     .task-row{align-items:center;padding:0 1.5rem;height:var(--row-height);border-bottom:1px solid rgba(15,23,42,.06);cursor:pointer;transition:background .15s ease,box-shadow .15s ease;font-size:.7rem;}
-    .task-row > *{width:100%;box-sizing:border-box;height:100%;}
-    .task-row > *:nth-child(1){display:flex;align-items:center;}
-    .task-row > *:nth-child(n+2){display:flex;align-items:center;justify-content:flex-end;}
+    .task-row > *{width:100%;box-sizing:border-box;height:100%;display:flex;align-items:center;padding:0 .35rem;}
+    .task-row .task-identifier{justify-content:center;font-weight:700;font-size:.75rem;text-transform:uppercase;font-variant-numeric:tabular-nums;color:var(--text);}
+    .task-row.stage-row .task-identifier{color:#7c6c1f;}
+    .task-row .task-identifier.identifier-placeholder{color:var(--text-muted);font-weight:600;}
+    .task-row .task-name{justify-content:flex-start;}
+    .task-row .task-start,
+    .task-row .task-end,
+    .task-row .task-duration-cell,
+    .task-row .task-progress{justify-content:flex-end;}
     .task-row:hover{background:rgba(48,86,211,.08);}
     .task-row.selected{background:rgba(48,86,211,.14);box-shadow:inset 4px 0 0 var(--primary);}
     .task-row.dragging{opacity:.55;}
@@ -125,7 +134,7 @@
     .task-bar{position:absolute;top:50%;transform:translateY(-50%);height:35px;min-height:35px;border-radius:8px;background:rgba(48,86,211,.22);border:1px solid rgba(48,86,211,.32);display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:.12rem;padding:.25rem .7rem;cursor:pointer;transition:box-shadow .2s ease,transform .2s ease;overflow:visible;}
     .task-bar:hover{transform:translateY(calc(-50% - 0.5px));box-shadow:0 12px 22px rgba(48,86,211,.2);}
     .task-bar.selected{background:rgba(48,86,211,.32);border-color:rgba(48,86,211,.55);box-shadow:0 12px 26px rgba(48,86,211,.26);}
-    .task-bar.stage-bar{background:rgba(250,214,126,.55);border-color:rgba(212,163,18,.85);}
+    .task-bar.stage-bar{background:rgb(250,250,210);border-color:rgba(212,163,18,.85);}
     .task-bar.stage-bar .progress{background:rgba(255,255,255,.35);}
     .task-label{font-size:.85rem;font-weight:600;line-height:1.05;white-space:nowrap;pointer-events:none;color:#000;position:relative;z-index:5;text-shadow:0 1px 2px rgba(255,255,255,.25);max-width:100%;overflow:hidden;text-overflow:ellipsis;}
     .task-dates{font-size:.74rem;line-height:1.05;color:rgba(0,0,0,.72);pointer-events:none;position:relative;z-index:5;max-width:100%;overflow:hidden;text-overflow:ellipsis;}
@@ -266,7 +275,7 @@
     .generate-modal-footer button:not(.secondary){background:var(--primary);color:#fff;border:none;padding:.55rem 1.25rem;font-size:.95rem;font-weight:600;border-radius:8px;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;}
     .generate-modal-footer button:not(.secondary):hover{transform:translateY(-1px);box-shadow:0 10px 20px rgba(48,86,211,.18);}
     @media(max-width:1200px){:root{--sidebar-width:320px;--day-width:28px;}}
-    @media(max-width:960px){:root{--sidebar-width:100%;}.app{flex-direction:column;}.sidebar{width:100%;max-height:55vh;border-right:none;border-bottom:1px solid var(--border);}.task-list-header,.task-row{grid-template-columns:1.6fr 1fr 1fr .8fr;}.task-duration{display:none;}}
+    @media(max-width:960px){:root{--sidebar-width:100%;}.app{flex-direction:column;}.sidebar{width:100%;max-height:55vh;border-right:none;border-bottom:1px solid var(--border);}.task-list-header,.task-row{grid-template-columns:64px minmax(0,1.2fr) 92px 92px 92px 76px;}.task-duration{display:none;}}
   </style>
 </head>
 <body>
@@ -287,7 +296,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>Architecture Project 13.2 Planner</h1>
+        <h1>Architecture Project 13.3 Planner</h1>
         <div class="sidebar-actions">
           <button id="addTaskBtn" type="button">＋ New</button>
           <button id="removeTaskBtn" class="secondary" type="button" disabled>- Remove</button>
@@ -297,11 +306,12 @@
         </div>
       </div>
       <div class="task-list-header">
-        <span>Task</span>
-        <span>Start</span>
-        <span>End</span>
-        <span></span>
-        <span>Progress</span>
+        <span class="task-header-identifier">ID</span>
+        <span class="task-header-name">Task</span>
+        <span class="task-header-start">Start</span>
+        <span class="task-header-end">End</span>
+        <span class="task-header-duration">Duration</span>
+        <span class="task-header-progress">Progress</span>
       </div>
       <div class="task-list" id="taskList"></div>
     </aside>
@@ -1038,6 +1048,44 @@
           task.endDate = summary.end ? formatDate(summary.end) : '';
           updateStageRowDisplay(task, summary);
         });
+      }
+
+      function getStageLetterLabel(index) {
+        if (typeof index !== 'number' || index < 0) return '';
+        let value = Math.floor(index);
+        let label = '';
+        while (value >= 0) {
+          const remainder = value % 26;
+          label = String.fromCharCode(65 + remainder) + label;
+          value = Math.floor(value / 26) - 1;
+        }
+        return label;
+      }
+
+      function buildTaskIdentifiers(orderedEntries) {
+        const identifiers = new Map();
+        const stageMeta = new Map();
+        let stageIndex = 0;
+        orderedEntries.forEach((entry) => {
+          const task = entry?.task;
+          if (!task) return;
+          if (task.entryType === 'stage') {
+            const letter = getStageLetterLabel(stageIndex);
+            stageMeta.set(task.id, { letter, counter: 0 });
+            identifiers.set(task.id, letter || '—');
+            stageIndex += 1;
+            return;
+          }
+          const parentInfo = stageMeta.get(task.parentId);
+          if (parentInfo && parentInfo.letter) {
+            parentInfo.counter += 1;
+            const sequence = String(parentInfo.counter).padStart(3, '0');
+            identifiers.set(task.id, `${parentInfo.letter}-${sequence}`);
+            return;
+          }
+          identifiers.set(task.id, '—');
+        });
+        return identifiers;
       }
 
       function getOrderedTasks() {
@@ -2360,6 +2408,7 @@ function adjustGanttOffset() {
       function renderTaskList() {
         taskListEl.innerHTML = '';
         const orderedEntries = getOrderedTasks();
+        const identifierMap = buildTaskIdentifiers(orderedEntries);
         if (!orderedEntries.length) {
           const empty = document.createElement('div');
           empty.className = 'empty-state';
@@ -2424,6 +2473,14 @@ function adjustGanttOffset() {
             moveTaskRelative(sourceId, task.id, insertAfter);
           });
 
+          const identifierCell = document.createElement('div');
+          identifierCell.className = 'task-identifier';
+          const identifierValue = identifierMap.get(task.id) || '—';
+          identifierCell.textContent = identifierValue;
+          if (identifierValue === '—') identifierCell.classList.add('identifier-placeholder');
+          row.dataset.identifier = identifierValue;
+          row.appendChild(identifierCell);
+
           const nameCell = document.createElement('div');
           nameCell.className = 'task-name';
           nameCell.textContent = task.name || (isStage ? 'Stage' : 'Untitled');
@@ -2478,6 +2535,7 @@ function adjustGanttOffset() {
           row.appendChild(endCell);
 
           const durationCell = document.createElement('div');
+          durationCell.className = 'task-duration-cell';
           const badge = document.createElement('div');
           badge.className = 'task-duration';
           if (isStage) {
