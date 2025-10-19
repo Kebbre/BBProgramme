@@ -6,7 +6,7 @@
   <title>Architecture Project Planner</title>
   <style>
     *,*::before,*::after{box-sizing:border-box;}
-    :root{--sidebar-width:600px;--day-width:32px;--row-height:54px;--primary:#3056d3;--surface:#fff;--surface-alt:#f2f4f9;--border:#d6dbe7;--text:#1f2937;--text-muted:#4b5563;--header-offset-days:.8rem;--header-offset-weeks:4.5rem;--top-offset:0px;--sidebar-header-height:0px;--gantt-header-height:0px;--task-scroll-height:calc(100vh - 220px);--gantt-scroll-height:calc(100vh - 220px);}
+    :root{--sidebar-width:600px;--day-width:32px;--row-height:54px;--primary:#3056d3;--surface:#fff;--surface-alt:#f2f4f9;--border:#d6dbe7;--text:#1f2937;--text-muted:#4b5563;--header-offset-days:7rem;--header-offset-weeks:8rem;--top-offset:0px;--sidebar-header-height:0px;--task-header-height:0px;--gantt-header-height:0px;--timeline-header-height:0px;--task-scroll-height:calc(100vh - 220px);--gantt-scroll-height:calc(100vh - 220px);}
     body{margin:0;font-family:"Inter","Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;background:#eef1f7;color:var(--text);min-height:100vh;display:flex;flex-direction:column;font-size:.94rem;}
     h1,h2,h3{margin:0;}
     button{border:0;background:var(--primary);color:#fff;border-radius:8px;padding:.5rem 1rem;font-size:.95rem;font-weight:600;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;}
@@ -39,13 +39,13 @@
     .sidebar-actions .secondary{background:var(--surface-alt);color:var(--text);border:1px solid var(--border);box-shadow:none;}
     .sidebar-actions .secondary:hover{transform:none;color:var(--primary);border-color:var(--primary);}
     .task-list-header,
-    .task-row{display:grid;grid-template-columns:30px 130px 110px 110px 80px 90px;column-gap:1px;align-items:center;}
+    .task-row{display:grid;grid-template-columns:40px 130px 110px 110px 70px 90px;column-gap:1px;align-items:center;}
     .task-list-header{padding:.6rem 1.5rem;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);background:rgba(48,86,211,.08);position:sticky;top:calc(var(--top-offset) + var(--sidebar-header-height));z-index:6;align-items:center;}
     .task-list-header span{display:flex;align-items:center;justify-content:flex-end;padding:0 .35rem;}
     .task-header-identifier{justify-content:center;}
     .task-header-name{justify-content:flex-start;}
-    .task-list-scroll{flex:1;overflow-y:auto;overflow-x:visible;max-height:var(--task-scroll-height);scrollbar-gutter:stable both-edges;background:var(--surface);min-height:0;}
-    .task-list{flex:1;overflow:visible;padding:0;min-height:0;}
+    .task-list-scroll{flex:1;overflow-y:auto;overflow-x:visible;max-height:var(--task-scroll-height);scrollbar-gutter:stable both-edges;background:var(--surface);min-height:0;padding-top:var(--task-header-height);scroll-padding-top:var(--task-header-height);}
+    .task-list{flex:1;overflow:visible;padding:0;min-height:0;margin-top:3.8rem;}
     .task-row{align-items:center;padding:0 1.5rem;height:var(--row-height);border-bottom:1px solid rgba(15,23,42,.06);cursor:pointer;transition:background .15s ease,box-shadow .15s ease;font-size:.7rem;}
     .task-row > *{width:100%;box-sizing:border-box;height:100%;display:flex;align-items:center;padding:0 .35rem;}
     .task-row .task-identifier{justify-content:center;font-weight:700;font-size:.35rem;text-transform:uppercase;font-variant-numeric:tabular-nums;color:var(--text);}
@@ -120,7 +120,7 @@
     .timeline-header .timeline-day-number:first-child{border-left:none;}
     .timeline-header.week-view .timeline-year,
     .timeline-header.week-view .timeline-month{background:rgba(48,86,211,.04);}
-    .gantt-body-scroll{flex:1;overflow-y:auto;overflow-x:visible;max-height:var(--gantt-scroll-height);scrollbar-gutter:stable both-edges;background:var(--surface);min-height:0;}
+    .gantt-body-scroll{flex:1;overflow-y:auto;overflow-x:visible;max-height:var(--gantt-scroll-height);scrollbar-gutter:stable both-edges;background:var(--surface);min-height:0;padding-top:var(--timeline-header-height);scroll-padding-top:var(--timeline-header-height);}
     .gantt-body{margin-top:0;display:flex;flex-direction:column;gap:0;transition:margin-top .2s ease;min-width:100%;}
     .gantt-row{position:relative;height:var(--row-height);min-width:100%;overflow:visible;}
     .gantt-row.stage-row{background:transparent;}
@@ -303,7 +303,7 @@
     <div class="planner-viewport" id="plannerViewport">
       <aside class="sidebar">
         <div class="sidebar-header">
-          <h1>Architecture Project 13.12 Planner</h1>
+          <h1>Architecture Project 13.13 Planner</h1>
           <div class="sidebar-actions">
             <button id="addTaskBtn" type="button">＋ New</button>
             <button id="removeTaskBtn" class="secondary" type="button" disabled>- Remove</button>
@@ -725,6 +725,14 @@
         if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
         return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
       }
+      function updateHeaderOffset() {
+  const root = document.documentElement;
+  if (timelineViewMode === 'weeks') {
+    root.style.setProperty('--timeline-header-height', 'var(--header-offset-weeks)');
+  } else {
+    root.style.setProperty('--timeline-header-height', 'var(--header-offset-days)');
+  }
+}
 
       function formatDate(date) {
         return date instanceof Date ? date.toISOString().slice(0, 10) : '';
@@ -2070,24 +2078,9 @@
       }
 
 function adjustGanttOffset() {
-  const taskHeader = document.querySelector('.task-list-header');
-  const timeHeader = document.querySelector('#timelineHeader');
   const ganttBody  = document.querySelector('.gantt-body');
-  if (!taskHeader || !timeHeader || !ganttBody) return;
-
-  // Get numeric row height from CSS variable safely
-  const rowHeightStr = getComputedStyle(document.documentElement)
-    .getPropertyValue('--row-height')
-    .trim();
-  const rowHeight = Number(rowHeightStr.replace('px', '')) || 54; // fallback
-
-  // Compute base header delta
-  const delta = taskHeader.offsetHeight - timeHeader.offsetHeight;
-
-  // Add modest downward offset (~1.5 rows) but clamp to a reasonable max
-  const offset = Math.min(delta + rowHeight * 1.6, 160); // prevents overshoot
-
-  ganttBody.style.marginTop = `${offset}px`;
+  if (!ganttBody) return;
+  ganttBody.style.marginTop = '0px';
 }
 
 
@@ -2648,7 +2641,9 @@ function adjustGanttOffset() {
 
           taskListEl.appendChild(row);
         });
-        if (taskListScrollEl) taskListScrollEl.scrollTop = previousScrollTop;
+        if (taskListScrollEl) {
+          taskListScrollEl.scrollTop = previousScrollTop;
+        }
       }
       function computeTimelineRange() {
         if (!tasks.length) {
@@ -5358,8 +5353,10 @@ ${formatDisplayDate(startDate)} (Single event)`;
         const taskListHeaderEl = document.querySelector('.task-list-header');
         const taskListHeaderHeight = taskListHeaderEl ? taskListHeaderEl.getBoundingClientRect().height : 0;
         const timelineHeaderHeight = timelineHeaderEl ? timelineHeaderEl.getBoundingClientRect().height : 0;
-        const availableTaskHeight = Math.max(120, window.innerHeight - (topOffset + sidebarHeaderHeight + taskListHeaderHeight));
-        const availableGanttHeight = Math.max(120, window.innerHeight - (topOffset + ganttHeaderHeight + timelineHeaderHeight));
+        document.documentElement.style.setProperty('--task-header-height', `${taskListHeaderHeight}px`);
+        document.documentElement.style.setProperty('--timeline-header-height', `${timelineHeaderHeight}px`);
+        const availableTaskHeight = Math.max(120, window.innerHeight - (topOffset + sidebarHeaderHeight));
+        const availableGanttHeight = Math.max(120, window.innerHeight - (topOffset + ganttHeaderHeight));
         document.documentElement.style.setProperty('--task-scroll-height', `${availableTaskHeight}px`);
         document.documentElement.style.setProperty('--gantt-scroll-height', `${availableGanttHeight}px`);
       }
@@ -5552,9 +5549,13 @@ ${formatDisplayDate(startDate)} (Single event)`;
         modalBackdrop.addEventListener('click', closeTaskModal);
         cancelModalBtn.addEventListener('click', closeTaskModal);
         taskForm.addEventListener('submit', handleFormSubmit);
-        viewModeButtons.forEach((button) => {
-          button.addEventListener('click', () => setTimelineViewMode(button.dataset.viewMode));
-        });
+    viewModeButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    setTimelineViewMode(button.dataset.viewMode);
+    updateHeaderOffset();
+  });
+});
+
         modalStartDate.addEventListener('change', () => {
           modalStartDate.value = formatDate(ensureWeekday(parseDate(modalStartDate.value), 1));
           updateDurationPreview();
