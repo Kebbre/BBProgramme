@@ -358,7 +358,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 14.1</span>
+    <span class="app-branding-text">Programme Tool : Version 14.2</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -3657,6 +3657,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
         adjustGanttOffset();
         updateZoomControls();
         if (ganttBodyScrollEl) ganttBodyScrollEl.scrollTop = previousScrollTop;
+        scheduleTimelineHorizontalSync();
       }
 
       async function handleSavePdf() {
@@ -5488,6 +5489,27 @@ ${formatDisplayDate(startDate)} (Single event)`;
         });
       }
 
+      let timelineHorizontalSyncFrame = null;
+
+      function updateTimelineHorizontalOffset() {
+        if (!timelineHeaderEl) return;
+        const offset = ganttBodyScrollEl ? Number(ganttBodyScrollEl.scrollLeft) || 0 : 0;
+        // Mirror the gantt body horizontal scroll so the header stays aligned.
+        if (Math.abs(offset) < 0.5) {
+          timelineHeaderEl.style.transform = '';
+        } else {
+          timelineHeaderEl.style.transform = `translateX(${-offset}px)`;
+        }
+      }
+
+      function scheduleTimelineHorizontalSync() {
+        if (timelineHorizontalSyncFrame !== null) return;
+        timelineHorizontalSyncFrame = requestAnimationFrame(() => {
+          timelineHorizontalSyncFrame = null;
+          updateTimelineHorizontalOffset();
+        });
+      }
+
       function attachEventListeners() {
         miniUnitButtons.forEach((button) => {
           button.addEventListener('click', () => {
@@ -5539,7 +5561,13 @@ ${formatDisplayDate(startDate)} (Single event)`;
           }, { passive: true });
           ganttBodyScrollEl.addEventListener('scroll', () => {
             syncScrollPositions(ganttBodyScrollEl, taskListScrollEl);
+            scheduleTimelineHorizontalSync();
           }, { passive: true });
+        } else if (ganttBodyScrollEl) {
+          ganttBodyScrollEl.addEventListener('scroll', scheduleTimelineHorizontalSync, { passive: true });
+        }
+        if (plannerViewportEl) {
+          plannerViewportEl.addEventListener('scroll', scheduleTimelineHorizontalSync, { passive: true });
         }
         if (modalStagePreset) {
           modalStagePreset.addEventListener('change', () => {
