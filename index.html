@@ -102,7 +102,7 @@
     .timeline-highlight{background:rgba(220,38,38,.12);border-left:2px solid transparent;border-right:2px solid transparent;border-radius:6px;pointer-events:none;z-index:1;}
     .timeline-highlight--today{background:rgba(220,38,38,.12);border-color:#dc2626;}
     .timeline-highlight--deadline{background:rgba(253,224,140,.28);border-color:#d97706;}
-    .timeline-highlight--standdown{background:rgba(148,163,184,.28);border-color:#475569;}
+    .timeline-highlight--standdown{background:repeating-linear-gradient(135deg,rgba(107,114,128,.55)0,rgba(107,114,128,.55)8px,rgba(107,114,128,0)8px,rgba(107,114,128,0)16px);background-attachment:fixed; background-position: 0 0 ;border:none;box-shadow:inset 0 0 0 1px rgba(71,85,105,.55);z-index:2;}
     .timeline-header.week-view .timeline-highlight{border-radius:4px;}
     .timeline-header .timeline-day-name.today,
     .timeline-header .timeline-day-number.today,
@@ -112,7 +112,16 @@
     .timeline-header .timeline-week.milestone-deadline{color:#b45309;font-weight:700;}
     .timeline-header .timeline-day-name.milestone-standdown,
     .timeline-header .timeline-day-number.milestone-standdown,
-    .timeline-header .timeline-week.milestone-standdown{color:#334155;font-weight:700;}
+    .timeline-header .timeline-week.milestone-standdown{color:#334155;font-weight:700;border-left-color:transparent;}
+    .timeline-header .timeline-day-name.milestone-standdown-start,
+    .timeline-header .timeline-day-number.milestone-standdown-start,
+    .timeline-header .timeline-week.milestone-standdown-start{border-left:1px solid rgba(71,85,105,.6);}
+    .timeline-header .timeline-day-name.milestone-standdown-end,
+    .timeline-header .timeline-day-number.milestone-standdown-end,
+    .timeline-header .timeline-week.milestone-standdown-end{box-shadow:inset -1px 0 0 rgba(71,85,105,.6);}
+    .timeline-header .timeline-day-name.milestone-standdown-start.milestone-standdown-end,
+    .timeline-header .timeline-day-number.milestone-standdown-start.milestone-standdown-end,
+    .timeline-header .timeline-week.milestone-standdown-start.milestone-standdown-end{border-left:1px solid rgba(71,85,105,.6);box-shadow:inset -1px 0 0 rgba(71,85,105,.6);}
     .timeline-header .timeline-day-name{font-size:.72rem;font-weight:600;color:var(--text-muted);letter-spacing:.03em;text-transform:uppercase;}
     .timeline-header .timeline-day-number{font-size:.76rem;font-weight:700;color:var(--text);}
     .timeline-header .timeline-year:first-child,
@@ -134,7 +143,11 @@
     .gantt-grid .day-cell::after{content:"";position:absolute;top:0;bottom:0;left:0;right:0;border-radius:6px;pointer-events:none;}
     .gantt-grid .day-cell::before{background:transparent;opacity:0;}
     .gantt-grid .day-cell.milestone-deadline::before{background:rgba(253,224,140,.28);border-left:2px solid #d97706;border-right:2px solid #d97706;opacity:1;}
-    .gantt-grid .day-cell.milestone-standdown::before{background:rgba(148,163,184,.32);border-left:2px solid #475569;border-right:2px solid #475569;opacity:1;}
+    .gantt-grid .day-cell.milestone-standdown{border-left-color:transparent;}
+   .gantt-grid .day-cell.milestone-standdown::before{background-color:rgba(230,232,235,0.9);background-image:repeating-linear-gradient(135deg,rgba(107,114,128,0.5)0,rgba(107,114,128,0.5)3px,rgba(107,114,128,0)3px,rgba(107,114,128,0)16px);background-attachment:fixed;background-position:0 0;opacity:1;border-left:0;border-right:0;z-index:1;left:-1px;right:-1px;}
+    .gantt-grid .day-cell.milestone-standdown-start::before{border-left:1px solid rgba(71,85,105,.6);}
+    .gantt-grid .day-cell.milestone-standdown-end::before{border-right:1px solid rgba(71,85,105,.6);}
+    .gantt-grid .day-cell.milestone-standdown-start.milestone-standdown-end::before{border-left:1px solid rgba(71,85,105,.6);border-right:1px solid rgba(71,85,105,.6);}
     .gantt-grid .day-cell.today::after{background:rgba(220,38,38,.12);border-left:2px solid #dc2626;border-right:2px solid #dc2626;}
     .stage-empty-label{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-weight:600;color:#7c6c1f;pointer-events:none;}
     .task-bar{position:absolute;top:50%;transform:translateY(-50%);height:35px;min-height:35px;border-radius:8px;background:rgba(48,86,211,.22);border:1px solid rgba(48,86,211,.32);display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:.12rem;padding:.25rem .7rem;cursor:pointer;transition:box-shadow .2s ease,transform .2s ease;overflow:visible;}
@@ -163,8 +176,11 @@
     .mini-segment .mini-handle.disabled{cursor:not-allowed;opacity:.2;background:transparent;box-shadow:none;}
     .mini-segment.locked .mini-handle{cursor:not-allowed;background:transparent;opacity:.2;}
     .mini-segment.locked .mini-handle:hover{background:transparent;}
-    .standdown-layer{position:absolute;inset:0;pointer-events:none;z-index:3;}
-    .standdown-gap{position:absolute;top:-1px;bottom:-1px;background:rgba(55,65,81,.7);border-left:1px dashed rgba(31,41,55,.8);border-right:1px dashed rgba(31,41,55,.8);box-shadow:inset 0 0 0 1px rgba(17,24,39,.36);}
+    .standdown-layer{position:absolute;inset:0;pointer-events:none;z-index:5;}
+    .standdown-gap{position:absolute;top:-2px;bottom:-2px;background-color:rgba(230,232,235,0.9);background-image:repeating-linear-gradient(135deg,rgba(107,114,128,0.5)0,rgba(107,114,128,0.5)3px,rgba(107,114,128,0)3px,rgba(107,114,128,0)16px);background-attachment:fixed;background-position:0 0;border:none;box-shadow:inset 0 0 0 1px rgba(71,85,105,.4);border-radius:8px;}
+    .standdown-gap.standdown-gap-start{border-top-left-radius:10px;border-bottom-left-radius:10px;box-shadow:inset 1px 0 0 rgba(71,85,105,.65), inset 0 0 0 1px rgba(71,85,105,.6);}
+    .standdown-gap.standdown-gap-end{border-top-right-radius:10px;border-bottom-right-radius:10px;box-shadow:inset -1px 0 0 rgba(71,85,105,.65), inset 0 0 0 1px rgba(71,85,105,.6);}
+    .standdown-gap.standdown-gap-start.standdown-gap-end{box-shadow:inset 1px 0 0 rgba(71,85,105,.65), inset -1px 0 0 rgba(71,85,105,.65), inset 0 0 0 1px rgba(71,85,105,.6);}
     .mini-0{background:rgba(48,86,211,.88);} .mini-1{background:rgba(46,160,67,.85);} .mini-2{background:rgba(191,135,0,.85);} .mini-3{background:rgba(219,97,162,.85);} .mini-4{background:rgba(137,87,229,.85);} .mini-5{background:rgba(64,193,213,.85);} .mini-6{background:rgba(231,120,67,.85);}
     .handle{position:absolute;top:0;bottom:0;width:10px;background:rgba(15,23,42,.18);border-radius:4px;cursor:ew-resize;opacity:0;transition:opacity .15s ease;z-index:6;}
     .task-bar:hover .handle,.task-bar.selected .handle{opacity:1;}
@@ -358,7 +374,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 14.2</span>
+    <span class="app-branding-text">Programme Tool : Version 14.3</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -990,6 +1006,8 @@
           mask.className = 'standdown-gap';
           mask.style.left = `${(overlapStart - startIndex) * dayWidth}px`;
           mask.style.width = `${(overlapEnd - overlapStart + 1) * dayWidth}px`;
+          if (overlapStart === segment.startIndex) mask.classList.add('standdown-gap-start');
+          if (overlapEnd === segment.endIndex) mask.classList.add('standdown-gap-end');
           const rangeStart = timelineDays[overlapStart];
           const rangeEnd = timelineDays[overlapEnd];
           if (rangeStart) {
@@ -3408,6 +3426,10 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           for (let index = segment.startIndex; index <= segment.endIndex; index += 1) {
             dayHighlightMap[index]?.add(segment.type);
           }
+          if (segment.type === 'standdown') {
+            dayHighlightMap[segment.startIndex]?.add('standdown-start');
+            dayHighlightMap[segment.endIndex]?.add('standdown-end');
+          }
         });
         if (!timelineDays.length) {
           timelineHeaderEl.classList.remove('week-view');
@@ -3435,6 +3457,9 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         normalizedSegments.forEach((segment) => {
           const highlightEl = document.createElement('div');
           highlightEl.className = `timeline-highlight timeline-highlight--${segment.type}`;
+          if (segment.type === 'standdown') {
+            highlightEl.classList.add('timeline-highlight-standdown');
+          }
           highlightEl.style.gridColumn = `${segment.startIndex + 1} / ${segment.endIndex + 2}`;
           highlightEl.style.gridRow = '1 / -1';
           if (segment.type === 'today') {
@@ -3490,6 +3515,8 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
             if (highlightSet.has('today')) cell.classList.add('today');
             if (highlightSet.has('deadline')) cell.classList.add('milestone-deadline');
             if (highlightSet.has('standdown')) cell.classList.add('milestone-standdown');
+            if (highlightSet.has('standdown-start')) cell.classList.add('milestone-standdown-start');
+            if (highlightSet.has('standdown-end')) cell.classList.add('milestone-standdown-end');
             timelineHeaderEl.appendChild(cell);
           });
         } else {
@@ -3503,6 +3530,8 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
             if (highlightSet.has('today')) dayName.classList.add('today');
             if (highlightSet.has('deadline')) dayName.classList.add('milestone-deadline');
             if (highlightSet.has('standdown')) dayName.classList.add('milestone-standdown');
+            if (highlightSet.has('standdown-start')) dayName.classList.add('milestone-standdown-start');
+            if (highlightSet.has('standdown-end')) dayName.classList.add('milestone-standdown-end');
             timelineHeaderEl.appendChild(dayName);
 
             const dayNumber = document.createElement('div');
@@ -3513,6 +3542,8 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
             if (highlightSet.has('today')) dayNumber.classList.add('today');
             if (highlightSet.has('deadline')) dayNumber.classList.add('milestone-deadline');
             if (highlightSet.has('standdown')) dayNumber.classList.add('milestone-standdown');
+            if (highlightSet.has('standdown-start')) dayNumber.classList.add('milestone-standdown-start');
+            if (highlightSet.has('standdown-end')) dayNumber.classList.add('milestone-standdown-end');
             timelineHeaderEl.appendChild(dayNumber);
           });
         }
@@ -3549,6 +3580,8 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
             if (highlightSet.has('today')) cell.classList.add('today');
             if (highlightSet.has('deadline')) cell.classList.add('milestone-deadline');
             if (highlightSet.has('standdown')) cell.classList.add('milestone-standdown');
+            if (highlightSet.has('standdown-start')) cell.classList.add('milestone-standdown-start');
+            if (highlightSet.has('standdown-end')) cell.classList.add('milestone-standdown-end');
             grid.appendChild(cell);
           });
 
@@ -3717,6 +3750,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
         const legendItems = Object.entries(TASK_COLOR_MAP);
         const supportsOpacity = typeof doc.GState === 'function';
         const progressOverlayState = supportsOpacity ? doc.GState({ opacity: 0.35 }) : null;
+        const standdownOverlayState = supportsOpacity ? doc.GState({ opacity: 0.55 }) : null;
         const resetOpacityState = supportsOpacity ? doc.GState({ opacity: 1 }) : null;
         const todayUtcPdf = getTodayUtc();
         const todayIndexPdf = todayUtcPdf ? timelineDays.findIndex((day) => compareDates(day, todayUtcPdf) === 0) : -1;
@@ -3741,7 +3775,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
         const highlightPalette = {
           today: { fill: { r: 255, g: 228, b: 232 }, border: { r: 220, g: 38, b: 38 } },
           deadline: { fill: { r: 255, g: 243, b: 207 }, border: { r: 217, g: 119, b: 6 } },
-          standdown: { fill: { r: 229, g: 231, b: 235 }, border: { r: 71, g: 85, b: 105 } }
+          standdown: { fill: null, border: { r: 107, g: 114, b: 128 } }
         };
         const timelineDateFontSize = 4;
         const logoImage = await loadPdfLogo();
@@ -3777,6 +3811,8 @@ ${formatDisplayDate(startDate)} (Single event)`;
             pdfDayHighlights[index]?.add(segment.type);
           }
         });
+        const standdownSegmentsPdf = normalizedHighlightSegments.filter((segment) => segment.type === 'standdown');
+        const standdownStripeColor = { r: 107, g: 114, b: 128 };
         const boundaryTypes = {};
         const applyBoundaryType = (index, type) => {
           if (index < 0 || index > dayCount) return;
@@ -3951,6 +3987,9 @@ ${formatDisplayDate(startDate)} (Single event)`;
             const x = timelineStartX + (index * dayWidth);
             const boundaryType = boundaryTypes[index];
             const isWeekStart = index % 5 === 0;
+            const leftStanddown = index > 0 && pdfDayHighlights[index - 1]?.has('standdown');
+            const rightStanddown = index < dayCount && pdfDayHighlights[index]?.has('standdown');
+            if (leftStanddown && rightStanddown) continue;
             if (boundaryType) {
               const palette = highlightPalette[boundaryType];
               doc.setDrawColor(palette.border.r, palette.border.g, palette.border.b);
@@ -3968,6 +4007,65 @@ ${formatDisplayDate(startDate)} (Single event)`;
           doc.setLineWidth(originalLineWidth);
         };
 
+        const drawStanddownHatch = (startX, topY, width, height) => {
+          if (width <= 0 || height <= 0) return;
+          const originalLineWidth = doc.getLineWidth();
+          const stripeSpacing = 4;
+          const stripeLineWidth = 0.3;
+          const maxX = startX + width;
+          if (standdownOverlayState && resetOpacityState) {
+            doc.setGState(standdownOverlayState);
+          }
+          doc.setDrawColor(standdownStripeColor.r, standdownStripeColor.g, standdownStripeColor.b);
+          doc.setLineWidth(stripeLineWidth);
+          for (let offset = -height; offset <= width; offset += stripeSpacing) {
+            let x1 = startX + offset;
+            let y1 = topY;
+            let x2 = x1 + height;
+            let y2 = topY + height;
+            if (x1 < startX) {
+              const delta = startX - x1;
+              x1 = startX;
+              y1 += delta;
+            }
+            if (x2 > maxX) {
+              const delta = x2 - maxX;
+              x2 = maxX;
+              y2 -= delta;
+            }
+            if (y1 > topY + height || y2 < topY) continue;
+            if (y1 < topY) {
+              const delta = topY - y1;
+              y1 = topY;
+              x1 += delta;
+            }
+            if (y2 > topY + height) {
+              const delta = y2 - (topY + height);
+              y2 = topY + height;
+              x2 -= delta;
+            }
+            if (x1 > maxX || x2 < startX) continue;
+            doc.line(x1, y1, x2, y2);
+          }
+          if (standdownOverlayState && resetOpacityState) {
+            doc.setGState(resetOpacityState);
+          }
+          doc.setDrawColor(standdownStripeColor.r, standdownStripeColor.g, standdownStripeColor.b);
+          doc.setLineWidth(0.35);
+          doc.rect(startX, topY, width, height);
+          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
+          doc.setLineWidth(originalLineWidth);
+        };
+
+        const drawStanddownBands = (topY, height) => {
+          if (!standdownSegmentsPdf.length) return;
+          standdownSegmentsPdf.forEach((segment) => {
+            const startX = timelineStartX + (segment.startIndex * dayWidth);
+            const width = (segment.endIndex - segment.startIndex + 1) * dayWidth;
+            drawStanddownHatch(startX, topY, width, height);
+          });
+        };
+
         const drawTimelineHeader = (topY) => {
           doc.setFillColor(244, 246, 252);
           doc.rect(timelineStartX, topY, rightColumnWidth, timelineHeaderHeight, 'F');
@@ -3976,9 +4074,13 @@ ${formatDisplayDate(startDate)} (Single event)`;
 
           segmentsForDrawing.forEach((segment) => {
             const palette = highlightPalette[segment.type];
-            if (!palette) return;
             const startX = timelineStartX + (segment.startIndex * dayWidth);
             const width = (segment.endIndex - segment.startIndex + 1) * dayWidth;
+            if (segment.type === 'standdown') {
+              drawStanddownHatch(startX, topY, width, timelineHeaderHeight);
+              return;
+            }
+            if (!palette?.fill) return;
             doc.setFillColor(palette.fill.r, palette.fill.g, palette.fill.b);
             doc.rect(startX, topY, width, timelineHeaderHeight, 'F');
           });
@@ -4091,6 +4193,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
           doc.setLineWidth(originalLineWidth);
 
           drawTimelineGridLines(topY, rowHeight);
+          drawStanddownBands(topY, rowHeight);
 
           const startDate = parseDate(task.startDate);
           const endDate = parseDate(task.endDate);
