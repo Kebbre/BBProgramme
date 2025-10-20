@@ -7,7 +7,8 @@
   <style>
     *,*::before,*::after{box-sizing:border-box;}
     :root{--sidebar-width:600px;--day-width:32px;--row-height:54px;--primary:#3056d3;--surface:#fff;--surface-alt:#f2f4f9;--border:#d6dbe7;--text:#1f2937;--text-muted:#4b5563;--top-offset:1rem;--header-vertical-offset:5rem;--sidebar-header-height:0px;--header-band-height:0rem;--task-header-height:4.5rem;--timeline-header-height:4.5rem;--task-header-top:calc(var(--top-offset) + var(--header-band-height) - var(--task-header-height)- var(--header-vertical-offset));--timeline-header-top:calc(var(--top-offset) + var(--header-band-height) - var(--timeline-header-height)- var(--header-vertical-offset));--gantt-header-height:0px;--task-scroll-height:calc(100vh - 100px);--gantt-scroll-height:calc(100vh - 100px);}
-    body{margin:0;font-family:"Inter","Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;background:#eef1f7;color:var(--text);min-height:100vh;display:flex;flex-direction:column;font-size:.94rem;}
+    html{height:100%;overflow:hidden;}
+    body{margin:0;font-family:"Inter","Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;background:#eef1f7;color:var(--text);min-height:100vh;height:100vh;overflow:hidden;display:flex;flex-direction:column;font-size:.94rem;}
     h1,h2,h3{margin:0;}
     button{border:0;background:var(--primary);color:#fff;border-radius:8px;padding:.5rem 1rem;font-size:.95rem;font-weight:600;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;}
     button:disabled{opacity:.4;cursor:not-allowed;}
@@ -45,7 +46,7 @@
     .task-list-header span{display:flex;align-items:center;justify-content:flex-end;padding:0 .35rem;}
     .task-header-identifier{justify-content:center;}
     .task-header-name{justify-content:flex-start;}
-    .task-list-scroll{display:flex;flex-direction:column;justify-content:flex-start;flex:1;overflow-y:auto;overflow-x:visible;max-height:var(--task-scroll-height);scrollbar-gutter:stable both-edges;background:var(--surface);min-height:0;padding-top:var(--header-band-height);scroll-padding-top:var(--header-band-height);}
+    .task-list-scroll{display:flex;flex-direction:column;justify-content:flex-start;flex:1;overflow-y:auto;overflow-x:visible;max-height:var(--task-scroll-height);scrollbar-gutter:stable both-edges;background:var(--surface);min-height:0;padding-top:var(--header-band-height);scroll-padding-top:var(--header-band-height)}
     .task-list{flex:0;overflow:visible;padding:0;min-height:0;margin-top:0;transform:none;}
     .task-row{align-items:center;padding:0 1.5rem;height:var(--row-height);border-bottom:1px solid rgba(15,23,42,.06);cursor:pointer;transition:background .15s ease,box-shadow .15s ease;font-size:.7rem;}
     .task-row > *{width:100%;box-sizing:border-box;height:100%;display:flex;align-items:center;padding:0 .35rem;}
@@ -72,7 +73,6 @@
     .task-row input[type="date"]{width:100%;}
     .task-progress input{text-align:right;width:68px;min-width:unset;padding-right:1.3rem;}
     .task-progress span{position:relative;right:.35rem;transform:none;font-size:.65rem;color:var(--text-muted);}
-    .planner-viewport{flex:1;display:flex;overflow-x:auto;overflow-y:hidden;position:relative;min-height:0;min-width:0;scrollbar-gutter:stable both-edges;align-items:flex-start;}
     .gantt-wrapper{flex:1;display:flex;flex-direction:column;min-width:0;}
     .gantt-header{padding:0rem 1.75rem 1rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;position:sticky;top:var(--top-offset);z-index:5;background:#fff;}
     .gantt-header h2{font-size:1.2rem;font-weight:600;}
@@ -87,7 +87,7 @@
     .zoom-controls button:hover:not(:disabled){color:var(--primary);background:rgba(48,86,211,.12);}
     .zoom-controls button:disabled{cursor:not-allowed;opacity:.45;}
     .zoom-controls button:focus-visible{outline:2px solid rgba(48,86,211,.35);outline-offset:2px;}
-    .planner-viewport{flex:1;display:flex;overflow:auto;position:relative;min-height:0;min-width:0;scrollbar-gutter:stable both-edges;align-items:flex-start;}
+    .planner-viewport{flex:1;display:flex;overflow-x:auto;overflow-y:hidden;position:relative;min-height:0;min-width:0;scrollbar-gutter:stable both-edges;align-items:flex-start;scroll-padding-top:var(--header-band-height);}
     .gantt-calendar{flex:1;background:var(--surface);border-top:1px solid var(--border);position:relative;display:flex;flex-direction:column;min-width:0;}
     .timeline-header{position:sticky;top:var(--timeline-header-top, calc(var(--top-offset) + var(--header-band-height) - var(--timeline-header-height) - var(--header-vertical-offset)));z-index:5;display:grid;background:#fff;border-bottom:1px solid var(--border);box-shadow:0 4px 12px rgba(15,23,42,.08);grid-auto-flow:column;height:var(--timeline-header-height);min-height:var(--timeline-header-height);align-content:stretch;}
     .timeline-header .timeline-year,
@@ -289,7 +289,7 @@
   <header class="top-bar">
     <div class="top-bar-row heading-row">
       <div class="project-heading">
-        <h1>Project 13.14</h1>
+        <h1>Project 13.15</h1>
       </div>
     </div>
     <div class="top-bar-row primary-actions-row">
@@ -568,7 +568,41 @@
         {"buildingType":"Residential tower","task":"Kitchen layouts","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":1,"levelsFactor":1},
         {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
         {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1}
+        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        
       ];
       const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -599,8 +633,8 @@
       let authorityFallbackActive = !GRAPH_AUTHORITY_PRIMARY;
       let teamsInitializationPromise = null;
       let renderFrameHandle = null;
-      let isSyncingScroll = false;
       let pdfLogoPromise = null;
+      let isSyncingScroll = false;
 
       async function loadPdfLogo() {
         if (!pdfLogoPromise) {
@@ -5386,8 +5420,8 @@ ${formatDisplayDate(startDate)} (Single event)`;
         const timelineHeaderHeightPx = toPixels(rootStyles.getPropertyValue('--timeline-header-height'));
 
         const headerVerticalOffsetPx = 80; // ≈ 5rem
-const taskHeaderTopPx = Math.max(0, topOffset + headerBandHeightPx - taskHeaderHeightPx - headerVerticalOffsetPx);
-const timelineHeaderTopPx = Math.max(0, topOffset + headerBandHeightPx - timelineHeaderHeightPx - headerVerticalOffsetPx);
+        const taskHeaderTopPx = Math.max(0, topOffset + headerBandHeightPx - taskHeaderHeightPx - headerVerticalOffsetPx);
+        const timelineHeaderTopPx = Math.max(0, topOffset + headerBandHeightPx - timelineHeaderHeightPx - headerVerticalOffsetPx);
 
         document.documentElement.style.setProperty('--task-header-top', `${taskHeaderTopPx}px`);
         document.documentElement.style.setProperty('--timeline-header-top', `${timelineHeaderTopPx}px`);
