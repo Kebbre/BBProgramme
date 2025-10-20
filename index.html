@@ -239,6 +239,9 @@
     .modal-footer{padding:1rem 1.75rem 1.35rem;border-top:1px solid rgba(15,23,42,.08);display:flex;justify-content:flex-end;gap:.75rem;}
     .modal-footer .secondary{background:#fff;color:var(--text);border:1px solid var(--border);}
     .modal-footer .secondary:hover{color:var(--primary);border-color:var(--primary);transform:none;}
+    .app-branding{position:fixed;bottom:1.5rem;left:1.5rem;display:flex;align-items:center;gap:.75rem;z-index:4;}
+    .app-branding img{width:100px;height:100px;object-fit:contain;}
+    .app-branding-text{font-size:.9rem;color:var(--text-muted);font-weight:600;}
     .schedule-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);z-index:12;}
     .schedule-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:13;padding:2rem;}
     .schedule-modal.hidden,.schedule-modal-backdrop.hidden{display:none;}
@@ -351,6 +354,11 @@
         </div>
       </main>
     </div>
+  </div>
+
+  <div class="app-branding">
+    <img src="assets/bb-logo.png" alt="BB Programme logo">
+    <span class="app-branding-text">Programme Tool : Version 14</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
