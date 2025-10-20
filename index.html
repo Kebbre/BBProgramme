@@ -374,7 +374,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 14.4</span>
+    <span class="app-branding-text">Programme Tool : Version 14.5</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -551,6 +551,11 @@
         { name: 'Client Comments', weight: 10 },
         { name: 'Bond Bryan review', weight: 15 }
       ];
+      const DEFAULT_SEQUENCE_MINIMUM_TOTAL = DEFAULT_SEQUENCE_STEPS.length;
+      const DEFAULT_SEQUENCE_TOTAL_WEIGHT = DEFAULT_SEQUENCE_STEPS.reduce(
+        (sum, step) => sum + (Number(step.weight) || 0),
+        0
+      );
       const WORKING_DAYS_PER_WEEK = 5;
       const TASK_COLOR_MAP = {
         'Bond Bryan Design': 'rgb(176, 207, 255)',
@@ -4537,12 +4542,61 @@ ${formatDisplayDate(startDate)} (Single event)`;
         renderAll();
       }
 
-      function createDefaultSequencedMiniTasks(taskId) {
+      function computeDefaultMiniTaskDurations(totalDuration) {
+        const normalizedTotal = Math.max(
+          DEFAULT_SEQUENCE_MINIMUM_TOTAL,
+          Math.max(1, Math.round(Number(totalDuration) || 0))
+        );
+        const stepData = DEFAULT_SEQUENCE_STEPS.map((step, index) => ({
+          index,
+          weight: Number(step.weight) || 0,
+          duration: Math.max(1, Math.round(((Number(step.weight) || 0) / 100) * normalizedTotal))
+        }));
+        const weightOrder = stepData
+          .slice()
+          .sort((a, b) => b.weight - a.weight);
+        let diff = normalizedTotal - stepData.reduce((sum, item) => sum + item.duration, 0);
+        if (diff !== 0) {
+          const maxGuard = 100;
+          let guard = 0;
+          while (diff !== 0 && guard < maxGuard) {
+            let adjusted = false;
+            for (let idx = 0; idx < weightOrder.length && diff !== 0; idx += 1) {
+              const entry = weightOrder[idx];
+              if (diff > 0) {
+                entry.duration += 1;
+                diff -= 1;
+                adjusted = true;
+              } else if (entry.duration > 1) {
+                entry.duration -= 1;
+                diff += 1;
+                adjusted = true;
+              }
+            }
+            if (!adjusted) break;
+            guard += 1;
+          }
+        }
+        const durations = stepData
+          .slice()
+          .sort((a, b) => a.index - b.index)
+          .map((item) => Math.max(1, Math.round(item.duration)));
+        const finalSum = durations.reduce((sum, value) => sum + value, 0);
+        if (finalSum !== normalizedTotal) {
+          const delta = normalizedTotal - finalSum;
+          const targetIndex = (weightOrder[0] && weightOrder[0].index) || 0;
+          durations[targetIndex] = Math.max(1, durations[targetIndex] + delta);
+        }
+        return durations;
+      }
+
+      function createDefaultSequencedMiniTasks(taskId, totalDuration) {
+        const durations = computeDefaultMiniTaskDurations(totalDuration);
         return DEFAULT_SEQUENCE_STEPS.map((step, index) => ({
           id: `${taskId}-mini-${index + 1}`,
           enabled: true,
           name: step.name,
-          duration: step.weight,
+          duration: durations[index] || 1,
           locked: false
         }));
       }
@@ -4708,7 +4762,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
             const taskEnd = shiftWeekdays(taskStart, totalDuration - 1);
             const taskId = `gen-${timestampBase}-${taskCounter}`;
             taskCounter += 1;
-            const miniTasks = createDefaultSequencedMiniTasks(taskId);
+            const miniTasks = createDefaultSequencedMiniTasks(taskId, totalDuration);
             const task = {
               id: taskId,
               entryType: 'task',
@@ -4757,7 +4811,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
           const taskEnd = shiftWeekdays(taskStart, totalDuration - 1);
           const taskId = `gen-${timestampBase}-${taskCounter}`;
           taskCounter += 1;
-          const miniTasks = createDefaultSequencedMiniTasks(taskId);
+          const miniTasks = createDefaultSequencedMiniTasks(taskId, totalDuration);
           const task = {
             id: taskId,
             entryType: 'task',
@@ -5188,10 +5242,26 @@ ${formatDisplayDate(startDate)} (Single event)`;
               }));
             }
           } else {
-            miniTaskDrafts = DEFAULT_SEQUENCE_STEPS.map((step) => sanitizeMiniTaskDraft({
+            let parentTaskDuration = DEFAULT_SEQUENCE_TOTAL_WEIGHT || DEFAULT_SEQUENCE_MINIMUM_TOTAL;
+            if (selectedTaskId) {
+              const selectedTask = tasks.find((item) => item.id === selectedTaskId) || null;
+              if (selectedTask && selectedTask.entryType === 'task') {
+                const selectedStart = ensureWeekday(parseDate(selectedTask.startDate), 1);
+                const selectedEnd = ensureWeekday(parseDate(selectedTask.endDate), -1);
+                const computedDuration = selectedStart && selectedEnd
+                  ? diffInWeekdays(selectedStart, selectedEnd)
+                  : 0;
+                if (computedDuration > 0) parentTaskDuration = computedDuration;
+              } else if (selectedTask && selectedTask.entryType === 'stage') {
+                const stageSummary = computeStageSummary(selectedTask);
+                if (stageSummary.duration > 0) parentTaskDuration = stageSummary.duration;
+              }
+            }
+            const defaultDurations = computeDefaultMiniTaskDurations(parentTaskDuration);
+            miniTaskDrafts = DEFAULT_SEQUENCE_STEPS.map((step, index) => sanitizeMiniTaskDraft({
               enabled: true,
               name: step.name,
-              duration: step.weight,
+              duration: defaultDurations[index] || 1,
               locked: false
             }));
           }
