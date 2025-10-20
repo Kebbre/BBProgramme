@@ -3750,7 +3750,6 @@ ${formatDisplayDate(startDate)} (Single event)`;
         const legendItems = Object.entries(TASK_COLOR_MAP);
         const supportsOpacity = typeof doc.GState === 'function';
         const progressOverlayState = supportsOpacity ? doc.GState({ opacity: 0.35 }) : null;
-        const standdownOverlayState = supportsOpacity ? doc.GState({ opacity: 0.55 }) : null;
         const resetOpacityState = supportsOpacity ? doc.GState({ opacity: 1 }) : null;
         const todayUtcPdf = getTodayUtc();
         const todayIndexPdf = todayUtcPdf ? timelineDays.findIndex((day) => compareDates(day, todayUtcPdf) === 0) : -1;
@@ -3772,10 +3771,16 @@ ${formatDisplayDate(startDate)} (Single event)`;
           return -1;
         };
         const highlightPriority = { standdown: 0, deadline: 1, today: 2 };
+        const highlightIndexOffset = timelineViewMode === 'days'
+          ? -1
+          : (timelineViewMode === 'weeks' ? 1 : 0);
+        const standdownFillColor = { r: 220, g: 223, b: 230 };
+        const standdownBorderColor = { r: 0, g: 0, b: 0 };
+        const standdownBoundaryLineWidth = 0.8;
         const highlightPalette = {
           today: { fill: { r: 255, g: 228, b: 232 }, border: { r: 220, g: 38, b: 38 } },
           deadline: { fill: { r: 255, g: 243, b: 207 }, border: { r: 217, g: 119, b: 6 } },
-          standdown: { fill: null, border: { r: 107, g: 114, b: 128 } }
+          standdown: { fill: standdownFillColor, border: standdownBorderColor }
         };
         const timelineDateFontSize = 4;
         const logoImage = await loadPdfLogo();
@@ -3793,11 +3798,15 @@ ${formatDisplayDate(startDate)} (Single event)`;
         });
         const normalizedHighlightSegments = highlightSegmentsPdf
           .map((segment) => {
-            const startIndex = Math.max(0, Math.min(dayCount - 1, segment.startIndex));
-            const endIndex = Math.max(startIndex, Math.min(dayCount - 1, segment.endIndex));
+            let startIndex = Number.isFinite(segment.startIndex) ? segment.startIndex + highlightIndexOffset : NaN;
+            let endIndex = Number.isFinite(segment.endIndex) ? segment.endIndex + highlightIndexOffset : NaN;
+            if (!Number.isFinite(startIndex) || !Number.isFinite(endIndex)) return null;
+            startIndex = Math.max(0, Math.min(dayCount - 1, startIndex));
+            endIndex = Math.max(startIndex, Math.min(dayCount - 1, endIndex));
+            if (startIndex > endIndex) return null;
             return { ...segment, startIndex, endIndex };
           })
-          .filter((segment) => segment.startIndex <= segment.endIndex);
+          .filter(Boolean);
         const segmentsForDrawing = normalizedHighlightSegments
           .slice()
           .sort((a, b) => {
@@ -3812,7 +3821,6 @@ ${formatDisplayDate(startDate)} (Single event)`;
           }
         });
         const standdownSegmentsPdf = normalizedHighlightSegments.filter((segment) => segment.type === 'standdown');
-        const standdownStripeColor = { r: 107, g: 114, b: 128 };
         const boundaryTypes = {};
         const applyBoundaryType = (index, type) => {
           if (index < 0 || index > dayCount) return;
@@ -3980,8 +3988,9 @@ ${formatDisplayDate(startDate)} (Single event)`;
           return legendBottom + 2;
         };
 
-        const drawTimelineGridLines = (topY, height) => {
+        const drawTimelineGridLines = (topY, height, options = {}) => {
           if (!dayCount) return;
+          const { highlightsOnly = false } = options;
           const originalLineWidth = doc.getLineWidth();
           for (let index = 0; index <= dayCount; index += 1) {
             const x = timelineStartX + (index * dayWidth);
@@ -3989,17 +3998,22 @@ ${formatDisplayDate(startDate)} (Single event)`;
             const isWeekStart = index % 5 === 0;
             const leftStanddown = index > 0 && pdfDayHighlights[index - 1]?.has('standdown');
             const rightStanddown = index < dayCount && pdfDayHighlights[index]?.has('standdown');
-            if (leftStanddown && rightStanddown) continue;
+            if (!highlightsOnly && leftStanddown && rightStanddown) continue;
+            if (boundaryType === 'standdown') continue;
             if (boundaryType) {
+              if (highlightsOnly && boundaryType !== 'today' && boundaryType !== 'deadline') continue;
               const palette = highlightPalette[boundaryType];
               doc.setDrawColor(palette.border.r, palette.border.g, palette.border.b);
               doc.setLineWidth(boundaryType === 'today' ? 0.45 : 0.3);
-            } else if (isWeekStart) {
-              doc.setDrawColor(190, 195, 205);
-              doc.setLineWidth(0.1);
             } else {
-              doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
-              doc.setLineWidth(0.1);
+              if (highlightsOnly) continue;
+              if (isWeekStart) {
+                doc.setDrawColor(190, 195, 205);
+                doc.setLineWidth(0.1);
+              } else {
+                doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
+                doc.setLineWidth(0.1);
+              }
             }
             doc.line(x, topY, x, topY + height);
           }
@@ -4010,51 +4024,15 @@ ${formatDisplayDate(startDate)} (Single event)`;
         const drawStanddownHatch = (startX, topY, width, height) => {
           if (width <= 0 || height <= 0) return;
           const originalLineWidth = doc.getLineWidth();
-          const stripeSpacing = 4;
-          const stripeLineWidth = 0.3;
-          const maxX = startX + width;
-          if (standdownOverlayState && resetOpacityState) {
-            doc.setGState(standdownOverlayState);
-          }
-          doc.setDrawColor(standdownStripeColor.r, standdownStripeColor.g, standdownStripeColor.b);
-          doc.setLineWidth(stripeLineWidth);
-          for (let offset = -height; offset <= width; offset += stripeSpacing) {
-            let x1 = startX + offset;
-            let y1 = topY;
-            let x2 = x1 + height;
-            let y2 = topY + height;
-            if (x1 < startX) {
-              const delta = startX - x1;
-              x1 = startX;
-              y1 += delta;
-            }
-            if (x2 > maxX) {
-              const delta = x2 - maxX;
-              x2 = maxX;
-              y2 -= delta;
-            }
-            if (y1 > topY + height || y2 < topY) continue;
-            if (y1 < topY) {
-              const delta = topY - y1;
-              y1 = topY;
-              x1 += delta;
-            }
-            if (y2 > topY + height) {
-              const delta = y2 - (topY + height);
-              y2 = topY + height;
-              x2 -= delta;
-            }
-            if (x1 > maxX || x2 < startX) continue;
-            doc.line(x1, y1, x2, y2);
-          }
-          if (standdownOverlayState && resetOpacityState) {
-            doc.setGState(resetOpacityState);
-          }
-          doc.setDrawColor(standdownStripeColor.r, standdownStripeColor.g, standdownStripeColor.b);
-          doc.setLineWidth(0.35);
-          doc.rect(startX, topY, width, height);
-          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
+          doc.setFillColor(standdownFillColor.r, standdownFillColor.g, standdownFillColor.b);
+          doc.rect(startX, topY, width, height, 'F');
+          doc.setDrawColor(standdownBorderColor.r, standdownBorderColor.g, standdownBorderColor.b);
+          doc.setLineWidth(standdownBoundaryLineWidth);
+          doc.line(startX, topY, startX, topY + height);
+          doc.line(startX + width, topY, startX + width, topY + height);
           doc.setLineWidth(originalLineWidth);
+          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
+          doc.setFillColor(255, 255, 255);
         };
 
         const drawStanddownBands = (topY, height) => {
@@ -4159,10 +4137,6 @@ ${formatDisplayDate(startDate)} (Single event)`;
             });
           }
 
-          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
-          doc.line(margin, topY, margin + contentWidth, topY);
-          doc.line(margin, topY + rowHeight, margin + contentWidth, topY + rowHeight);
-
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(9);
           let cellX = margin;
@@ -4189,11 +4163,9 @@ ${formatDisplayDate(startDate)} (Single event)`;
             }
           });
 
-          doc.line(timelineStartX, topY, timelineStartX, topY + rowHeight);
           doc.setLineWidth(originalLineWidth);
 
           drawTimelineGridLines(topY, rowHeight);
-          drawStanddownBands(topY, rowHeight);
 
           const startDate = parseDate(task.startDate);
           const endDate = parseDate(task.endDate);
@@ -4334,6 +4306,17 @@ ${formatDisplayDate(startDate)} (Single event)`;
               doc.setTextColor(defaultTextColor.r, defaultTextColor.g, defaultTextColor.b);
             }
           }
+
+          drawStanddownBands(topY, rowHeight);
+
+          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
+          doc.setLineWidth(0.1);
+          doc.line(margin, topY, margin + contentWidth, topY);
+          doc.line(margin, topY + rowHeight, margin + contentWidth, topY + rowHeight);
+          doc.line(timelineStartX, topY, timelineStartX, topY + rowHeight);
+          doc.setLineWidth(originalLineWidth);
+
+          drawTimelineGridLines(topY, rowHeight, { highlightsOnly: true });
         };
 
         const startNewPage = (isFirstPage) => {
