@@ -39,8 +39,8 @@
     .sidebar-actions .secondary{background:var(--surface-alt);color:var(--text);border:1px solid var(--border);box-shadow:none;}
     .sidebar-actions .secondary:hover{transform:none;color:var(--primary);border-color:var(--primary);}
     .task-list-header,
-    .task-row{display:grid;grid-template-columns:40px 130px 110px 110px 70px 90px;column-gap:1px;align-items:center;}
-    .task-list-header{padding:.6rem 1.5rem;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);background:rgba(48,86,211,.08);position:sticky;top:calc(var(--top-offset) + var(--sidebar-header-height));z-index:6;align-items:center;}
+    .task-row{display:grid;grid-template-columns:50px 120px 110px 110px 70px 90px;column-gap:0.6px;align-items:center;}
+    .task-list-header{padding:0.6rem 1rem;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);background:rgba(48,86,211,.08);position:sticky;top:calc(var(--top-offset) + var(--sidebar-header-height));z-index:6;align-items:left;}
     .task-list-header span{display:flex;align-items:center;justify-content:flex-end;padding:0 .35rem;}
     .task-header-identifier{justify-content:center;}
     .task-header-name{justify-content:flex-start;}
@@ -48,7 +48,7 @@
     .task-list{flex:1;overflow:visible;padding:0;min-height:0;margin-top:3.8rem;}
     .task-row{align-items:center;padding:0 1.5rem;height:var(--row-height);border-bottom:1px solid rgba(15,23,42,.06);cursor:pointer;transition:background .15s ease,box-shadow .15s ease;font-size:.7rem;}
     .task-row > *{width:100%;box-sizing:border-box;height:100%;display:flex;align-items:center;padding:0 .35rem;}
-    .task-row .task-identifier{justify-content:center;font-weight:700;font-size:.35rem;text-transform:uppercase;font-variant-numeric:tabular-nums;color:var(--text);}
+    .task-row .task-identifier{justify-content:center;font-weight:700;font-size:.595rem;text-transform:uppercase;font-variant-numeric:tabular-nums;color:var(--text);}
     .task-row.stage-row .task-identifier{color:#7c6c1f;}
     .task-row .task-identifier.identifier-placeholder{color:var(--text-muted);font-weight:600;}
     .task-row .task-name{justify-content:flex-start;}
@@ -303,7 +303,7 @@
     <div class="planner-viewport" id="plannerViewport">
       <aside class="sidebar">
         <div class="sidebar-header">
-          <h1>Architecture Project 13.13 Planner</h1>
+          <h1>Architecture Project 13.13.2 Planner</h1>
           <div class="sidebar-actions">
             <button id="addTaskBtn" type="button">＋ New</button>
             <button id="removeTaskBtn" class="secondary" type="button" disabled>- Remove</button>
