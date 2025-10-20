@@ -123,7 +123,10 @@
     .timeline-header .timeline-day-number.milestone-standdown-start.milestone-standdown-end,
     .timeline-header .timeline-week.milestone-standdown-start.milestone-standdown-end{border-left:1px solid rgba(71,85,105,.6);box-shadow:inset -1px 0 0 rgba(71,85,105,.6);}
     .timeline-header .timeline-day-name{font-size:.72rem;font-weight:600;color:var(--text-muted);letter-spacing:.03em;text-transform:uppercase;}
+    .timeline-header.day-view .timeline-day-name{font-size:calc(.72rem * .7);transform:rotate(-90deg);transform-origin:center;line-height:1;white-space:nowrap;padding:.15rem 0;}
     .timeline-header .timeline-day-number{font-size:.76rem;font-weight:700;color:var(--text);}
+    .timeline-header.day-view .timeline-day-number:not(.today):not(.milestone-deadline):not(.milestone-standdown):not(.milestone-standdown-start):not(.milestone-standdown-end){color:var(--text-muted);}
+    .timeline-header.day-view .timeline-day-number.is-monday:not(.today):not(.milestone-deadline):not(.milestone-standdown):not(.milestone-standdown-start):not(.milestone-standdown-end){color:#000;}
     .timeline-header .timeline-year:first-child,
     .timeline-header .timeline-month:first-child,
     .timeline-header .timeline-week:first-child,
@@ -3381,6 +3384,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         const previousScrollTop = ganttBodyScrollEl ? ganttBodyScrollEl.scrollTop : 0;
         ganttBodyEl.innerHTML = '';
         timelineHeaderEl.innerHTML = '';
+        timelineHeaderEl.classList.remove('week-view', 'day-view');
         const { start, end } = computeTimelineRange();
         timelineRangeStart = start;
         timelineRangeEnd = end;
@@ -3437,7 +3441,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           }
         });
         if (!timelineDays.length) {
-          timelineHeaderEl.classList.remove('week-view');
+          timelineHeaderEl.classList.remove('week-view', 'day-view');
           const emptyHeader = document.createElement('div');
           emptyHeader.className = 'empty-state';
           emptyHeader.textContent = 'No working days to display.';
@@ -3454,7 +3458,7 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
           timelineHeaderEl.classList.add('week-view');
           timelineHeaderEl.style.gridTemplateRows = 'auto auto auto';
         } else {
-          timelineHeaderEl.classList.remove('week-view');
+          timelineHeaderEl.classList.add('day-view');
           timelineHeaderEl.style.gridTemplateRows = 'auto auto auto auto';
         }
         adjustGanttOffset();
@@ -3544,6 +3548,9 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
             dayNumber.textContent = formatShortDate(day).split('/')[0];
             dayNumber.style.gridRow = '4';
             dayNumber.style.gridColumn = `${index + 1}`;
+            if (day.getUTCDay() === 1) {
+              dayNumber.classList.add('is-monday');
+            }
             if (highlightSet.has('today')) dayNumber.classList.add('today');
             if (highlightSet.has('deadline')) dayNumber.classList.add('milestone-deadline');
             if (highlightSet.has('standdown')) dayNumber.classList.add('milestone-standdown');
