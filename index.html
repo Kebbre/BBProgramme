@@ -309,7 +309,7 @@
   <header class="top-bar">
     <div class="top-bar-row heading-row">
       <div class="project-heading">
-        <h1>Project 14.0</h1>
+        <h1>Project ABCDE</h1>
       </div>
     </div>
     <div class="top-bar-row primary-actions-row">
@@ -374,7 +374,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 14.3</span>
+    <span class="app-branding-text">Programme Tool : Version 14.4</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -4150,7 +4150,11 @@ ${formatDisplayDate(startDate)} (Single event)`;
             const textTop = topY + Math.max(verticalPadding, (rowHeight - contentHeight) / 2);
             const cleanedLines = lines.length ? lines.map((line) => (line === '' ? ' ' : line)) : [' '];
             if (index === 0) {
+              const originalFontSize = doc.getFontSize();
+              doc.setFont('helvetica', 'normal');
+              doc.setFontSize(7);
               doc.text(cleanedLines, cellX + textPadding, textTop, { baseline: 'top' });
+              doc.setFontSize(originalFontSize);
             } else if (index === 1) {
               doc.text(cleanedLines, cellX + textPadding, textTop, { baseline: 'top' });
             } else {
