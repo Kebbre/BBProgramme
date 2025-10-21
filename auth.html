@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Microsoft Authentication</title>
+  <style>
+    body {
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f3f4f6;
+      color: #1f2937;
+    }
+    .message {
+      text-align: center;
+      max-width: 320px;
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+  </style>
+  <script src="https://alcdn.msauth.net/browser/2.37.0/js/msal-browser.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div class="message">
+    <p>Completing Microsoft sign-in…</p>
+  </div>
+  <script>
+    (async function finishAuthentication() {
+      const CLIENT_ID = '64eaf9c0-93d7-4bda-9f02-b343bc459350';
+      const TENANT_ID = '6dc7041f-549e-4127-9e89-36f74513bad5';
+      const authority = TENANT_ID
+        ? `https://login.microsoftonline.com/${TENANT_ID}`
+        : 'https://login.microsoftonline.com/common';
+      const redirectUri = new URL('auth.html', window.location.href).toString();
+      if (!window.msal || !window.msal.PublicClientApplication) {
+        console.error('MSAL browser library unavailable while finishing authentication.');
+        window.close();
+        return;
+      }
+      const app = new window.msal.PublicClientApplication({
+        auth: { clientId: CLIENT_ID, authority, redirectUri },
+        cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: false }
+      });
+      try {
+        if (typeof app.initialize === 'function') {
+          await app.initialize();
+        }
+        const result = await app.handleRedirectPromise();
+        if (result?.account) {
+          app.setActiveAccount(result.account);
+        }
+        if (window.opener && !window.opener.closed) {
+          const payload = result?.account
+            ? {
+                success: true,
+                account: {
+                  homeAccountId: result.account.homeAccountId,
+                  username: result.account.username,
+                  name: result.account.name || null
+                }
+              }
+            : { success: true, account: null };
+          try {
+            window.opener.postMessage(
+              { type: 'bbprogramme-auth-complete', ...payload },
+              window.location.origin
+            );
+          } catch (messageError) {
+            console.debug('Unable to post authentication completion message to parent window.', messageError);
+          }
+        }
+      } catch (error) {
+        console.error('Authentication redirect handling failed.', error);
+        if (window.opener && !window.opener.closed) {
+          try {
+            window.opener.postMessage(
+              {
+                type: 'bbprogramme-auth-complete',
+                success: false,
+                error: error?.message || String(error || 'Unknown error')
+              },
+              window.location.origin
+            );
+          } catch (messageError) {
+            console.debug('Unable to notify parent window about authentication failure.', messageError);
+          }
+        }
+      } finally {
+        setTimeout(() => {
+          try {
+            window.close();
+          } catch (closeError) {
+            console.debug('Unable to close authentication window automatically.', closeError);
+          }
+        }, 200);
+      }
+    }());
+  </script>
+</body>
+</html>

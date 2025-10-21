@@ -377,7 +377,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 15.2.8</span>
+    <span class="app-branding-text">Programme Tool : Version 15.2.9</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -658,18 +658,24 @@
       }
       const GRAPH_AUTHORITY_PRIMARY = TENANT_ID ? `https://login.microsoftonline.com/${TENANT_ID}` : null;
       const GRAPH_AUTHORITY_FALLBACK = 'https://login.microsoftonline.com/common';
-      const GRAPH_REDIRECT_URI = "https://kebbre.github.io/BBProgramme/";
-      const TEAMS_AUTH_QUERY_PARAM = 'teamsAuth';
-      const TEAMS_AUTH_QUERY_VALUE = '1';
-      const TEAMS_AUTH_SESSION_KEY = 'bbprogramme:teams-auth-flow';
-      const TEAMS_AUTH_POPUP_WIDTH = 600;
-      const TEAMS_AUTH_POPUP_HEIGHT = 535;
-      const TEAMS_AUTH_POPUP_URL = `${GRAPH_REDIRECT_URI}?${TEAMS_AUTH_QUERY_PARAM}=${TEAMS_AUTH_QUERY_VALUE}`;
-      const currentUrlSearch = new URLSearchParams(window.location.search);
-      if (currentUrlSearch.get(TEAMS_AUTH_QUERY_PARAM) === TEAMS_AUTH_QUERY_VALUE) {
-        window.sessionStorage.setItem(TEAMS_AUTH_SESSION_KEY, TEAMS_AUTH_QUERY_VALUE);
-      }
-      const isTeamsAuthWindow = window.sessionStorage.getItem(TEAMS_AUTH_SESSION_KEY) === TEAMS_AUTH_QUERY_VALUE;
+      const GRAPH_REDIRECT_URI = (() => {
+        if (typeof window === 'undefined') {
+          return 'https://kebbre.github.io/BBProgramme/auth.html';
+        }
+        try {
+          return new URL('auth.html', window.location.href).toString();
+        } catch (error) {
+          console.warn('Unable to resolve redirect URI, falling back to default.', error);
+          return 'https://kebbre.github.io/BBProgramme/auth.html';
+        }
+      })();
+      const TEAMS_SSO_RESOURCE = (() => {
+        if (typeof window === 'undefined') return null;
+        if (window.bbProgrammeTeamsSsoResource) {
+          return String(window.bbProgrammeTeamsSsoResource);
+        }
+        return 'https://graph.microsoft.com';
+      })();
 
       const DATABASE_FALLBACK = [
         {"buildingType":"school","task":"GA Plan","weekdays":10,"squareMeterFactor":0.01,"difficultyFactor":3,"levelsFactor":2},
@@ -1627,10 +1633,15 @@
       function updateGraphAuthUI() {
         if (!graphAuthBtn) return;
         if (graphAccount) {
-          const label = activeAccountEmail ? `Signed in: ${activeAccountEmail}` : 'Signed in';
+          const usingTeamsSso = isTeamsSdkAvailable();
+          const label = activeAccountEmail
+            ? `${usingTeamsSso ? 'Teams SSO' : 'Signed in'}: ${activeAccountEmail}`
+            : (usingTeamsSso ? 'Connected via Teams SSO' : 'Signed in');
           graphAuthBtn.textContent = label;
           graphAuthBtn.dataset.signedIn = 'true';
-          graphAuthBtn.title = 'Click to sign out from OneDrive';
+          graphAuthBtn.title = usingTeamsSso
+            ? 'Click to refresh or sign out from OneDrive'
+            : 'Click to sign out from OneDrive';
         } else {
           graphAuthBtn.textContent = 'Sign in to OneDrive';
           delete graphAuthBtn.dataset.signedIn;
@@ -1653,143 +1664,139 @@
         return teamsInitializationPromise;
       }
 
-      async function launchTeamsAuthentication() {
-        if (!isTeamsSdkAvailable()) {
-          throw new Error('Microsoft Teams SDK is not available.');
+      function decodeJwtClaims(token) {
+        if (typeof token !== 'string' || token.indexOf('.') === -1) {
+          return null;
         }
-        await ensureTeamsAppInitialized();
-        const teamsAuth = window.microsoftTeams?.authentication;
-        if (!teamsAuth || typeof teamsAuth.authenticate !== 'function') {
-          throw new Error('Microsoft Teams authentication capability is unavailable.');
+        const [, payload = ''] = token.split('.');
+        if (!payload) return null;
+        let base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+        while (base64.length % 4 !== 0) {
+          base64 += '=';
         }
-        return new Promise((resolve, reject) => {
-          teamsAuth.authenticate({
-            url: TEAMS_AUTH_POPUP_URL,
-            width: TEAMS_AUTH_POPUP_WIDTH,
-            height: TEAMS_AUTH_POPUP_HEIGHT,
-            successCallback: (result) => {
-              resolve(result);
-            },
-            failureCallback: (reason) => {
-              const message = typeof reason === 'string' && reason.trim().length
-                ? reason
-                : 'Unknown Teams authentication error.';
-              reject(new Error(message));
-            }
-          });
-        });
+        try {
+          const raw = typeof window !== 'undefined' && typeof window.atob === 'function'
+            ? window.atob(base64)
+            : (typeof globalThis !== 'undefined' && typeof globalThis.atob === 'function'
+              ? globalThis.atob(base64)
+              : '');
+          if (!raw) return null;
+          const percentEncoded = Array.prototype.map.call(raw, (char) => {
+            const hex = char.charCodeAt(0).toString(16).padStart(2, '0');
+            return `%${hex}`;
+          }).join('');
+          const json = decodeURIComponent(percentEncoded);
+          return JSON.parse(json);
+        } catch (error) {
+          console.warn('Unable to decode Teams SSO token claims.', error);
+          return null;
+        }
       }
 
-      async function handleTeamsAuthPopupFlow() {
-        if (!isTeamsAuthWindow || !isTeamsSdkAvailable()) {
-          return false;
-        }
-        const teamsAuth = window.microsoftTeams?.authentication;
-        if (!teamsAuth
-          || typeof teamsAuth.notifySuccess !== 'function'
-          || typeof teamsAuth.notifyFailure !== 'function') {
-          console.warn('Teams authentication APIs are not available in this context.');
-          window.sessionStorage.removeItem(TEAMS_AUTH_SESSION_KEY);
-          return false;
-        }
-        let notifyCompleted = false;
-        const notifyFailure = (error) => {
-          if (notifyCompleted) return;
-          notifyCompleted = true;
-          try {
-            teamsAuth.notifyFailure(error ?? 'Teams authentication failed.');
-          } catch (notifyError) {
-            console.error('Unable to notify Teams authentication failure.', notifyError);
-          } finally {
-            window.sessionStorage.removeItem(TEAMS_AUTH_SESSION_KEY);
-          }
-        };
-        const notifySuccess = (payload) => {
-          if (notifyCompleted) return;
-          notifyCompleted = true;
-          try {
-            const serialised = typeof payload === 'string' ? payload : JSON.stringify(payload ?? {});
-            teamsAuth.notifySuccess(serialised);
-          } catch (notifyError) {
-            console.error('Unable to notify Teams authentication success.', notifyError);
-            notifyFailure(notifyError instanceof Error ? notifyError.message : String(notifyError));
-            return;
-          } finally {
-            window.sessionStorage.removeItem(TEAMS_AUTH_SESSION_KEY);
-          }
-        };
+      async function getTeamsContextSafe() {
+        if (!isTeamsSdkAvailable()) return null;
         try {
           await ensureTeamsAppInitialized();
         } catch (error) {
-          notifyFailure(error instanceof Error ? error.message : String(error));
-          return true;
+          console.warn('Unable to initialise Teams SDK for context retrieval.', error);
+          return null;
+        }
+        const teamsApp = window.microsoftTeams?.app;
+        if (!teamsApp || typeof teamsApp.getContext !== 'function') {
+          return null;
         }
         try {
-          await ensureMsalClient();
+          return await teamsApp.getContext();
         } catch (error) {
-          notifyFailure(extractErrorMessage(error));
-          return true;
+          console.warn('Unable to retrieve Teams context.', error);
+          return null;
         }
-        const client = msalInstance;
+      }
+
+      async function tryTeamsSsoSignIn({ forceRefresh = false, msalClient = null } = {}) {
+        if (!isTeamsSdkAvailable()) {
+          return null;
+        }
         try {
-          const redirectResult = await client.handleRedirectPromise?.();
-          if (redirectResult?.account) {
-            setActiveGraphAccount(redirectResult.account);
-          }
+          await ensureTeamsAppInitialized();
         } catch (error) {
-          console.warn('MSAL redirect handling within Teams auth window failed.', error);
+          console.warn('Unable to initialise Teams SDK for SSO.', error);
+          return null;
         }
-        let account = client.getActiveAccount();
-        if (!account) {
-          const accounts = client.getAllAccounts();
-          if (accounts.length) {
-            account = accounts[0];
-            setActiveGraphAccount(account);
-          }
+        const teamsAuth = window.microsoftTeams?.authentication;
+        if (!teamsAuth || typeof teamsAuth.getAuthToken !== 'function') {
+          console.debug('Teams authentication.getAuthToken is unavailable; skipping Teams SSO.');
+          return null;
         }
-        if (!account) {
-          try {
-            window.sessionStorage.setItem(TEAMS_AUTH_SESSION_KEY, TEAMS_AUTH_QUERY_VALUE);
-            client.loginRedirect({
-              scopes: GRAPH_SCOPES,
-              prompt: 'select_account',
-              redirectStartPage: window.location.href
-            });
-            return true;
-          } catch (error) {
-            notifyFailure(extractErrorMessage(error));
-            return true;
-          }
+        const request = { silent: !forceRefresh };
+        if (TEAMS_SSO_RESOURCE) {
+          request.resources = [TEAMS_SSO_RESOURCE];
         }
-        const tokenRequest = { scopes: GRAPH_SCOPES, account };
+        let ssoToken;
         try {
-          const response = await client.acquireTokenSilent(tokenRequest);
-          notifySuccess({
-            accessToken: response?.accessToken ?? null,
-            account: {
-              homeAccountId: account.homeAccountId,
-              username: account.username,
-              name: account.name
-            }
+          ssoToken = await teamsAuth.getAuthToken(request);
+        } catch (error) {
+          const method = forceRefresh ? 'warn' : 'info';
+          console[method]('Teams SSO token acquisition failed.', error);
+          return null;
+        }
+        let loginHint;
+        let sid;
+        const claims = decodeJwtClaims(ssoToken);
+        if (claims) {
+          loginHint = claims.preferred_username
+            || claims.upn
+            || claims.email
+            || claims.unique_name
+            || null;
+          sid = claims.sid || claims.oid || claims.sub || null;
+        }
+        if (!loginHint || !sid) {
+          const context = await getTeamsContextSafe();
+          if (context?.user) {
+            loginHint = loginHint
+              || context.user.loginHint
+              || context.user.userPrincipalName
+              || context.user.principalName
+              || null;
+            sid = sid
+              || context.user.id
+              || context.user.objectId
+              || null;
+          }
+        }
+        if (!loginHint && !sid) {
+          console.info('Teams SSO token did not include login hint or session id; skipping silent sign-in.');
+          return null;
+        }
+        const client = msalClient || msalInstance || await ensureMsalClient();
+        if (!client || typeof client.ssoSilent !== 'function') {
+          console.debug('MSAL ssoSilent API unavailable; cannot complete Teams SSO sign-in.');
+          return null;
+        }
+        try {
+          const response = await client.ssoSilent({
+            scopes: GRAPH_SCOPES,
+            loginHint,
+            sid,
+            forceRefresh
           });
-          return true;
-        } catch (error) {
-          if (window.msal?.InteractionRequiredAuthError && error instanceof window.msal.InteractionRequiredAuthError) {
-            try {
-              window.sessionStorage.setItem(TEAMS_AUTH_SESSION_KEY, TEAMS_AUTH_QUERY_VALUE);
-              client.acquireTokenRedirect({
-                ...tokenRequest,
-                redirectStartPage: window.location.href
-              });
-              return true;
-            } catch (redirectError) {
-              notifyFailure(extractErrorMessage(redirectError));
-              return true;
-            }
+          if (response?.account) {
+            setActiveGraphAccount(response.account);
+            return graphAccount;
           }
-          notifyFailure(extractErrorMessage(error));
-          return true;
+          if (response?.idTokenClaims?.preferred_username) {
+            activeAccountEmail = response.idTokenClaims.preferred_username;
+            updateGraphAuthUI();
+          }
+        } catch (error) {
+          const isInteractionRequired = window.msal?.InteractionRequiredAuthError
+            && error instanceof window.msal.InteractionRequiredAuthError;
+          const method = isInteractionRequired ? 'info' : 'warn';
+          console[method]('Teams SSO silent token acquisition failed.', error);
+          return null;
         }
+        return graphAccount;
       }
 
       function isAuthorityResolutionError(error) {
@@ -1892,21 +1899,17 @@
             setActiveGraphAccount(accounts[0]);
             return graphAccount;
           }
+          const ssoAccount = await tryTeamsSsoSignIn({ msalClient: client });
+          if (ssoAccount) {
+            return graphAccount;
+          }
           if (!allowInteractive) {
             throw new Error('Please sign in to OneDrive before continuing.');
           }
           if (isTeamsSdkAvailable()) {
-            try {
-              await launchTeamsAuthentication();
-              const refreshedAccount = client.getActiveAccount() || client.getAllAccounts()[0];
-              if (refreshedAccount) {
-                setActiveGraphAccount(refreshedAccount);
-                return graphAccount;
-              }
-              throw new Error('Teams authentication completed but no account was detected.');
-            } catch (teamsError) {
-              console.error('Microsoft Teams authentication failed.', teamsError);
-              throw teamsError;
+            const refreshedAccount = await tryTeamsSsoSignIn({ forceRefresh: true, msalClient: client });
+            if (refreshedAccount) {
+              return graphAccount;
             }
           }
           const response = await client.loginPopup({
@@ -1928,9 +1931,23 @@
             return response.accessToken;
           } catch (error) {
             if (window.msal?.InteractionRequiredAuthError && error instanceof window.msal.InteractionRequiredAuthError) {
+              if (isTeamsSdkAvailable()) {
+                const refreshed = await tryTeamsSsoSignIn({ forceRefresh: true, msalClient: client });
+                if (refreshed) {
+                  const retry = await client.acquireTokenSilent(tokenRequest);
+                  return retry.accessToken;
+                }
+              }
               if (!interactiveFallback) throw error;
               const interactiveResponse = await client.acquireTokenPopup(tokenRequest);
               return interactiveResponse.accessToken;
+            }
+            if (isTeamsSdkAvailable()) {
+              const refreshed = await tryTeamsSsoSignIn({ forceRefresh: true, msalClient: client });
+              if (refreshed) {
+                const retry = await client.acquireTokenSilent(tokenRequest);
+                return retry.accessToken;
+              }
             }
             if (!interactiveFallback) throw error;
             const interactiveResponse = await client.acquireTokenPopup(tokenRequest);
@@ -1941,6 +1958,15 @@
 
       async function loginToGraph() {
         try {
+          const client = await ensureMsalClient();
+          if (isTeamsSdkAvailable()) {
+            const ssoAccount = await tryTeamsSsoSignIn({ forceRefresh: true, msalClient: client });
+            if (ssoAccount) {
+              const label = activeAccountEmail ? `Teams SSO: ${activeAccountEmail}` : 'Connected via Teams SSO.';
+              window.alert(label);
+              return;
+            }
+          }
           await requireGraphAccount({ allowInteractive: true });
           const label = activeAccountEmail ? `Signed in: ${activeAccountEmail}` : 'Signed in to OneDrive.';
           window.alert(label);
@@ -5935,7 +5961,10 @@ ${formatDisplayDate(startDate)} (Single event)`;
       function initialise() {
         updateStickyMetrics();
         updateGraphAuthUI();
-        ensureMsalClient().then(() => {
+        ensureMsalClient().then(async (client) => {
+          if (isTeamsSdkAvailable()) {
+            await tryTeamsSsoSignIn({ msalClient: client });
+          }
           updateGraphAuthUI();
         }).catch((error) => {
           console.warn('Unable to initialise Microsoft authentication on startup.', error);
@@ -5958,11 +5987,6 @@ ${formatDisplayDate(startDate)} (Single event)`;
             renderAllImmediate();
           }
         });
-      }
-
-      if (isTeamsAuthWindow) {
-        await handleTeamsAuthPopupFlow();
-        return;
       }
 
       document.addEventListener('DOMContentLoaded', initialise);
