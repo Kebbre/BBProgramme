@@ -380,7 +380,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 15.2.14</span>
+    <span class="app-branding-text">Programme Tool : Version 15.3.0</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -539,7 +539,6 @@
     </div>
   </div>
 
-  <script src="https://alcdn.msauth.net/browser/2.37.0/js/msal-browser.min.js" crossorigin="anonymous"></script>
   <script src="https://res.cdn.office.net/teams-js/v2.17.0/js/MicrosoftTeams.min.js" crossorigin="anonymous"></script>
   <script type="importmap">
     {
@@ -549,6 +548,10 @@
     }
   </script>
   <script type="module">
+    import {
+      createNestablePublicClientApplication,
+      InteractionRequiredAuthError
+    } from "https://cdn.jsdelivr.net/npm/@azure/msal-browser@latest/+esm";
     (async function () {
       const DEFAULT_DAY_WIDTH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--day-width'), 10) || 32;
       const MIN_ZOOM_SCALE = 0.6;
@@ -580,8 +583,6 @@
       };
       const DEFAULT_SEGMENT_COLOR = '#3056d3';
       // Graph configuration for OneDrive storage
-      const CLIENT_ID = '64eaf9c0-93d7-4bda-9f02-b343bc459350';
-      const TENANT_ID = '6dc7041f-549e-4127-9e89-36f74513bad5';
       const GRAPH_SCOPES = ['User.Read', 'Files.ReadWrite.All'];
       const GRAPH_BASE_URL = 'https://graph.microsoft.com/v1.0';
       const GRAPH_ITEM_BASE_SEGMENTS = ['Documents', 'Programme App'];
@@ -592,6 +593,18 @@
         'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
         'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'
       ]);
+      const MSAL_CONFIG = {
+        auth: {
+          clientId: '64eaf9c0-93d7-4bda-9f02-b343bc459350',
+          authority: 'https://login.microsoftonline.com/common',
+          redirectUri: 'https://kebbre.github.io/BBProgramme/auth.html',
+          supportsNestedAppAuth: true
+        },
+        cache: {
+          cacheLocation: 'localStorage',
+          storeAuthStateInCookie: false
+        }
+      };
       let teamsChannelAutoLoadRequested = false;
       let hasAttemptedInitialTeamsAutoLoad = false;
       function sanitizeFilenameSegment(raw) {
@@ -658,106 +671,6 @@
       if (typeof window !== 'undefined') {
         window.bbProgrammeInvalidateGraphPathCache = invalidateGraphItemPathCache;
         window.bbProgrammeOnTeamsChannelResolved = handleTeamsChannelResolved;
-      }
-      const GRAPH_AUTHORITY_PRIMARY = TENANT_ID ? `https://login.microsoftonline.com/${TENANT_ID}` : null;
-      const GRAPH_AUTHORITY_FALLBACK = 'https://login.microsoftonline.com/common';
-      const GRAPH_REDIRECT_URI = (() => {
-        if (typeof window === 'undefined') {
-          return 'https://kebbre.github.io/BBProgramme/auth.html';
-        }
-        try {
-          return new URL('auth.html', window.location.href).toString();
-        } catch (error) {
-          console.warn('Unable to resolve redirect URI, falling back to default.', error);
-          return 'https://kebbre.github.io/BBProgramme/auth.html';
-        }
-      })();
-      const TEAMS_SSO_RESOURCE = (() => {
-        if (typeof window === 'undefined') return null;
-        if (window.bbProgrammeTeamsSsoResource) {
-          return String(window.bbProgrammeTeamsSsoResource);
-        }
-        return 'https://graph.microsoft.com';
-      })();
-      const TEAMS_AUTH_POPUP_WIDTH = 600;
-      const TEAMS_AUTH_POPUP_HEIGHT = 535;
-      const TEAMS_INTERACTIVE_AUTH_URL = (() => {
-        if (typeof window === 'undefined') {
-          return 'https://kebbre.github.io/BBProgramme/auth.html?teams=1';
-        }
-        try {
-          return new URL('auth.html?teams=1', window.location.href).toString();
-        } catch (error) {
-          console.warn('Unable to resolve Teams authentication URL, falling back to default.', error);
-          return 'https://kebbre.github.io/BBProgramme/auth.html?teams=1';
-        }
-      })();
-      const AUTH_COMPLETION_WAITERS = [];
-      function removeAuthCompletionWaiter(waiter) {
-        const index = AUTH_COMPLETION_WAITERS.indexOf(waiter);
-        if (index >= 0) {
-          AUTH_COMPLETION_WAITERS.splice(index, 1);
-        }
-      }
-      function waitForAuthCompletion(timeoutMs = 60000) {
-        if (typeof window === 'undefined') {
-          return Promise.resolve(null);
-        }
-        const timeout = Math.max(1000, Number(timeoutMs) || 60000);
-        return new Promise((resolve, reject) => {
-          const waiter = {
-            resolve: (value) => {
-              window.clearTimeout(waiter.timer);
-              removeAuthCompletionWaiter(waiter);
-              resolve(value);
-            },
-            reject: (error) => {
-              window.clearTimeout(waiter.timer);
-              removeAuthCompletionWaiter(waiter);
-              reject(error);
-            }
-          };
-          waiter.timer = window.setTimeout(() => {
-            removeAuthCompletionWaiter(waiter);
-            reject(new Error('Authentication message timeout.'));
-          }, timeout);
-          AUTH_COMPLETION_WAITERS.push(waiter);
-        });
-      }
-      function notifyAuthCompletionWaiters(payload, { isError = false } = {}) {
-        if (!AUTH_COMPLETION_WAITERS.length) return;
-        const waiters = AUTH_COMPLETION_WAITERS.splice(0, AUTH_COMPLETION_WAITERS.length);
-        waiters.forEach((waiter) => {
-          if (!waiter) return;
-          try {
-            if (isError) {
-              waiter.reject(payload instanceof Error ? payload : new Error(String(payload || 'Authentication failed.')));
-            } else {
-              waiter.resolve(payload ?? null);
-            }
-          } catch (listenerError) {
-            console.debug('Authentication completion waiter failed.', listenerError);
-          }
-        });
-      }
-      if (typeof window !== 'undefined') {
-        window.addEventListener('message', (event) => {
-          if (!event || typeof event.data !== 'object' || event.data === null) {
-            return;
-          }
-          if (typeof window.location === 'object' && event.origin !== window.location.origin) {
-            return;
-          }
-          const { type, success, error, account } = event.data;
-          if (type !== 'bbprogramme-auth-complete') {
-            return;
-          }
-          if (success === false) {
-            notifyAuthCompletionWaiters(error || 'Authentication failed.', { isError: true });
-          } else {
-            notifyAuthCompletionWaiters({ success: true, account: account || null });
-          }
-        }, false);
       }
 
       const DATABASE_FALLBACK = [
@@ -826,13 +739,10 @@
       let milestones = [];
       let milestoneDrafts = [];
       let selectedMilestoneId = null;
-      let msalInstance = null;
-      let msalInitializationPromise = null;
+      let msalClient = null;
+      let msalClientPromise = null;
       let graphAccount = null;
       let activeAccountEmail = null;
-      let currentAuthority = GRAPH_AUTHORITY_PRIMARY || GRAPH_AUTHORITY_FALLBACK;
-      let authorityFallbackActive = !GRAPH_AUTHORITY_PRIMARY;
-      let teamsInitializationPromise = null;
       let renderFrameHandle = null;
       let pdfLogoPromise = null;
       let isSyncingScroll = false;
@@ -1707,8 +1617,8 @@
           graphAccount = null;
           activeAccountEmail = null;
         }
-        if (msalInstance && typeof msalInstance.setActiveAccount === 'function') {
-          msalInstance.setActiveAccount(account || null);
+        if (msalClient && typeof msalClient.setActiveAccount === 'function') {
+          msalClient.setActiveAccount(account || null);
         }
         updateGraphAuthUI();
         maybeAutoLoadProgrammeFromTeams();
@@ -1717,15 +1627,12 @@
       function updateGraphAuthUI() {
         if (!graphAuthBtn) return;
         if (graphAccount) {
-          const usingTeamsSso = isTeamsSdkAvailable();
           const label = activeAccountEmail
-            ? `${usingTeamsSso ? 'Teams SSO' : 'Signed in'}: ${activeAccountEmail}`
-            : (usingTeamsSso ? 'Connected via Teams SSO' : 'Signed in');
+            ? `Signed in: ${activeAccountEmail}`
+            : 'Signed in';
           graphAuthBtn.textContent = label;
           graphAuthBtn.dataset.signedIn = 'true';
-          graphAuthBtn.title = usingTeamsSso
-            ? 'Click to refresh or sign out from OneDrive'
-            : 'Click to sign out from OneDrive';
+          graphAuthBtn.title = 'Click to sign out from OneDrive';
         } else {
           graphAuthBtn.textContent = 'Sign in to OneDrive';
           delete graphAuthBtn.dataset.signedIn;
@@ -1733,571 +1640,79 @@
         }
       }
 
-      function isTeamsSdkAvailable() {
-        return typeof window.microsoftTeams !== 'undefined'
-          && typeof window.microsoftTeams?.app?.initialize === 'function';
-      }
-
-      async function ensureTeamsAppInitialized() {
-        if (!isTeamsSdkAvailable()) {
-          throw new Error('Microsoft Teams SDK is not available.');
-        }
-        if (!teamsInitializationPromise) {
-          teamsInitializationPromise = window.microsoftTeams.app.initialize();
-        }
-        return teamsInitializationPromise;
-      }
-
-      function decodeJwtClaims(token) {
-        if (typeof token !== 'string' || token.indexOf('.') === -1) {
-          return null;
-        }
-        const [, payload = ''] = token.split('.');
-        if (!payload) return null;
-        let base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-        while (base64.length % 4 !== 0) {
-          base64 += '=';
-        }
-        try {
-          const raw = typeof window !== 'undefined' && typeof window.atob === 'function'
-            ? window.atob(base64)
-            : (typeof globalThis !== 'undefined' && typeof globalThis.atob === 'function'
-              ? globalThis.atob(base64)
-              : '');
-          if (!raw) return null;
-          const percentEncoded = Array.prototype.map.call(raw, (char) => {
-            const hex = char.charCodeAt(0).toString(16).padStart(2, '0');
-            return `%${hex}`;
-          }).join('');
-          const json = decodeURIComponent(percentEncoded);
-          return JSON.parse(json);
-        } catch (error) {
-          console.warn('Unable to decode Teams SSO token claims.', error);
-          return null;
-        }
-      }
-
-      async function getTeamsContextSafe() {
-        if (!isTeamsSdkAvailable()) return null;
-        try {
-          await ensureTeamsAppInitialized();
-        } catch (error) {
-          console.warn('Unable to initialise Teams SDK for context retrieval.', error);
-          return null;
-        }
-        const teamsApp = window.microsoftTeams?.app;
-        if (!teamsApp || typeof teamsApp.getContext !== 'function') {
-          return null;
-        }
-        try {
-          return await teamsApp.getContext();
-        } catch (error) {
-          console.warn('Unable to retrieve Teams context.', error);
-          return null;
-        }
-      }
-
-      async function tryTeamsSsoSignIn({ forceRefresh = false, msalClient = null } = {}) {
-        if (!isTeamsSdkAvailable()) {
-          return null;
-        }
-        try {
-          await ensureTeamsAppInitialized();
-        } catch (error) {
-          console.warn('Unable to initialise Teams SDK for SSO.', error);
-          return null;
-        }
-        const teamsAuth = window.microsoftTeams?.authentication;
-        if (!teamsAuth || typeof teamsAuth.getAuthToken !== 'function') {
-          console.debug('Teams authentication.getAuthToken is unavailable; skipping Teams SSO.');
-          return null;
-        }
-        const request = { silent: !forceRefresh };
-        if (TEAMS_SSO_RESOURCE) {
-          request.resources = [TEAMS_SSO_RESOURCE];
-        }
-        let ssoToken;
-        try {
-          ssoToken = await teamsAuth.getAuthToken(request);
-        } catch (error) {
-          const method = forceRefresh ? 'warn' : 'info';
-          console[method]('Teams SSO token acquisition failed.', error);
-          return null;
-        }
-        let loginHint;
-        let sid;
-        const claims = decodeJwtClaims(ssoToken);
-        if (claims) {
-          loginHint = claims.preferred_username
-            || claims.upn
-            || claims.email
-            || claims.unique_name
-            || null;
-          sid = claims.sid || claims.oid || claims.sub || null;
-        }
-        if (!loginHint || !sid) {
-          const context = await getTeamsContextSafe();
-          if (context?.user) {
-            loginHint = loginHint
-              || context.user.loginHint
-              || context.user.userPrincipalName
-              || context.user.principalName
-              || null;
-            sid = sid
-              || context.user.id
-              || context.user.objectId
-              || null;
-          }
-        }
-        if (!loginHint && !sid) {
-          console.info('Teams SSO token did not include login hint or session id; skipping silent sign-in.');
-          return null;
-        }
-        const client = msalClient || msalInstance || await ensureMsalClient();
-        if (!client || typeof client.ssoSilent !== 'function') {
-          console.debug('MSAL ssoSilent API unavailable; cannot complete Teams SSO sign-in.');
-          return null;
-        }
-        try {
-          const response = await client.ssoSilent({
-            scopes: GRAPH_SCOPES,
-            loginHint,
-            sid,
-            forceRefresh
-          });
-          if (response?.account) {
-            setActiveGraphAccount(response.account);
-            return graphAccount;
-          }
-          if (response?.idTokenClaims?.preferred_username) {
-            activeAccountEmail = response.idTokenClaims.preferred_username;
-            updateGraphAuthUI();
-          }
-        } catch (error) {
-          const isInteractionRequired = window.msal?.InteractionRequiredAuthError
-            && error instanceof window.msal.InteractionRequiredAuthError;
-          const method = isInteractionRequired ? 'info' : 'warn';
-          console[method]('Teams SSO silent token acquisition failed.', error);
-          return null;
-        }
-        return graphAccount;
-      }
-
-      async function runMsalPopup(startPopup, { timeoutMs = 90000 } = {}) {
-        if (typeof startPopup !== 'function') {
-          throw new Error('A popup invocation callback is required.');
-        }
-        if (typeof window === 'undefined') {
-          const result = await startPopup();
-          return {
-            popupOutcome: { type: 'popup', result },
-            messageOutcome: null
-          };
-        }
-        let messageSettled = false;
-        const messagePromise = waitForAuthCompletion(timeoutMs)
-          .then((data) => {
-            messageSettled = true;
-            return { type: 'message', data };
-          })
-          .catch((error) => {
-            messageSettled = true;
-            return { type: 'message-error', error };
-          });
-        const popupPromise = startPopup()
-          .then((result) => ({ type: 'popup', result }))
-          .catch((error) => ({ type: 'popup-error', error }));
-        const popupOutcome = await popupPromise;
-        let messageOutcome = null;
-        if (messageSettled) {
-          messageOutcome = await messagePromise;
-        } else {
-          messageOutcome = await Promise.race([
-            messagePromise,
-            Promise.resolve({ type: 'message-timeout' })
-          ]);
-        }
-        return { popupOutcome, messageOutcome };
-      }
-
-      function selectAccountFromClient(client, desiredAccount) {
-        if (!client || typeof client.getAllAccounts !== 'function') {
-          return null;
-        }
-        const accounts = client.getAllAccounts();
-        if (!accounts.length) return null;
-        if (desiredAccount?.homeAccountId) {
-          const match = accounts.find((account) => account.homeAccountId === desiredAccount.homeAccountId);
-          if (match) return match;
-        }
-        if (desiredAccount?.username) {
-          const normalisedUsername = String(desiredAccount.username).toLowerCase();
-          const match = accounts.find((account) => String(account.username || '').toLowerCase() === normalisedUsername);
-          if (match) return match;
-        }
-        return accounts[0];
-      }
-
-      function finaliseInteractiveOutcome(client, { popupOutcome, messageOutcome }) {
-        const messageType = messageOutcome?.type;
-        const popupType = popupOutcome?.type;
-        if (messageType === 'message') {
-          const message = messageOutcome.data || {};
-          if (message.success === false) {
-            const popupError = popupType === 'popup-error' ? popupOutcome.error : null;
-            if (popupError && popupError.errorCode !== 'user_cancelled') {
-              throw popupError;
-            }
-            throw new Error(message.error || 'Authentication failed.');
-          }
-          const matchedAccount = selectAccountFromClient(client, message.account);
-          if (matchedAccount) {
-            setActiveGraphAccount(matchedAccount);
-            if (message.account?.username) {
-              activeAccountEmail = message.account.username;
-            } else if (matchedAccount.username) {
-              activeAccountEmail = matchedAccount.username;
-            }
-            updateGraphAuthUI();
-            return matchedAccount;
-          }
-        } else if (messageType === 'message-error') {
-          const popupError = popupType === 'popup-error' ? popupOutcome.error : null;
-          if (popupError && popupError.errorCode !== 'user_cancelled') {
-            throw popupError;
-          }
-          throw messageOutcome.error instanceof Error
-            ? messageOutcome.error
-            : new Error(String(messageOutcome.error || 'Authentication popup failed.'));
-        } else if (messageType === 'message-timeout') {
-          // Ignore – rely on popup outcome alone.
-        }
-        if (popupType === 'popup' && popupOutcome.result?.account) {
-          setActiveGraphAccount(popupOutcome.result.account);
-          return popupOutcome.result.account;
-        }
-        if (popupType === 'popup-error') {
-          if (popupOutcome.error?.errorCode === 'user_cancelled' && graphAccount) {
-            return graphAccount;
-          }
-          throw popupOutcome.error;
-        }
-        const fallbackAccount = client?.getActiveAccount?.() || selectAccountFromClient(client, null);
-        if (fallbackAccount) {
-          setActiveGraphAccount(fallbackAccount);
-          return fallbackAccount;
-        }
-        throw new Error('Authentication failed. No account is available after popup.');
-      }
-
-      async function launchTeamsInteractiveAuth({ timeoutMs = 90000 } = {}) {
-        if (!isTeamsSdkAvailable()) {
-          throw new Error('Microsoft Teams SDK is not available.');
-        }
-        await ensureTeamsAppInitialized();
-        const teamsAuth = window.microsoftTeams?.authentication;
-        if (!teamsAuth || typeof teamsAuth.authenticate !== 'function') {
-          throw new Error('Microsoft Teams authentication capability is unavailable.');
-        }
-        const timeout = Math.max(1000, Number(timeoutMs) || 90000);
-        return new Promise((resolve, reject) => {
-          let settled = false;
-          const timeoutHandle = window.setTimeout(() => {
-            if (settled) return;
-            settled = true;
-            reject(new Error('Teams authentication timed out.'));
-          }, timeout);
-          teamsAuth.authenticate({
-            url: TEAMS_INTERACTIVE_AUTH_URL,
-            width: TEAMS_AUTH_POPUP_WIDTH,
-            height: TEAMS_AUTH_POPUP_HEIGHT,
-            successCallback: (result) => {
-              if (settled) return;
-              settled = true;
-              window.clearTimeout(timeoutHandle);
-              resolve(result);
-            },
-            failureCallback: (reason) => {
-              if (settled) return;
-              settled = true;
-              window.clearTimeout(timeoutHandle);
-              const message = typeof reason === 'string' && reason.trim().length
-                ? reason
-                : 'Teams authentication failed.';
-              reject(new Error(message));
-            }
-          });
-        });
-      }
-
-      async function ensureTeamsInteractiveGraphAccount(client, { timeoutMs = 90000 } = {}) {
-        let rawResult = null;
-        try {
-          rawResult = await launchTeamsInteractiveAuth({ timeoutMs });
-        } catch (error) {
-          throw error;
-        }
-        let payload = null;
-        if (typeof rawResult === 'string') {
-          try {
-            payload = JSON.parse(rawResult);
-          } catch (parseError) {
-            console.debug('Unable to parse Teams authentication payload.', parseError);
-          }
-        } else if (rawResult && typeof rawResult === 'object') {
-          payload = rawResult;
-        }
-        if (payload?.success === false) {
-          const message = typeof payload.error === 'string' && payload.error.trim().length
-            ? payload.error
-            : 'Teams authentication failed.';
-          throw new Error(message);
-        }
-        const desiredAccount = payload?.account ?? null;
-        let matched = selectAccountFromClient(client, desiredAccount);
-        if (!matched) {
-          matched = client?.getActiveAccount?.() || selectAccountFromClient(client, null);
-        }
-        if (!matched) {
-          const accounts = client?.getAllAccounts?.() || [];
-          if (accounts.length) {
-            matched = accounts[0];
-          }
-        }
-        if (!matched) {
-          throw new Error('Teams authentication completed but no account is available.');
-        }
-        setActiveGraphAccount(matched);
-        if (matched.username) {
-          activeAccountEmail = matched.username;
-        }
-        updateGraphAuthUI();
-        return graphAccount;
-      }
-
-      async function ensureInteractiveGraphAccount(client, { timeoutMs } = {}) {
-        const outcome = await runMsalPopup(
-          () => client.loginPopup({
-            scopes: GRAPH_SCOPES,
-            prompt: 'select_account',
-            redirectUri: GRAPH_REDIRECT_URI
-          }),
-          { timeoutMs }
-        );
-        return finaliseInteractiveOutcome(client, outcome);
-      }
-
-      async function acquireTokenInteractively(client, tokenRequest, { timeoutMs } = {}) {
-        const outcome = await runMsalPopup(
-          () => client.acquireTokenPopup({ ...tokenRequest, redirectUri: GRAPH_REDIRECT_URI }),
-          { timeoutMs }
-        );
-        if (outcome.popupOutcome?.type === 'popup' && outcome.popupOutcome.result?.accessToken) {
-          if (outcome.popupOutcome.result.account) {
-            setActiveGraphAccount(outcome.popupOutcome.result.account);
-          }
-          return outcome.popupOutcome.result.accessToken;
-        }
-        const account = finaliseInteractiveOutcome(client, outcome);
-        const silentResponse = await client.acquireTokenSilent({ ...tokenRequest, account });
-        return silentResponse.accessToken;
-      }
-
-      function isAuthorityResolutionError(error) {
-
-        const code = error?.errorCode || error?.code || error?.name;
-        if (typeof code === 'string' && code.toLowerCase().includes('endpoints_resolution_error')) {
-          return true;
-        }
-        const message = error?.message || error?.errorMessage || '';
-        if (typeof message === 'string') {
-          const lowered = message.toLowerCase();
-          if (lowered.includes('endpoints_resolution_error') || lowered.includes('openid_config_error') || lowered.includes('invalid_tenant')) {
-            return true;
-          }
-        }
-        return false;
-      }
-
-      async function setupMsalClient(authority, { allowFallback } = { allowFallback: true }) {
-        if (!window.msal || !window.msal.PublicClientApplication) {
-          throw new Error('Microsoft authentication library is not available.');
-        }
-        currentAuthority = authority || GRAPH_AUTHORITY_FALLBACK;
-        authorityFallbackActive = currentAuthority === GRAPH_AUTHORITY_FALLBACK;
-        console.info(`Initialising MSAL with authority: ${currentAuthority}`);
-        msalInstance = new window.msal.PublicClientApplication({
-          auth: {
-            clientId: CLIENT_ID,
-            authority: currentAuthority,
-            redirectUri: GRAPH_REDIRECT_URI
-          },
-          cache: {
-            cacheLocation: 'localStorage',
-            storeAuthStateInCookie: false
-          }
-        });
-        msalInitializationPromise = typeof msalInstance.initialize === 'function'
-          ? msalInstance.initialize()
-          : Promise.resolve();
-        try {
-          await msalInitializationPromise;
-        } catch (error) {
-          if (allowFallback && currentAuthority !== GRAPH_AUTHORITY_FALLBACK && isAuthorityResolutionError(error)) {
-            console.warn('Primary authority failed, switching to fallback authority.', error);
-            return setupMsalClient(GRAPH_AUTHORITY_FALLBACK, { allowFallback: false });
-          }
-          throw error;
-        }
-        setActiveGraphAccount(null);
-        const existingAccounts = msalInstance.getAllAccounts();
-        if (existingAccounts.length) {
-          setActiveGraphAccount(existingAccounts[0]);
-        } else {
-          updateGraphAuthUI();
-        }
-        return msalInstance;
-      }
-
-      async function runWithAuthorityFallback(executor) {
-        try {
-          return await executor();
-        } catch (error) {
-          if (!authorityFallbackActive && isAuthorityResolutionError(error)) {
-            console.warn('MSAL operation failed due to authority resolution. Retrying with fallback authority.', error);
-            await setupMsalClient(GRAPH_AUTHORITY_FALLBACK, { allowFallback: false });
-            return await executor();
-          }
-          throw error;
-        }
-      }
-
       async function ensureMsalClient() {
-        if (!msalInstance) {
-          await setupMsalClient(GRAPH_AUTHORITY_PRIMARY || GRAPH_AUTHORITY_FALLBACK, { allowFallback: true });
-        } else if (msalInitializationPromise) {
+        if (msalClient) return msalClient;
+        if (!msalClientPromise) {
+          msalClientPromise = (async () => {
+            const client = await createNestablePublicClientApplication(MSAL_CONFIG);
+            if (typeof client.initialize === 'function') {
+              await client.initialize();
+            }
+            return client;
+          })();
+        }
+        try {
+          msalClient = await msalClientPromise;
+        } catch (error) {
+          msalClientPromise = null;
+          throw error;
+        }
+        const accounts = msalClient?.getAllAccounts?.() || [];
+        if (accounts.length && !graphAccount) {
+          setActiveGraphAccount(accounts[0]);
+        }
+        return msalClient;
+      }
+
+      async function acquireGraphToken({ interactiveFallback = true } = {}) {
+        const client = await ensureMsalClient();
+        const accounts = client.getAllAccounts?.() || [];
+        let account = accounts.length ? accounts[0] : null;
+        if (account) {
+          client.setActiveAccount?.(account);
+          setActiveGraphAccount(account);
+        }
+
+        if (account) {
           try {
-            await msalInitializationPromise;
+            const response = await client.acquireTokenSilent({
+              scopes: GRAPH_SCOPES,
+              account
+            });
+            if (response?.account) {
+              setActiveGraphAccount(response.account);
+            }
+            return response.accessToken;
           } catch (error) {
-            if (!authorityFallbackActive && isAuthorityResolutionError(error)) {
-              await setupMsalClient(GRAPH_AUTHORITY_FALLBACK, { allowFallback: false });
-            } else {
+            const interactionRequired = error instanceof InteractionRequiredAuthError
+              || String(error?.errorCode || '').toLowerCase() === 'interaction_required';
+            if (!interactionRequired) {
+              throw error;
+            }
+            if (!interactiveFallback) {
               throw error;
             }
           }
         }
-        return msalInstance;
-      }
 
-      async function requireGraphAccount({ allowInteractive } = { allowInteractive: false }) {
-        return runWithAuthorityFallback(async () => {
-          const client = await ensureMsalClient();
-          if (graphAccount) return graphAccount;
-          const active = client.getActiveAccount();
-          if (active) {
-            setActiveGraphAccount(active);
-            return graphAccount;
-          }
-          const accounts = client.getAllAccounts();
-          if (accounts.length) {
-            setActiveGraphAccount(accounts[0]);
-            return graphAccount;
-          }
-          const ssoAccount = await tryTeamsSsoSignIn({ msalClient: client });
-          if (ssoAccount) {
-            return graphAccount;
-          }
-          if (!allowInteractive) {
-            throw new Error('Please sign in to OneDrive before continuing.');
-          }
-          if (isTeamsSdkAvailable()) {
-            const refreshedAccount = await tryTeamsSsoSignIn({ forceRefresh: true, msalClient: client });
-            if (refreshedAccount) {
-              return graphAccount;
-            }
-            try {
-              const teamsAccount = await ensureTeamsInteractiveGraphAccount(client, { timeoutMs: 90000 });
-              if (teamsAccount) {
-                return graphAccount;
-              }
-            } catch (teamsError) {
-              console.warn('Teams interactive authentication failed.', teamsError);
-            }
-          }
-          await ensureInteractiveGraphAccount(client, { timeoutMs: 90000 });
-          return graphAccount;
+        if (!interactiveFallback) {
+          throw new Error('User interaction is required to acquire a Graph token.');
+        }
+        const popupResponse = await client.acquireTokenPopup({
+          scopes: GRAPH_SCOPES
         });
-      }
-
-      async function acquireGraphToken({ interactiveFallback = true } = {}) {
-        return runWithAuthorityFallback(async () => {
-          const client = await ensureMsalClient();
-          const account = await requireGraphAccount({ allowInteractive: interactiveFallback });
-          const tokenRequest = { scopes: GRAPH_SCOPES, account };
-          try {
-            const response = await client.acquireTokenSilent(tokenRequest);
-            return response.accessToken;
-          } catch (error) {
-            if (window.msal?.InteractionRequiredAuthError && error instanceof window.msal.InteractionRequiredAuthError) {
-              if (isTeamsSdkAvailable()) {
-                try {
-                  await ensureTeamsInteractiveGraphAccount(client, { timeoutMs: 90000 });
-                  const retryAfterTeams = await client.acquireTokenSilent(tokenRequest);
-                  return retryAfterTeams.accessToken;
-                } catch (teamsInteractiveError) {
-                  console.warn('Teams interactive authentication did not yield a token.', teamsInteractiveError);
-                }
-                const refreshed = await tryTeamsSsoSignIn({ forceRefresh: true, msalClient: client });
-                if (refreshed) {
-                  const retry = await client.acquireTokenSilent(tokenRequest);
-                  return retry.accessToken;
-                }
-              }
-              if (!interactiveFallback) throw error;
-              const interactiveAccessToken = await acquireTokenInteractively(client, tokenRequest, { timeoutMs: 90000 });
-              return interactiveAccessToken;
-            }
-            if (isTeamsSdkAvailable()) {
-              try {
-                await ensureTeamsInteractiveGraphAccount(client, { timeoutMs: 90000 });
-                const retryAfterTeams = await client.acquireTokenSilent(tokenRequest);
-                return retryAfterTeams.accessToken;
-              } catch (teamsInteractiveError) {
-                console.warn('Teams interactive authentication did not yield a token.', teamsInteractiveError);
-              }
-              const refreshed = await tryTeamsSsoSignIn({ forceRefresh: true, msalClient: client });
-              if (refreshed) {
-                const retry = await client.acquireTokenSilent(tokenRequest);
-                return retry.accessToken;
-              }
-            }
-            if (!interactiveFallback) throw error;
-            const interactiveAccessToken = await acquireTokenInteractively(client, tokenRequest, { timeoutMs: 90000 });
-            return interactiveAccessToken;
-          }
-        });
+        if (popupResponse?.account) {
+          setActiveGraphAccount(popupResponse.account);
+        }
+        if (!popupResponse?.accessToken) {
+          throw new Error('Authentication did not return an access token.');
+        }
+        return popupResponse.accessToken;
       }
 
       async function loginToGraph() {
         try {
-          const client = await ensureMsalClient();
-          if (isTeamsSdkAvailable()) {
-            const ssoAccount = await tryTeamsSsoSignIn({ forceRefresh: true, msalClient: client });
-            if (ssoAccount) {
-              const label = activeAccountEmail ? `Teams SSO: ${activeAccountEmail}` : 'Connected via Teams SSO.';
-              window.alert(label);
-              return;
-            }
-            try {
-              await ensureTeamsInteractiveGraphAccount(client, { timeoutMs: 90000 });
-              const label = activeAccountEmail ? `Teams account: ${activeAccountEmail}` : 'Connected via Teams authentication.';
-              window.alert(label);
-              return;
-            } catch (teamsInteractiveError) {
-              console.warn('Teams interactive authentication failed.', teamsInteractiveError);
-            }
-          }
-          await requireGraphAccount({ allowInteractive: true });
+          await acquireGraphToken({ interactiveFallback: true });
           const label = activeAccountEmail ? `Signed in: ${activeAccountEmail}` : 'Signed in to OneDrive.';
           window.alert(label);
         } catch (error) {
@@ -2308,17 +1723,15 @@
 
       async function logoutFromGraph() {
         try {
-          await runWithAuthorityFallback(async () => {
-            const client = await ensureMsalClient();
-            if (!graphAccount) {
-              updateGraphAuthUI();
-              window.alert('No OneDrive session to sign out from.');
-              return;
-            }
-            await client.logoutPopup({ account: graphAccount });
-            setActiveGraphAccount(null);
-            window.alert('Signed out from OneDrive.');
-          });
+          const client = await ensureMsalClient();
+          if (!graphAccount) {
+            updateGraphAuthUI();
+            window.alert('No OneDrive session to sign out from.');
+            return;
+          }
+          await client.logoutPopup({ account: graphAccount });
+          setActiveGraphAccount(null);
+          window.alert('Signed out from OneDrive.');
         } catch (error) {
           console.error('Unable to sign out from OneDrive', error);
           window.alert(`Unable to sign out from OneDrive. Details: ${extractErrorMessage(error)}`);
@@ -2383,9 +1796,6 @@
           } catch (jsonError) {
             message = String(error);
           }
-        }
-        if (currentAuthority) {
-          return `${message} [authority: ${currentAuthority}]`;
         }
         return message;
       }
@@ -6375,10 +5785,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
       function initialise() {
         updateStickyMetrics();
         updateGraphAuthUI();
-        ensureMsalClient().then(async (client) => {
-          if (isTeamsSdkAvailable()) {
-            await tryTeamsSsoSignIn({ msalClient: client });
-          }
+        ensureMsalClient().then(() => {
           updateGraphAuthUI();
         }).catch((error) => {
           console.warn('Unable to initialise Microsoft authentication on startup.', error);
