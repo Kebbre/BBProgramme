@@ -377,7 +377,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 15.2.4</span>
+    <span class="app-branding-text">Programme Tool : Version 15.2.5</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -5897,25 +5897,39 @@ ${formatDisplayDate(startDate)} (Single event)`;
     }());
   </script>
   <script type="module">
-    import { app, pages } from "@microsoft/teams-js";
+    import { app } from "@microsoft/teams-js";
+
+    async function getTeamsContext() {
+      try {
+        await app.initialize();
+        return await app.getContext();
+      } catch (sdkError) {
+        const legacyApp = typeof window !== 'undefined' ? window.microsoftTeams?.app : undefined;
+        if (!legacyApp
+          || typeof legacyApp.initialize !== 'function'
+          || typeof legacyApp.getContext !== 'function') {
+          console.debug('Microsoft Teams SDK unavailable; skipping channel heading update.', sdkError);
+          return null;
+        }
+        try {
+          await legacyApp.initialize();
+          return await legacyApp.getContext();
+        } catch (legacyError) {
+          console.warn('Unable to retrieve Teams context via legacy SDK.', legacyError);
+          return null;
+        }
+      }
+    }
 
     async function setHeadingFromTeamsChannel() {
       const heading = document.querySelector('.project-heading h1');
       if (!heading) {
         return;
       }
-
-      try {
-        await app.initialize();
-        const context = await microsoftTeams.app.getContext();
-        console.log("Teams context:", context);
-
-        const channelName = context?.channel?.displayName;
-        if (channelName) {
-          heading.textContent = channelName;
-        }
-      } catch (error) {
-        console.warn("Unable to retrieve Teams context.", error);
+      const context = await getTeamsContext();
+      const channelName = context?.channel?.displayName?.trim();
+      if (channelName) {
+        heading.textContent = channelName;
       }
     }
 
