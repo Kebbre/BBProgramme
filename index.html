@@ -377,7 +377,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 15.2.3</span>
+    <span class="app-branding-text">Programme Tool : Version 15.2.4</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -5907,7 +5907,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
 
       try {
         await app.initialize();
-        const context = await pages.getContext();
+        const context = await microsoftTeams.app.getContext();
         console.log("Teams context:", context);
 
         const channelName = context?.channel?.displayName;
