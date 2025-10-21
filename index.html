@@ -377,7 +377,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 15.1</span>
+    <span class="app-branding-text">Programme Tool : Version 15.2.2</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -538,6 +538,13 @@
 
   <script src="https://alcdn.msauth.net/browser/2.37.0/js/msal-browser.min.js" crossorigin="anonymous"></script>
   <script src="https://res.cdn.office.net/teams-js/v2.17.0/js/MicrosoftTeams.min.js" crossorigin="anonymous"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "@microsoft/teams-js": "https://esm.sh/@microsoft/teams-js@2.17.0?bundle"
+      }
+    }
+  </script>
   <script type="module">
     (async function () {
       const DEFAULT_DAY_WIDTH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--day-width'), 10) || 32;
