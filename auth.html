@@ -37,6 +37,10 @@
         ? `https://login.microsoftonline.com/${TENANT_ID}`
         : 'https://login.microsoftonline.com/common';
       const redirectUri = new URL('auth.html', window.location.href).toString();
+      const GRAPH_SCOPES = ['User.Read', 'Files.ReadWrite.All'];
+      const REDIRECT_SESSION_KEY = 'bbprogramme:auth-redirect-started';
+      const searchParams = new URLSearchParams(window.location.search || '');
+      const launchedFromTeams = searchParams.get('teams') === '1';
 
       async function notifyCompletion(payload) {
         const origin = window.location.origin;
@@ -97,16 +101,52 @@
         if (result?.account) {
           app.setActiveAccount(result.account);
         }
-        const payload = result?.account
-          ? {
-              success: true,
-              account: {
-                homeAccountId: result.account.homeAccountId,
-                username: result.account.username,
-                name: result.account.name || null
-              }
+        let account = result?.account || null;
+        if (!account) {
+          const accounts = app.getAllAccounts();
+          if (accounts.length) {
+            account = accounts[0];
+            app.setActiveAccount(account);
+          }
+        }
+        if (!account) {
+          if (!window.sessionStorage.getItem(REDIRECT_SESSION_KEY)) {
+            window.sessionStorage.setItem(REDIRECT_SESSION_KEY, '1');
+            try {
+              await app.loginRedirect({
+                scopes: GRAPH_SCOPES,
+                prompt: 'select_account',
+                redirectStartPage: redirectUri
+              });
+              return;
+            } catch (loginError) {
+              console.error('Authentication redirect invocation failed.', loginError);
+              window.sessionStorage.removeItem(REDIRECT_SESSION_KEY);
+              await notifyCompletion({
+                success: false,
+                error: loginError?.message || String(loginError || 'Unable to start authentication.')
+              });
+              return;
             }
-          : { success: true, account: null };
+          } else {
+            window.sessionStorage.removeItem(REDIRECT_SESSION_KEY);
+            await notifyCompletion({
+              success: false,
+              error: 'Authentication completed without selecting an account.'
+            });
+            return;
+          }
+        } else {
+          window.sessionStorage.removeItem(REDIRECT_SESSION_KEY);
+        }
+        const payload = {
+          success: true,
+          account: {
+            homeAccountId: account.homeAccountId,
+            username: account.username,
+            name: account.name || null
+          }
+        };
         await notifyCompletion(payload);
       } catch (error) {
         console.error('Authentication redirect handling failed.', error);
