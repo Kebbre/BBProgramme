@@ -377,7 +377,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 15.2.7</span>
+    <span class="app-branding-text">Programme Tool : Version 15.2.8</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -2052,7 +2052,6 @@
           const json = await downloadProgrammeFromOneDrive();
           window.localStorage.setItem('programme-cache', json);
           applyProgrammeSnapshot(JSON.parse(json));
-          window.alert('Programme loaded from OneDrive.');
         } catch (error) {
           console.warn('Unable to load programme from OneDrive', error);
           try {
