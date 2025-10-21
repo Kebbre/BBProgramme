@@ -176,6 +176,9 @@
     .mini-segment .mini-handle:hover{transform:translateY(-50%) scale(1.05);}
     .mini-segment .mini-handle-left{left:-7px;}
     .mini-segment .mini-handle-right{right:-7px;}
+    .progress-handle{position:absolute;top:50%;transform:translate(-50%,-50%);width:16px;height:70%;border-radius:10px;cursor:ew-resize;background:transparent;border:1px solid transparent;box-shadow:none;display:flex;align-items:center;justify-content:center;pointer-events:auto;z-index:6;transition:transform .15s ease;}
+    .progress-handle::before{display:none;}
+    .progress-handle:hover{transform:translate(-50%,-50%) scale(1.05);}
     .mini-segment .mini-handle.disabled{cursor:not-allowed;opacity:.2;background:transparent;box-shadow:none;}
     .mini-segment.locked .mini-handle{cursor:not-allowed;background:transparent;opacity:.2;}
     .mini-segment.locked .mini-handle:hover{background:transparent;}
@@ -377,7 +380,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 15.2.13</span>
+    <span class="app-branding-text">Programme Tool : Version 15.2.14</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -3721,6 +3724,89 @@ ${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} d
         });
       }
 
+      function attachProgressHandle(barElement, task) {
+        if (!barElement || !task || task.entryType === 'stage') return;
+        const progressEl = barElement.querySelector('.progress');
+        if (!progressEl) return;
+        let handle = barElement.querySelector('.progress-handle');
+        if (!handle) {
+          handle = document.createElement('div');
+          handle.className = 'progress-handle mini-control';
+          handle.setAttribute('role', 'slider');
+          handle.setAttribute('aria-valuemin', '0');
+          handle.setAttribute('aria-valuemax', '100');
+          handle.setAttribute('aria-orientation', 'horizontal');
+          handle.setAttribute('tabindex', '-1');
+          barElement.appendChild(handle);
+        }
+
+        const updateAria = (value) => {
+          const taskName = ((task.name || '').trim()) || 'task';
+          handle.setAttribute('aria-valuenow', String(value));
+          handle.setAttribute('aria-valuetext', `${value}%`);
+          handle.setAttribute('aria-label', `Adjust progress for ${taskName}`);
+        };
+
+        const updateFromClientX = (clientX) => {
+          const barRect = barElement.getBoundingClientRect();
+          const width = Math.max(1, barRect.width);
+          let offset = clientX - barRect.left;
+          offset = Math.max(0, Math.min(offset, width));
+          const progressValue = Math.round((offset / width) * 100);
+          task.progress = progressValue;
+          progressEl.style.width = `${progressValue}%`;
+          progressEl.classList.toggle('is-full', progressValue >= 99.5);
+          handle.style.left = `${progressValue}%`;
+          updateAria(progressValue);
+          const listRow = taskListEl ? taskListEl.querySelector(`.task-row[data-task-id="${task.id}"]`) : null;
+          if (listRow) {
+            const input = listRow.querySelector('.task-progress input');
+            if (input) {
+              input.value = progressValue;
+            } else {
+              const display = listRow.querySelector('.task-progress');
+              if (display) display.textContent = `${progressValue}%`;
+            }
+          }
+        };
+
+        if (!handle._progressHandleReady) {
+          handle.addEventListener('pointerdown', (event) => {
+            event.stopPropagation();
+            event.preventDefault();
+            selectedTaskId = task.id;
+            const pointerId = event.pointerId;
+            handle.setPointerCapture(pointerId);
+            updateFromClientX(event.clientX);
+
+            const onPointerMove = (moveEvent) => {
+              updateFromClientX(moveEvent.clientX);
+            };
+
+            const onPointerUp = () => {
+              if (handle.hasPointerCapture(pointerId)) handle.releasePointerCapture(pointerId);
+              handle.removeEventListener('pointermove', onPointerMove);
+              handle.removeEventListener('pointerup', onPointerUp);
+              handle.removeEventListener('pointercancel', onPointerUp);
+              renderAll();
+            };
+
+            handle.addEventListener('pointermove', onPointerMove);
+            handle.addEventListener('pointerup', onPointerUp);
+            handle.addEventListener('pointercancel', onPointerUp);
+          });
+          Object.defineProperty(handle, '_progressHandleReady', {
+            value: true,
+            enumerable: false,
+            configurable: true,
+            writable: false
+          });
+        }
+        const currentProgress = Math.min(100, Math.max(0, Number(task.progress) || 0));
+        updateAria(currentProgress);
+        handle.style.left = `${currentProgress}%`;
+      }
+
       function enableBarDrag(barElement, task) {
         barElement.addEventListener('pointerdown', (event) => {
           if (event.button && event.button !== 0) return;
@@ -4111,6 +4197,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
             setBarLabel(bar, task, startDate, endDate);
             updateMiniLayerElements(bar, segments, { task });
             attachResizeHandles(bar, task);
+            attachProgressHandle(bar, task);
             enableBarDrag(bar, task);
           } else {
             standdownLayer = document.createElement('div');
