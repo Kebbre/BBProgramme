@@ -160,8 +160,8 @@
     .task-bar.stage-bar:hover,
     .task-bar.stage-bar.selected{background:rgb(255,247,190)!important;border-color:rgba(180,140,0,.9)!important;}
     .task-bar.stage-bar .progress{background:rgba(255,255,255,.35);}
-    .task-label{font-size:.85rem;font-weight:600;line-height:1.05;white-space:nowrap;pointer-events:none;color:#000;position:relative;z-index:5;text-shadow:0 1px 2px rgba(255,255,255,.25);max-width:100%;overflow:hidden;text-overflow:ellipsis;}
-    .task-dates{font-size:.74rem;line-height:1.05;color:rgba(0,0,0,.72);pointer-events:none;position:relative;z-index:5;max-width:100%;overflow:hidden;text-overflow:ellipsis;}
+    .task-label{font-size:.85rem;font-weight:600;line-height:1.05;white-space:nowrap;pointer-events:none;color:#000;position:relative;z-index:5;text-shadow:0 1px 2px rgba(255,255,255,.25);max-width:none;overflow:visible;text-overflow:clip;flex-shrink:0;}
+    .task-dates{font-size:.74rem;line-height:1.05;color:rgba(0,0,0,.72);pointer-events:none;position:relative;z-index:5;max-width:none;overflow:visible;text-overflow:clip;white-space:nowrap;flex-shrink:0;}
     .task-bar .progress{position:absolute;top:0;bottom:0;left:0;width:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,.9)0,rgba(255,255,255,.9)6px,rgba(255,255,255,.25)6px,rgba(255,255,255,.25)12px);background-color:rgba(255,255,255,.25);border-radius:8px 0 0 8px;pointer-events:none;transition:width .2s ease;z-index:5;box-shadow:inset -1px 0 0 rgba(0,0,0,.08);overflow:hidden;}
     .task-bar .progress.is-full{border-radius:8px;}
     .mini-layer{position:absolute;inset:0;pointer-events:auto;border-radius:8px;overflow:visible;z-index:4;}
@@ -377,7 +377,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 15.2.12</span>
+    <span class="app-branding-text">Programme Tool : Version 15.2.13</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
