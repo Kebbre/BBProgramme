@@ -23,6 +23,7 @@
     }
   </style>
   <script src="https://alcdn.msauth.net/browser/2.37.0/js/msal-browser.min.js" crossorigin="anonymous"></script>
+  <script src="https://res.cdn.office.net/teams-js/v2.17.0/js/MicrosoftTeams.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
   <div class="message">
@@ -36,11 +37,54 @@
         ? `https://login.microsoftonline.com/${TENANT_ID}`
         : 'https://login.microsoftonline.com/common';
       const redirectUri = new URL('auth.html', window.location.href).toString();
+
+      async function notifyCompletion(payload) {
+        const origin = window.location.origin;
+        let teamsInitialised = false;
+        const teams = window.microsoftTeams;
+        if (teams?.app && typeof teams.app.initialize === 'function') {
+          try {
+            await teams.app.initialize();
+            teamsInitialised = true;
+          } catch (teamsInitError) {
+            console.debug('Teams SDK initialisation failed in auth window.', teamsInitError);
+          }
+        }
+        if (teamsInitialised && teams?.authentication) {
+          try {
+            if (payload.success) {
+              teams.authentication.notifySuccess(JSON.stringify(payload));
+            } else {
+              teams.authentication.notifyFailure(payload.error || 'Authentication failed.');
+            }
+          } catch (teamsNotifyError) {
+            console.debug('Unable to notify Teams authentication result.', teamsNotifyError);
+          }
+        }
+        const message = { type: 'bbprogramme-auth-complete', ...payload };
+        try {
+          if (window.opener && !window.opener.closed) {
+            window.opener.postMessage(message, origin);
+          }
+        } catch (postError) {
+          console.debug('Unable to post authentication completion message to opener.', postError);
+        }
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage(message, origin);
+          }
+        } catch (parentPostError) {
+          console.debug('Unable to post authentication completion message to parent frame.', parentPostError);
+        }
+      }
+
       if (!window.msal || !window.msal.PublicClientApplication) {
         console.error('MSAL browser library unavailable while finishing authentication.');
+        await notifyCompletion({ success: false, error: 'MSAL library unavailable.' });
         window.close();
         return;
       }
+
       const app = new window.msal.PublicClientApplication({
         auth: { clientId: CLIENT_ID, authority, redirectUri },
         cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: false }
@@ -53,42 +97,23 @@
         if (result?.account) {
           app.setActiveAccount(result.account);
         }
-        if (window.opener && !window.opener.closed) {
-          const payload = result?.account
-            ? {
-                success: true,
-                account: {
-                  homeAccountId: result.account.homeAccountId,
-                  username: result.account.username,
-                  name: result.account.name || null
-                }
+        const payload = result?.account
+          ? {
+              success: true,
+              account: {
+                homeAccountId: result.account.homeAccountId,
+                username: result.account.username,
+                name: result.account.name || null
               }
-            : { success: true, account: null };
-          try {
-            window.opener.postMessage(
-              { type: 'bbprogramme-auth-complete', ...payload },
-              window.location.origin
-            );
-          } catch (messageError) {
-            console.debug('Unable to post authentication completion message to parent window.', messageError);
-          }
-        }
+            }
+          : { success: true, account: null };
+        await notifyCompletion(payload);
       } catch (error) {
         console.error('Authentication redirect handling failed.', error);
-        if (window.opener && !window.opener.closed) {
-          try {
-            window.opener.postMessage(
-              {
-                type: 'bbprogramme-auth-complete',
-                success: false,
-                error: error?.message || String(error || 'Unknown error')
-              },
-              window.location.origin
-            );
-          } catch (messageError) {
-            console.debug('Unable to notify parent window about authentication failure.', messageError);
-          }
-        }
+        await notifyCompletion({
+          success: false,
+          error: error?.message || String(error || 'Unknown error')
+        });
       } finally {
         setTimeout(() => {
           try {

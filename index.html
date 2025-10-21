@@ -377,7 +377,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 15.2.10</span>
+    <span class="app-branding-text">Programme Tool : Version 15.2.11</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -675,6 +675,19 @@
           return String(window.bbProgrammeTeamsSsoResource);
         }
         return 'https://graph.microsoft.com';
+      })();
+      const TEAMS_AUTH_POPUP_WIDTH = 600;
+      const TEAMS_AUTH_POPUP_HEIGHT = 535;
+      const TEAMS_INTERACTIVE_AUTH_URL = (() => {
+        if (typeof window === 'undefined') {
+          return 'https://kebbre.github.io/BBProgramme/auth.html?teams=1';
+        }
+        try {
+          return new URL('auth.html?teams=1', window.location.href).toString();
+        } catch (error) {
+          console.warn('Unable to resolve Teams authentication URL, falling back to default.', error);
+          return 'https://kebbre.github.io/BBProgramme/auth.html?teams=1';
+        }
       })();
       const AUTH_COMPLETION_WAITERS = [];
       function removeAuthCompletionWaiter(waiter) {
@@ -1877,13 +1890,29 @@
             messageOutcome: null
           };
         }
+        let messageSettled = false;
         const messagePromise = waitForAuthCompletion(timeoutMs)
-          .then((data) => ({ type: 'message', data }))
-          .catch((error) => ({ type: 'message-error', error }));
+          .then((data) => {
+            messageSettled = true;
+            return { type: 'message', data };
+          })
+          .catch((error) => {
+            messageSettled = true;
+            return { type: 'message-error', error };
+          });
         const popupPromise = startPopup()
           .then((result) => ({ type: 'popup', result }))
           .catch((error) => ({ type: 'popup-error', error }));
-        const [popupOutcome, messageOutcome] = await Promise.all([popupPromise, messagePromise]);
+        const popupOutcome = await popupPromise;
+        let messageOutcome = null;
+        if (messageSettled) {
+          messageOutcome = await messagePromise;
+        } else {
+          messageOutcome = await Promise.race([
+            messagePromise,
+            Promise.resolve({ type: 'message-timeout' })
+          ]);
+        }
         return { popupOutcome, messageOutcome };
       }
 
@@ -1936,6 +1965,8 @@
           throw messageOutcome.error instanceof Error
             ? messageOutcome.error
             : new Error(String(messageOutcome.error || 'Authentication popup failed.'));
+        } else if (messageType === 'message-timeout') {
+          // Ignore – rely on popup outcome alone.
         }
         if (popupType === 'popup' && popupOutcome.result?.account) {
           setActiveGraphAccount(popupOutcome.result.account);
@@ -1953,6 +1984,91 @@
           return fallbackAccount;
         }
         throw new Error('Authentication failed. No account is available after popup.');
+      }
+
+      async function launchTeamsInteractiveAuth({ timeoutMs = 90000 } = {}) {
+        if (!isTeamsSdkAvailable()) {
+          throw new Error('Microsoft Teams SDK is not available.');
+        }
+        await ensureTeamsAppInitialized();
+        const teamsAuth = window.microsoftTeams?.authentication;
+        if (!teamsAuth || typeof teamsAuth.authenticate !== 'function') {
+          throw new Error('Microsoft Teams authentication capability is unavailable.');
+        }
+        const timeout = Math.max(1000, Number(timeoutMs) || 90000);
+        return new Promise((resolve, reject) => {
+          let settled = false;
+          const timeoutHandle = window.setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            reject(new Error('Teams authentication timed out.'));
+          }, timeout);
+          teamsAuth.authenticate({
+            url: TEAMS_INTERACTIVE_AUTH_URL,
+            width: TEAMS_AUTH_POPUP_WIDTH,
+            height: TEAMS_AUTH_POPUP_HEIGHT,
+            successCallback: (result) => {
+              if (settled) return;
+              settled = true;
+              window.clearTimeout(timeoutHandle);
+              resolve(result);
+            },
+            failureCallback: (reason) => {
+              if (settled) return;
+              settled = true;
+              window.clearTimeout(timeoutHandle);
+              const message = typeof reason === 'string' && reason.trim().length
+                ? reason
+                : 'Teams authentication failed.';
+              reject(new Error(message));
+            }
+          });
+        });
+      }
+
+      async function ensureTeamsInteractiveGraphAccount(client, { timeoutMs = 90000 } = {}) {
+        let rawResult = null;
+        try {
+          rawResult = await launchTeamsInteractiveAuth({ timeoutMs });
+        } catch (error) {
+          throw error;
+        }
+        let payload = null;
+        if (typeof rawResult === 'string') {
+          try {
+            payload = JSON.parse(rawResult);
+          } catch (parseError) {
+            console.debug('Unable to parse Teams authentication payload.', parseError);
+          }
+        } else if (rawResult && typeof rawResult === 'object') {
+          payload = rawResult;
+        }
+        if (payload?.success === false) {
+          const message = typeof payload.error === 'string' && payload.error.trim().length
+            ? payload.error
+            : 'Teams authentication failed.';
+          throw new Error(message);
+        }
+        const desiredAccount = payload?.account ?? null;
+        let matched = selectAccountFromClient(client, desiredAccount);
+        if (!matched) {
+          matched = client?.getActiveAccount?.() || selectAccountFromClient(client, null);
+        }
+        if (!matched) {
+          const accounts = client?.getAllAccounts?.() || [];
+          if (accounts.length) {
+            matched = accounts[0];
+          }
+        }
+        if (!matched) {
+          throw new Error('Teams authentication completed but no account is available.');
+        }
+        setActiveGraphAccount(matched);
+        if (matched.username) {
+          activeAccountEmail = matched.username;
+        }
+        updateGraphAuthUI();
+        return graphAccount;
       }
 
       async function ensureInteractiveGraphAccount(client, { timeoutMs } = {}) {
@@ -2095,6 +2211,14 @@
             if (refreshedAccount) {
               return graphAccount;
             }
+            try {
+              const teamsAccount = await ensureTeamsInteractiveGraphAccount(client, { timeoutMs: 90000 });
+              if (teamsAccount) {
+                return graphAccount;
+              }
+            } catch (teamsError) {
+              console.warn('Teams interactive authentication failed.', teamsError);
+            }
           }
           await ensureInteractiveGraphAccount(client, { timeoutMs: 90000 });
           return graphAccount;
@@ -2112,6 +2236,13 @@
           } catch (error) {
             if (window.msal?.InteractionRequiredAuthError && error instanceof window.msal.InteractionRequiredAuthError) {
               if (isTeamsSdkAvailable()) {
+                try {
+                  await ensureTeamsInteractiveGraphAccount(client, { timeoutMs: 90000 });
+                  const retryAfterTeams = await client.acquireTokenSilent(tokenRequest);
+                  return retryAfterTeams.accessToken;
+                } catch (teamsInteractiveError) {
+                  console.warn('Teams interactive authentication did not yield a token.', teamsInteractiveError);
+                }
                 const refreshed = await tryTeamsSsoSignIn({ forceRefresh: true, msalClient: client });
                 if (refreshed) {
                   const retry = await client.acquireTokenSilent(tokenRequest);
@@ -2123,6 +2254,13 @@
               return interactiveAccessToken;
             }
             if (isTeamsSdkAvailable()) {
+              try {
+                await ensureTeamsInteractiveGraphAccount(client, { timeoutMs: 90000 });
+                const retryAfterTeams = await client.acquireTokenSilent(tokenRequest);
+                return retryAfterTeams.accessToken;
+              } catch (teamsInteractiveError) {
+                console.warn('Teams interactive authentication did not yield a token.', teamsInteractiveError);
+              }
               const refreshed = await tryTeamsSsoSignIn({ forceRefresh: true, msalClient: client });
               if (refreshed) {
                 const retry = await client.acquireTokenSilent(tokenRequest);
@@ -2145,6 +2283,14 @@
               const label = activeAccountEmail ? `Teams SSO: ${activeAccountEmail}` : 'Connected via Teams SSO.';
               window.alert(label);
               return;
+            }
+            try {
+              await ensureTeamsInteractiveGraphAccount(client, { timeoutMs: 90000 });
+              const label = activeAccountEmail ? `Teams account: ${activeAccountEmail}` : 'Connected via Teams authentication.';
+              window.alert(label);
+              return;
+            } catch (teamsInteractiveError) {
+              console.warn('Teams interactive authentication failed.', teamsInteractiveError);
             }
           }
           await requireGraphAccount({ allowInteractive: true });
