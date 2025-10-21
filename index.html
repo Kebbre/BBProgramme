@@ -377,7 +377,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 15.2.11</span>
+    <span class="app-branding-text">Programme Tool : Version 15.2.12</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -1259,7 +1259,7 @@
         }
         let start = null;
         let end = null;
-        let totalDuration = 0;
+        let weightedDuration = 0;
         let weightedProgress = 0;
         children.forEach((child) => {
           const childStart = parseDate(child.startDate);
@@ -1272,17 +1272,18 @@
             if (!end || compareDates(effectiveEnd, end) > 0) end = effectiveEnd;
           }
           const duration = Math.max(1, getTaskDuration(child));
-          totalDuration += duration;
+          weightedDuration += duration;
           const progressValue = Math.min(100, Math.max(0, Number(child.progress) || 0));
           weightedProgress += progressValue * duration;
         });
-        const progress = totalDuration ? Math.round(weightedProgress / totalDuration) : 0;
+        const progress = weightedDuration ? Math.round(weightedProgress / weightedDuration) : 0;
+        const spanDuration = start && end ? Math.max(1, diffInWeekdays(start, end)) : 0;
         return {
           hasChildren: true,
           start,
           end,
           progress,
-          duration: totalDuration
+          duration: spanDuration
         };
       }
 
