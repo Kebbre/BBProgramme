@@ -3737,7 +3737,18 @@ ${formatDisplayDate(startDate)} (Single event)`;
         milestoneSegmentsPdf.forEach((segment) => {
           highlightSegmentsPdf.push(segment);
         });
-        const normalizedHighlightSegments = highlightSegmentsPdf
+        const normalizedHighlightSegmentsRaw = highlightSegmentsPdf
+          .map((segment) => {
+            let startIndex = Number.isFinite(segment.startIndex) ? segment.startIndex : NaN;
+            let endIndex = Number.isFinite(segment.endIndex) ? segment.endIndex : NaN;
+            if (!Number.isFinite(startIndex) || !Number.isFinite(endIndex)) return null;
+            startIndex = Math.max(0, Math.min(dayCount - 1, startIndex));
+            endIndex = Math.max(startIndex, Math.min(dayCount - 1, endIndex));
+            if (startIndex > endIndex) return null;
+            return { ...segment, startIndex, endIndex };
+          })
+          .filter(Boolean);
+        const normalizedHighlightSegments = normalizedHighlightSegmentsRaw
           .map((segment) => {
             let startIndex = Number.isFinite(segment.startIndex) ? segment.startIndex + highlightIndexOffset : NaN;
             let endIndex = Number.isFinite(segment.endIndex) ? segment.endIndex + highlightIndexOffset : NaN;
@@ -3756,9 +3767,15 @@ ${formatDisplayDate(startDate)} (Single event)`;
             return a.startIndex - b.startIndex;
           });
         const pdfDayHighlights = timelineDays.map(() => new Set());
-        normalizedHighlightSegments.forEach((segment) => {
+        normalizedHighlightSegmentsRaw.forEach((segment) => {
           for (let index = segment.startIndex; index <= segment.endIndex; index += 1) {
             pdfDayHighlights[index]?.add(segment.type);
+          }
+        });
+        const pdfDayHighlightsShifted = timelineDays.map(() => new Set());
+        normalizedHighlightSegments.forEach((segment) => {
+          for (let index = segment.startIndex; index <= segment.endIndex; index += 1) {
+            pdfDayHighlightsShifted[index]?.add(segment.type);
           }
         });
         const standdownSegmentsPdf = normalizedHighlightSegments.filter((segment) => segment.type === 'standdown');
@@ -3871,6 +3888,21 @@ ${formatDisplayDate(startDate)} (Single event)`;
           doc.setTextColor(defaultTextColor.r, defaultTextColor.g, defaultTextColor.b);
         };
 
+        const drawVerticalDateLabel = (text, centreX, centreY, highlights) => {
+          const highlightSet = highlights instanceof Set ? highlights : new Set();
+          const styled = highlightSet.size > 0 ? applyHighlightTextStyle(highlightSet) : false;
+          const supportsRotation = typeof doc.saveGraphicsState === 'function' && typeof doc.rotate === 'function';
+          if (supportsRotation) {
+            doc.saveGraphicsState();
+            doc.rotate(90, { origin: [centreX, centreY] });
+            doc.text(text, centreX, centreY, { align: 'center', baseline: 'middle' });
+            doc.restoreGraphicsState();
+          } else {
+            doc.text(text, centreX, centreY, { align: 'center', angle: 90, baseline: 'middle' });
+          }
+          if (styled) resetHighlightTextStyle();
+        };
+
         const drawLegend = (topY, startX = margin) => {
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(9);
@@ -3931,14 +3963,17 @@ ${formatDisplayDate(startDate)} (Single event)`;
 
         const drawTimelineGridLines = (topY, height, options = {}) => {
           if (!dayCount) return;
-          const { highlightsOnly = false } = options;
+          const {
+            highlightsOnly = false,
+            dayHighlights = pdfDayHighlightsShifted
+          } = options;
           const originalLineWidth = doc.getLineWidth();
           for (let index = 0; index <= dayCount; index += 1) {
             const x = timelineStartX + (index * dayWidth);
             const boundaryType = boundaryTypes[index];
             const isWeekStart = index % 5 === 0;
-            const leftStanddown = index > 0 && pdfDayHighlights[index - 1]?.has('standdown');
-            const rightStanddown = index < dayCount && pdfDayHighlights[index]?.has('standdown');
+            const leftStanddown = index > 0 && dayHighlights[index - 1]?.has('standdown');
+            const rightStanddown = index < dayCount && dayHighlights[index]?.has('standdown');
             if (!highlightsOnly && leftStanddown && rightStanddown) continue;
             if (boundaryType === 'standdown') continue;
             if (boundaryType) {
@@ -4008,7 +4043,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
           doc.rect(timelineStartX, topY, rightColumnWidth, timelineHeaderHeight);
 
           const yearBaseline = topY + timelineRowHeight - 1;
-          const dateBaseline = topY + timelineHeaderHeight - 2;
+          const dateCenterY = topY + timelineRowHeight + (timelineRowHeight / 2);
 
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(8);
@@ -4026,25 +4061,24 @@ ${formatDisplayDate(startDate)} (Single event)`;
             weekGroups.forEach((group) => {
               const startX = timelineStartX + (group.startIndex * dayWidth);
               const centreX = startX + ((Math.max(1, group.length) * dayWidth) / 2);
-              const highlightSet = new Set();
+              const combinedHighlights = new Set();
               const span = Math.max(1, group.length);
               for (let offset = 0; offset < span; offset += 1) {
                 const dayIndex = group.startIndex + offset;
-                pdfDayHighlights[dayIndex]?.forEach((type) => highlightSet.add(type));
+                pdfDayHighlights[dayIndex]?.forEach((type) => combinedHighlights.add(type));
+                pdfDayHighlightsShifted[dayIndex]?.forEach((type) => combinedHighlights.add(type));
               }
-              const styled = applyHighlightTextStyle(highlightSet);
               const weekLabel = formatShortDate(group.start);
-              doc.text(weekLabel, centreX, dateBaseline, { align: 'center', angle: 90 });
-              if (styled) resetHighlightTextStyle();
+              drawVerticalDateLabel(weekLabel, centreX, dateCenterY, combinedHighlights);
             });
           } else {
             timelineDays.forEach((day, index) => {
               const centreX = timelineStartX + ((index + 0.5) * dayWidth);
-              const highlightSet = pdfDayHighlights[index] || new Set();
-              const styled = applyHighlightTextStyle(highlightSet);
+              const combinedHighlights = new Set();
+              pdfDayHighlights[index]?.forEach((type) => combinedHighlights.add(type));
+              pdfDayHighlightsShifted[index]?.forEach((type) => combinedHighlights.add(type));
               const dateLabel = formatShortDate(day);
-              doc.text(dateLabel, centreX, dateBaseline, { align: 'center', angle: 90 });
-              if (styled) resetHighlightTextStyle();
+              drawVerticalDateLabel(dateLabel, centreX, dateCenterY, combinedHighlights);
             });
           }
 
