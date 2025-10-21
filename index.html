@@ -5889,5 +5889,34 @@ ${formatDisplayDate(startDate)} (Single event)`;
       document.addEventListener('DOMContentLoaded', initialise);
     }());
   </script>
+  <script type="module">
+    import { app, pages } from "@microsoft/teams-js";
+
+    async function setHeadingFromTeamsChannel() {
+      const heading = document.querySelector('.project-heading h1');
+      if (!heading) {
+        return;
+      }
+
+      try {
+        await app.initialize();
+        const context = await pages.getContext();
+        console.log("Teams context:", context);
+
+        const channelName = context?.channel?.displayName;
+        if (channelName) {
+          heading.textContent = channelName;
+        }
+      } catch (error) {
+        console.warn("Unable to retrieve Teams context.", error);
+      }
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", setHeadingFromTeamsChannel);
+    } else {
+      setHeadingFromTeamsChannel();
+    }
+  </script>
 </body>
 </html>
