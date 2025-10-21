@@ -377,7 +377,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 15.2.5</span>
+    <span class="app-branding-text">Programme Tool : Version 15.2.6</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -581,9 +581,53 @@
       const TENANT_ID = '6dc7041f-549e-4127-9e89-36f74513bad5';
       const GRAPH_SCOPES = ['User.Read', 'Files.ReadWrite.All'];
       const GRAPH_BASE_URL = 'https://graph.microsoft.com/v1.0';
-      const GRAPH_ITEM_PATH_SEGMENTS = ['Documents', 'Programme App', 'gantt-shared-data.json'];
-      const GRAPH_ITEM_PATH = GRAPH_ITEM_PATH_SEGMENTS.map((segment) => encodeURIComponent(segment)).join('/');
-      const GRAPH_ITEM_CONTENT_URL = `${GRAPH_BASE_URL}/me/drive/root:/${GRAPH_ITEM_PATH}:/content`;
+      const GRAPH_ITEM_BASE_SEGMENTS = ['Documents', 'Programme App'];
+      const DEFAULT_GRAPH_FILE_BASENAME = 'gantt-shared-data';
+      const GRAPH_ITEM_PATH_SEGMENTS_CACHE = { path: null, heading: null };
+      const WINDOWS_RESERVED_FILENAMES = new Set([
+        'CON', 'PRN', 'AUX', 'NUL',
+        'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
+        'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'
+      ]);
+      function sanitizeFilenameSegment(raw) {
+        if (!raw) return DEFAULT_GRAPH_FILE_BASENAME;
+        const trimmed = String(raw).trim();
+        if (!trimmed) return DEFAULT_GRAPH_FILE_BASENAME;
+        const cleaned = trimmed
+          .replace(/[\u0000-\u001F<>:"/\\|?*]+/g, '')
+          .replace(/\s+/g, ' ')
+          .replace(/^[. ]+/, '')
+          .replace(/[. ]+$/, '');
+        if (!cleaned) return DEFAULT_GRAPH_FILE_BASENAME;
+        if (WINDOWS_RESERVED_FILENAMES.has(cleaned.toUpperCase())) {
+          return `${cleaned}-channel`;
+        }
+        return cleaned;
+      }
+      function computeGraphItemPath() {
+        const headingEl = document.querySelector('.project-heading h1');
+        const headingText = headingEl?.textContent ?? '';
+        if (GRAPH_ITEM_PATH_SEGMENTS_CACHE.heading === headingText && GRAPH_ITEM_PATH_SEGMENTS_CACHE.path) {
+          return GRAPH_ITEM_PATH_SEGMENTS_CACHE.path;
+        }
+        const filename = `${sanitizeFilenameSegment(headingText)}.json`;
+        const segments = [...GRAPH_ITEM_BASE_SEGMENTS, filename];
+        const path = segments.map((segment) => encodeURIComponent(segment)).join('/');
+        GRAPH_ITEM_PATH_SEGMENTS_CACHE.heading = headingText;
+        GRAPH_ITEM_PATH_SEGMENTS_CACHE.path = path;
+        return path;
+      }
+      function getGraphItemContentUrl() {
+        const itemPath = computeGraphItemPath();
+        return `${GRAPH_BASE_URL}/me/drive/root:/${itemPath}:/content`;
+      }
+      function invalidateGraphItemPathCache() {
+        GRAPH_ITEM_PATH_SEGMENTS_CACHE.heading = null;
+        GRAPH_ITEM_PATH_SEGMENTS_CACHE.path = null;
+      }
+      if (typeof window !== 'undefined') {
+        window.bbProgrammeInvalidateGraphPathCache = invalidateGraphItemPathCache;
+      }
       const GRAPH_AUTHORITY_PRIMARY = TENANT_ID ? `https://login.microsoftonline.com/${TENANT_ID}` : null;
       const GRAPH_AUTHORITY_FALLBACK = 'https://login.microsoftonline.com/common';
       const GRAPH_REDIRECT_URI = "https://kebbre.github.io/BBProgramme/";
@@ -1908,7 +1952,7 @@
 
       async function uploadProgrammeToOneDrive(json) {
         const token = await acquireGraphToken();
-        const response = await fetch(GRAPH_ITEM_CONTENT_URL, {
+        const response = await fetch(getGraphItemContentUrl(), {
           method: 'PUT',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -1925,7 +1969,7 @@
 
       async function downloadProgrammeFromOneDrive() {
         const token = await acquireGraphToken();
-        const response = await fetch(GRAPH_ITEM_CONTENT_URL, {
+        const response = await fetch(getGraphItemContentUrl(), {
           method: 'GET',
           headers: {
             Authorization: `Bearer ${token}`
@@ -5930,6 +5974,9 @@ ${formatDisplayDate(startDate)} (Single event)`;
       const channelName = context?.channel?.displayName?.trim();
       if (channelName) {
         heading.textContent = channelName;
+        if (typeof window !== 'undefined' && typeof window.bbProgrammeInvalidateGraphPathCache === 'function') {
+          window.bbProgrammeInvalidateGraphPathCache();
+        }
       }
     }
 
