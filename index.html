@@ -23,7 +23,7 @@
     .top-bar-row.legend-row{justify-content:flex-end;}
     .top-bar-row.secondary-actions-row{justify-content:space-between;}
     .project-heading{display:flex;align-items:center;gap:1.1rem;flex-wrap:wrap;justify-content:flex-start;}
-    .project-heading{font-size:1.45rem;font-weight:700;margin:0;}
+    .project-heading h1{font-size:1.45rem;font-weight:700;margin:0;}
     .top-bar-sidebar-actions{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;justify-content:flex-start;}
     .top-bar .top-bar-sidebar-actions button{flex:0 0 auto;min-width:0;}
     .top-bar .button-row{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;}
@@ -5900,7 +5900,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
     import { app, pages } from "@microsoft/teams-js";
 
     async function setHeadingFromTeamsChannel() {
-      const heading = document.querySelector('.project-heading');
+      const heading = document.querySelector('.project-heading h1');
       if (!heading) {
         return;
       }
