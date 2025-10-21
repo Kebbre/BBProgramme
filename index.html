@@ -377,7 +377,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 15.2.9</span>
+    <span class="app-branding-text">Programme Tool : Version 15.2.10</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -676,6 +676,73 @@
         }
         return 'https://graph.microsoft.com';
       })();
+      const AUTH_COMPLETION_WAITERS = [];
+      function removeAuthCompletionWaiter(waiter) {
+        const index = AUTH_COMPLETION_WAITERS.indexOf(waiter);
+        if (index >= 0) {
+          AUTH_COMPLETION_WAITERS.splice(index, 1);
+        }
+      }
+      function waitForAuthCompletion(timeoutMs = 60000) {
+        if (typeof window === 'undefined') {
+          return Promise.resolve(null);
+        }
+        const timeout = Math.max(1000, Number(timeoutMs) || 60000);
+        return new Promise((resolve, reject) => {
+          const waiter = {
+            resolve: (value) => {
+              window.clearTimeout(waiter.timer);
+              removeAuthCompletionWaiter(waiter);
+              resolve(value);
+            },
+            reject: (error) => {
+              window.clearTimeout(waiter.timer);
+              removeAuthCompletionWaiter(waiter);
+              reject(error);
+            }
+          };
+          waiter.timer = window.setTimeout(() => {
+            removeAuthCompletionWaiter(waiter);
+            reject(new Error('Authentication message timeout.'));
+          }, timeout);
+          AUTH_COMPLETION_WAITERS.push(waiter);
+        });
+      }
+      function notifyAuthCompletionWaiters(payload, { isError = false } = {}) {
+        if (!AUTH_COMPLETION_WAITERS.length) return;
+        const waiters = AUTH_COMPLETION_WAITERS.splice(0, AUTH_COMPLETION_WAITERS.length);
+        waiters.forEach((waiter) => {
+          if (!waiter) return;
+          try {
+            if (isError) {
+              waiter.reject(payload instanceof Error ? payload : new Error(String(payload || 'Authentication failed.')));
+            } else {
+              waiter.resolve(payload ?? null);
+            }
+          } catch (listenerError) {
+            console.debug('Authentication completion waiter failed.', listenerError);
+          }
+        });
+      }
+      if (typeof window !== 'undefined') {
+        window.addEventListener('message', (event) => {
+          if (!event || typeof event.data !== 'object' || event.data === null) {
+            return;
+          }
+          if (typeof window.location === 'object' && event.origin !== window.location.origin) {
+            return;
+          }
+          const { type, success, error, account } = event.data;
+          if (type !== 'bbprogramme-auth-complete') {
+            return;
+          }
+          if (success === false) {
+            notifyAuthCompletionWaiters(error || 'Authentication failed.', { isError: true });
+          } else {
+            notifyAuthCompletionWaiters({ success: true, account: account || null });
+          }
+        }, false);
+      }
 
       const DATABASE_FALLBACK = [
         {"buildingType":"school","task":"GA Plan","weekdays":10,"squareMeterFactor":0.01,"difficultyFactor":3,"levelsFactor":2},
@@ -1799,6 +1866,123 @@
         return graphAccount;
       }
 
+      async function runMsalPopup(startPopup, { timeoutMs = 90000 } = {}) {
+        if (typeof startPopup !== 'function') {
+          throw new Error('A popup invocation callback is required.');
+        }
+        if (typeof window === 'undefined') {
+          const result = await startPopup();
+          return {
+            popupOutcome: { type: 'popup', result },
+            messageOutcome: null
+          };
+        }
+        const messagePromise = waitForAuthCompletion(timeoutMs)
+          .then((data) => ({ type: 'message', data }))
+          .catch((error) => ({ type: 'message-error', error }));
+        const popupPromise = startPopup()
+          .then((result) => ({ type: 'popup', result }))
+          .catch((error) => ({ type: 'popup-error', error }));
+        const [popupOutcome, messageOutcome] = await Promise.all([popupPromise, messagePromise]);
+        return { popupOutcome, messageOutcome };
+      }
+
+      function selectAccountFromClient(client, desiredAccount) {
+        if (!client || typeof client.getAllAccounts !== 'function') {
+          return null;
+        }
+        const accounts = client.getAllAccounts();
+        if (!accounts.length) return null;
+        if (desiredAccount?.homeAccountId) {
+          const match = accounts.find((account) => account.homeAccountId === desiredAccount.homeAccountId);
+          if (match) return match;
+        }
+        if (desiredAccount?.username) {
+          const normalisedUsername = String(desiredAccount.username).toLowerCase();
+          const match = accounts.find((account) => String(account.username || '').toLowerCase() === normalisedUsername);
+          if (match) return match;
+        }
+        return accounts[0];
+      }
+
+      function finaliseInteractiveOutcome(client, { popupOutcome, messageOutcome }) {
+        const messageType = messageOutcome?.type;
+        const popupType = popupOutcome?.type;
+        if (messageType === 'message') {
+          const message = messageOutcome.data || {};
+          if (message.success === false) {
+            const popupError = popupType === 'popup-error' ? popupOutcome.error : null;
+            if (popupError && popupError.errorCode !== 'user_cancelled') {
+              throw popupError;
+            }
+            throw new Error(message.error || 'Authentication failed.');
+          }
+          const matchedAccount = selectAccountFromClient(client, message.account);
+          if (matchedAccount) {
+            setActiveGraphAccount(matchedAccount);
+            if (message.account?.username) {
+              activeAccountEmail = message.account.username;
+            } else if (matchedAccount.username) {
+              activeAccountEmail = matchedAccount.username;
+            }
+            updateGraphAuthUI();
+            return matchedAccount;
+          }
+        } else if (messageType === 'message-error') {
+          const popupError = popupType === 'popup-error' ? popupOutcome.error : null;
+          if (popupError && popupError.errorCode !== 'user_cancelled') {
+            throw popupError;
+          }
+          throw messageOutcome.error instanceof Error
+            ? messageOutcome.error
+            : new Error(String(messageOutcome.error || 'Authentication popup failed.'));
+        }
+        if (popupType === 'popup' && popupOutcome.result?.account) {
+          setActiveGraphAccount(popupOutcome.result.account);
+          return popupOutcome.result.account;
+        }
+        if (popupType === 'popup-error') {
+          if (popupOutcome.error?.errorCode === 'user_cancelled' && graphAccount) {
+            return graphAccount;
+          }
+          throw popupOutcome.error;
+        }
+        const fallbackAccount = client?.getActiveAccount?.() || selectAccountFromClient(client, null);
+        if (fallbackAccount) {
+          setActiveGraphAccount(fallbackAccount);
+          return fallbackAccount;
+        }
+        throw new Error('Authentication failed. No account is available after popup.');
+      }
+
+      async function ensureInteractiveGraphAccount(client, { timeoutMs } = {}) {
+        const outcome = await runMsalPopup(
+          () => client.loginPopup({
+            scopes: GRAPH_SCOPES,
+            prompt: 'select_account',
+            redirectUri: GRAPH_REDIRECT_URI
+          }),
+          { timeoutMs }
+        );
+        return finaliseInteractiveOutcome(client, outcome);
+      }
+
+      async function acquireTokenInteractively(client, tokenRequest, { timeoutMs } = {}) {
+        const outcome = await runMsalPopup(
+          () => client.acquireTokenPopup({ ...tokenRequest, redirectUri: GRAPH_REDIRECT_URI }),
+          { timeoutMs }
+        );
+        if (outcome.popupOutcome?.type === 'popup' && outcome.popupOutcome.result?.accessToken) {
+          if (outcome.popupOutcome.result.account) {
+            setActiveGraphAccount(outcome.popupOutcome.result.account);
+          }
+          return outcome.popupOutcome.result.accessToken;
+        }
+        const account = finaliseInteractiveOutcome(client, outcome);
+        const silentResponse = await client.acquireTokenSilent({ ...tokenRequest, account });
+        return silentResponse.accessToken;
+      }
+
       function isAuthorityResolutionError(error) {
 
         const code = error?.errorCode || error?.code || error?.name;
@@ -1912,11 +2096,7 @@
               return graphAccount;
             }
           }
-          const response = await client.loginPopup({
-            scopes: GRAPH_SCOPES,
-            prompt: 'select_account'
-          });
-          setActiveGraphAccount(response.account);
+          await ensureInteractiveGraphAccount(client, { timeoutMs: 90000 });
           return graphAccount;
         });
       }
@@ -1939,8 +2119,8 @@
                 }
               }
               if (!interactiveFallback) throw error;
-              const interactiveResponse = await client.acquireTokenPopup(tokenRequest);
-              return interactiveResponse.accessToken;
+              const interactiveAccessToken = await acquireTokenInteractively(client, tokenRequest, { timeoutMs: 90000 });
+              return interactiveAccessToken;
             }
             if (isTeamsSdkAvailable()) {
               const refreshed = await tryTeamsSsoSignIn({ forceRefresh: true, msalClient: client });
@@ -1950,8 +2130,8 @@
               }
             }
             if (!interactiveFallback) throw error;
-            const interactiveResponse = await client.acquireTokenPopup(tokenRequest);
-            return interactiveResponse.accessToken;
+            const interactiveAccessToken = await acquireTokenInteractively(client, tokenRequest, { timeoutMs: 90000 });
+            return interactiveAccessToken;
           }
         });
       }
