@@ -380,7 +380,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 16.0.0</span>
+    <span class="app-branding-text">Programme Tool : Version 16.0.1</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -586,10 +586,20 @@
       const GRAPH_SCOPES = ['User.Read', 'Files.ReadWrite.All'];
       const GRAPH_BASE_URL = 'https://graph.microsoft.com/v1.0';
       const GRAPH_CENTRAL_SHARE_URL = 'https://bondbryantesting-my.sharepoint.com/:f:/g/personal/a_pescher_bondbryan-test_co_uk/Eh1JR9BNBsxLqqpJu74r67EB81URVqZHByVbaMrFgN_UZA?e=DctYvs';
-      const GRAPH_PERSONAL_BASE_SEGMENTS = ['Documents', 'Programme App'];
+      const GRAPH_PROGRAMME_FOLDER_NAME = 'Programme App';
+      const GRAPH_PERSONAL_BASE_SEGMENTS = ['Documents', GRAPH_PROGRAMME_FOLDER_NAME];
       const DEFAULT_GRAPH_FILE_BASENAME = 'gantt-shared-data';
-      const GRAPH_ITEM_PATH_SEGMENTS_CACHE = { path: null, heading: null, shareId: null };
+      const GRAPH_ITEM_PATH_SEGMENTS_CACHE = { path: null, heading: null, shareId: null, segments: null };
       let graphShareIdCache = undefined;
+      const TEAMS_CONTEXT_STATE = {
+        teamId: null,
+        channelId: null,
+        channelDisplayName: null,
+        driveId: null,
+        channelFolderSegments: null,
+        programmeFolderEnsured: false,
+        filesFolderItemId: null
+      };
       const WINDOWS_RESERVED_FILENAMES = new Set([
         'CON', 'PRN', 'AUX', 'NUL',
         'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
@@ -624,6 +634,26 @@
         }
         return cleaned;
       }
+      function getProgrammeHeadingText() {
+        const headingEl = document.querySelector('.project-heading h1');
+        return headingEl?.textContent ?? '';
+      }
+      function getProgrammeFilename() {
+        const headingText = getProgrammeHeadingText();
+        return `${sanitizeFilenameSegment(headingText)}.json`;
+      }
+      function buildGraphPathFromSegments(segments) {
+        if (!Array.isArray(segments) || !segments.length) return '';
+        return segments
+          .map((segment) => encodeURIComponent(String(segment)))
+          .join('/');
+      }
+      function clearTeamsChannelDriveMetadata() {
+        TEAMS_CONTEXT_STATE.driveId = null;
+        TEAMS_CONTEXT_STATE.channelFolderSegments = null;
+        TEAMS_CONTEXT_STATE.programmeFolderEnsured = false;
+        TEAMS_CONTEXT_STATE.filesFolderItemId = null;
+      }
       function getGraphShareId() {
         if (graphShareIdCache !== undefined) {
           return graphShareIdCache;
@@ -649,9 +679,67 @@
         }
         return graphShareIdCache;
       }
+      async function ensureTeamsChannelStorageContext({ token } = {}) {
+        if (!TEAMS_CONTEXT_STATE.teamId || !TEAMS_CONTEXT_STATE.channelId) {
+          return null;
+        }
+        if (
+          TEAMS_CONTEXT_STATE.driveId
+          && Array.isArray(TEAMS_CONTEXT_STATE.channelFolderSegments)
+          && TEAMS_CONTEXT_STATE.channelFolderSegments.length
+        ) {
+          return TEAMS_CONTEXT_STATE;
+        }
+        if (!token) {
+          throw new Error('Graph token required to resolve Teams channel storage context.');
+        }
+        const teamId = TEAMS_CONTEXT_STATE.teamId;
+        const channelId = TEAMS_CONTEXT_STATE.channelId;
+        const response = await fetch(
+          `${GRAPH_BASE_URL}/teams/${encodeURIComponent(teamId)}/channels/${encodeURIComponent(channelId)}/filesFolder`,
+          {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => '');
+          console.warn(`Unable to resolve Teams channel files folder (${response.status}).`, errorText);
+          return null;
+        }
+        const data = await response.json().catch(() => null);
+        if (!data) {
+          return null;
+        }
+        const driveId = data?.parentReference?.driveId || data?.parentReference?.id;
+        if (!driveId) {
+          console.warn('Teams channel filesFolder response missing driveId.');
+          return null;
+        }
+        const parentPathRaw = data?.parentReference?.path || '';
+        let baseSegments = [];
+        if (typeof parentPathRaw === 'string' && parentPathRaw.length) {
+          const colonIndex = parentPathRaw.indexOf(':/');
+          const relativePath = colonIndex >= 0 ? parentPathRaw.slice(colonIndex + 2) : parentPathRaw;
+          baseSegments = relativePath
+            .split('/')
+            .map((segment) => segment.trim())
+            .filter((segment) => segment.length);
+        }
+        const channelFolderName = data?.name || data?.displayName;
+        if (channelFolderName) {
+          baseSegments.push(channelFolderName);
+        }
+        TEAMS_CONTEXT_STATE.driveId = driveId;
+        TEAMS_CONTEXT_STATE.channelFolderSegments = baseSegments;
+        TEAMS_CONTEXT_STATE.filesFolderItemId = data?.id || null;
+        TEAMS_CONTEXT_STATE.programmeFolderEnsured = false;
+        return TEAMS_CONTEXT_STATE;
+      }
       function computeGraphItemPath() {
-        const headingEl = document.querySelector('.project-heading h1');
-        const headingText = headingEl?.textContent ?? '';
+        const headingText = getProgrammeHeadingText();
         const shareId = getGraphShareId();
         if (
           GRAPH_ITEM_PATH_SEGMENTS_CACHE.heading === headingText
@@ -660,26 +748,135 @@
         ) {
           return GRAPH_ITEM_PATH_SEGMENTS_CACHE.path;
         }
-        const filename = `${sanitizeFilenameSegment(headingText)}.json`;
+        const filename = getProgrammeFilename();
         const baseSegments = shareId ? [] : GRAPH_PERSONAL_BASE_SEGMENTS;
         const segments = [...baseSegments, filename];
-        const path = segments.map((segment) => encodeURIComponent(segment)).join('/');
+        const path = buildGraphPathFromSegments(segments);
         GRAPH_ITEM_PATH_SEGMENTS_CACHE.heading = headingText;
         GRAPH_ITEM_PATH_SEGMENTS_CACHE.shareId = shareId;
+        GRAPH_ITEM_PATH_SEGMENTS_CACHE.segments = segments;
         GRAPH_ITEM_PATH_SEGMENTS_CACHE.path = path;
         return path;
       }
-      function getGraphItemContentUrl() {
+      function buildDriveItemUrl(driveId, segments, suffix = '') {
+        if (!driveId) return null;
+        const safeSegments = Array.isArray(segments)
+          ? segments
+              .map((segment) => String(segment).trim())
+              .filter((segment) => segment.length)
+          : [];
+        const encodedPath = buildGraphPathFromSegments(safeSegments);
+        const pathPart = encodedPath ? `/${encodedPath}` : '';
+        return `${GRAPH_BASE_URL}/drives/${encodeURIComponent(driveId)}/root:${pathPart}${suffix}`;
+      }
+      function buildDriveChildrenUrl(driveId, parentSegments) {
+        if (!driveId) return null;
+        const safeSegments = Array.isArray(parentSegments)
+          ? parentSegments
+              .map((segment) => String(segment).trim())
+              .filter((segment) => segment.length)
+          : [];
+        if (!safeSegments.length) {
+          return `${GRAPH_BASE_URL}/drives/${encodeURIComponent(driveId)}/root/children`;
+        }
+        const encodedPath = buildGraphPathFromSegments(safeSegments);
+        return `${GRAPH_BASE_URL}/drives/${encodeURIComponent(driveId)}/root:/${encodedPath}:/children`;
+      }
+      async function ensureTeamsProgrammeFolder({ token, teamsInfo }) {
+        if (!teamsInfo || !teamsInfo.driveId || !Array.isArray(teamsInfo.channelFolderSegments)) {
+          return;
+        }
+        if (teamsInfo.programmeFolderEnsured) {
+          return;
+        }
+        if (!token) {
+          throw new Error('Graph token required to ensure Programme folder on Teams channel.');
+        }
+        const folderSegments = [...teamsInfo.channelFolderSegments, GRAPH_PROGRAMME_FOLDER_NAME];
+        const folderUrl = buildDriveItemUrl(teamsInfo.driveId, folderSegments, ':/');
+        if (!folderUrl) return;
+        const metadataResponse = await fetch(folderUrl, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        if (metadataResponse.ok) {
+          teamsInfo.programmeFolderEnsured = true;
+          return;
+        }
+        if (metadataResponse.status !== 404) {
+          const errorText = await metadataResponse.text().catch(() => '');
+          console.warn(`Unable to verify Teams Programme folder (${metadataResponse.status}).`, errorText);
+          return;
+        }
+        const createUrl = buildDriveChildrenUrl(teamsInfo.driveId, teamsInfo.channelFolderSegments);
+        if (!createUrl) return;
+        const createResponse = await fetch(createUrl, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: GRAPH_PROGRAMME_FOLDER_NAME,
+            folder: {},
+            '@microsoft.graph.conflictBehavior': 'replace'
+          })
+        });
+        if (!createResponse.ok) {
+          const errorText = await createResponse.text().catch(() => '');
+          console.warn(`Unable to create Teams Programme folder (${createResponse.status}).`, errorText);
+          return;
+        }
+        teamsInfo.programmeFolderEnsured = true;
+      }
+      async function resolveProgrammeStorageUrl({ token, ensureProgrammeFolder = false } = {}) {
+        const filename = getProgrammeFilename();
+        let teamsInfo = null;
+        try {
+          teamsInfo = await ensureTeamsChannelStorageContext({ token });
+        } catch (error) {
+          console.warn('Unable to resolve Teams channel storage context.', error);
+        }
+        if (
+          teamsInfo
+          && teamsInfo.driveId
+          && Array.isArray(teamsInfo.channelFolderSegments)
+        ) {
+          const pathSegments = [...teamsInfo.channelFolderSegments, GRAPH_PROGRAMME_FOLDER_NAME, filename];
+          if (ensureProgrammeFolder) {
+            await ensureTeamsProgrammeFolder({ token, teamsInfo });
+          }
+          const teamsUrl = buildDriveItemUrl(teamsInfo.driveId, pathSegments, ':/content');
+          if (teamsUrl) {
+            return {
+              type: 'teams',
+              url: teamsUrl,
+              driveId: teamsInfo.driveId,
+              pathSegments
+            };
+          }
+        }
         const itemPath = computeGraphItemPath();
         const shareId = getGraphShareId();
         if (shareId) {
-          return `${GRAPH_BASE_URL}/shares/${shareId}/driveItem:/${itemPath}:/content`;
+          return {
+            type: 'share',
+            url: `${GRAPH_BASE_URL}/shares/${shareId}/driveItem:/${itemPath}:/content`,
+            path: itemPath
+          };
         }
-        return `${GRAPH_BASE_URL}/me/drive/root:/${itemPath}:/content`;
+        return {
+          type: 'personal',
+          url: `${GRAPH_BASE_URL}/me/drive/root:/${itemPath}:/content`,
+          path: itemPath
+        };
       }
       function invalidateGraphItemPathCache() {
         GRAPH_ITEM_PATH_SEGMENTS_CACHE.heading = null;
         GRAPH_ITEM_PATH_SEGMENTS_CACHE.shareId = null;
+        GRAPH_ITEM_PATH_SEGMENTS_CACHE.segments = null;
         GRAPH_ITEM_PATH_SEGMENTS_CACHE.path = null;
       }
       function setProjectHeadingText(text) {
@@ -700,16 +897,57 @@
           console.warn('Unable to auto-load programme for Teams channel.', error);
         }
       }
-      function handleTeamsChannelResolved(channelName) {
-        const normalised = typeof channelName === 'string' ? channelName.trim() : '';
-        if (!normalised) return;
-        setProjectHeadingText(normalised);
+      function handleTeamsContextResolved(contextOrChannelName) {
+        if (!contextOrChannelName) return;
+        let channelName = '';
+        if (typeof contextOrChannelName === 'string') {
+          channelName = contextOrChannelName.trim();
+          if (channelName) {
+            TEAMS_CONTEXT_STATE.channelDisplayName = channelName;
+          }
+        } else if (typeof contextOrChannelName === 'object') {
+          channelName = (
+            contextOrChannelName?.channel?.displayName
+            || contextOrChannelName?.channel?.name
+            || contextOrChannelName?.channelDisplayName
+            || ''
+          ).trim();
+          const resolvedTeamId = contextOrChannelName?.team?.groupId
+            || contextOrChannelName?.team?.id
+            || contextOrChannelName?.groupId
+            || null;
+          const resolvedChannelId = contextOrChannelName?.channel?.id
+            || contextOrChannelName?.channelId
+            || null;
+          let contextUpdated = false;
+          if (resolvedTeamId && resolvedTeamId !== TEAMS_CONTEXT_STATE.teamId) {
+            TEAMS_CONTEXT_STATE.teamId = resolvedTeamId;
+            contextUpdated = true;
+          }
+          if (resolvedChannelId && resolvedChannelId !== TEAMS_CONTEXT_STATE.channelId) {
+            TEAMS_CONTEXT_STATE.channelId = resolvedChannelId;
+            contextUpdated = true;
+          }
+          if (contextUpdated) {
+            clearTeamsChannelDriveMetadata();
+          }
+          if (channelName) {
+            TEAMS_CONTEXT_STATE.channelDisplayName = channelName;
+          }
+        }
+        if (channelName) {
+          setProjectHeadingText(channelName);
+        }
+        if (!TEAMS_CONTEXT_STATE.teamId || !TEAMS_CONTEXT_STATE.channelId) {
+          if (!channelName) return;
+        }
         teamsChannelAutoLoadRequested = true;
         maybeAutoLoadProgrammeFromTeams();
       }
       if (typeof window !== 'undefined') {
         window.bbProgrammeInvalidateGraphPathCache = invalidateGraphItemPathCache;
-        window.bbProgrammeOnTeamsChannelResolved = handleTeamsChannelResolved;
+        window.bbProgrammeOnTeamsContextResolved = handleTeamsContextResolved;
+        window.bbProgrammeOnTeamsChannelResolved = handleTeamsContextResolved;
       }
 
       const DATABASE_FALLBACK = [
@@ -1789,7 +2027,11 @@
 
       async function uploadProgrammeToOneDrive(json) {
         const token = await acquireGraphToken();
-        const response = await fetch(getGraphItemContentUrl(), {
+        const target = await resolveProgrammeStorageUrl({ token, ensureProgrammeFolder: true });
+        if (!target?.url) {
+          throw new Error('Unable to determine storage location for programme file.');
+        }
+        const response = await fetch(target.url, {
           method: 'PUT',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -1806,7 +2048,11 @@
 
       async function downloadProgrammeFromOneDrive() {
         const token = await acquireGraphToken();
-        const response = await fetch(getGraphItemContentUrl(), {
+        const target = await resolveProgrammeStorageUrl({ token });
+        if (!target?.url) {
+          throw new Error('Unable to determine storage location for programme file.');
+        }
+        const response = await fetch(target.url, {
           method: 'GET',
           headers: {
             Authorization: `Bearer ${token}`
@@ -5913,15 +6159,15 @@ ${formatDisplayDate(startDate)} (Single event)`;
 
     async function setHeadingFromTeamsChannel() {
       const context = await getTeamsContext();
-      const channelName = context?.channel?.displayName?.trim();
-      if (!channelName) {
-        return;
-      }
       const handler = typeof window !== 'undefined'
-        ? window.bbProgrammeOnTeamsChannelResolved
+        ? window.bbProgrammeOnTeamsContextResolved || window.bbProgrammeOnTeamsChannelResolved
         : undefined;
       if (typeof handler === 'function') {
-        handler(channelName);
+        handler(context || null);
+        return;
+      }
+      const channelName = context?.channel?.displayName?.trim();
+      if (!channelName) {
         return;
       }
       const heading = document.querySelector('.project-heading h1');
