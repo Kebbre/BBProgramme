@@ -380,7 +380,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 15.3.0</span>
+    <span class="app-branding-text">Programme Tool : Version 16.0.0</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -585,9 +585,11 @@
       // Graph configuration for OneDrive storage
       const GRAPH_SCOPES = ['User.Read', 'Files.ReadWrite.All'];
       const GRAPH_BASE_URL = 'https://graph.microsoft.com/v1.0';
-      const GRAPH_ITEM_BASE_SEGMENTS = ['Documents', 'Programme App'];
+      const GRAPH_CENTRAL_SHARE_URL = 'https://bondbryantesting-my.sharepoint.com/:f:/g/personal/a_pescher_bondbryan-test_co_uk/Eh1JR9BNBsxLqqpJu74r67EB81URVqZHByVbaMrFgN_UZA?e=DctYvs';
+      const GRAPH_PERSONAL_BASE_SEGMENTS = ['Documents', 'Programme App'];
       const DEFAULT_GRAPH_FILE_BASENAME = 'gantt-shared-data';
-      const GRAPH_ITEM_PATH_SEGMENTS_CACHE = { path: null, heading: null };
+      const GRAPH_ITEM_PATH_SEGMENTS_CACHE = { path: null, heading: null, shareId: null };
+      let graphShareIdCache = undefined;
       const WINDOWS_RESERVED_FILENAMES = new Set([
         'CON', 'PRN', 'AUX', 'NUL',
         'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
@@ -622,25 +624,62 @@
         }
         return cleaned;
       }
+      function getGraphShareId() {
+        if (graphShareIdCache !== undefined) {
+          return graphShareIdCache;
+        }
+        if (!GRAPH_CENTRAL_SHARE_URL) {
+          graphShareIdCache = null;
+          return graphShareIdCache;
+        }
+        try {
+          const trimmed = GRAPH_CENTRAL_SHARE_URL.trim();
+          if (!trimmed) {
+            graphShareIdCache = null;
+          } else {
+            const base64 = btoa(trimmed)
+              .replace(/\+/g, '-')
+              .replace(/\//g, '_')
+              .replace(/=+$/, '');
+            graphShareIdCache = `u!${base64}`;
+          }
+        } catch (error) {
+          console.warn('Unable to compute Graph share ID', error);
+          graphShareIdCache = null;
+        }
+        return graphShareIdCache;
+      }
       function computeGraphItemPath() {
         const headingEl = document.querySelector('.project-heading h1');
         const headingText = headingEl?.textContent ?? '';
-        if (GRAPH_ITEM_PATH_SEGMENTS_CACHE.heading === headingText && GRAPH_ITEM_PATH_SEGMENTS_CACHE.path) {
+        const shareId = getGraphShareId();
+        if (
+          GRAPH_ITEM_PATH_SEGMENTS_CACHE.heading === headingText
+          && GRAPH_ITEM_PATH_SEGMENTS_CACHE.shareId === shareId
+          && GRAPH_ITEM_PATH_SEGMENTS_CACHE.path
+        ) {
           return GRAPH_ITEM_PATH_SEGMENTS_CACHE.path;
         }
         const filename = `${sanitizeFilenameSegment(headingText)}.json`;
-        const segments = [...GRAPH_ITEM_BASE_SEGMENTS, filename];
+        const baseSegments = shareId ? [] : GRAPH_PERSONAL_BASE_SEGMENTS;
+        const segments = [...baseSegments, filename];
         const path = segments.map((segment) => encodeURIComponent(segment)).join('/');
         GRAPH_ITEM_PATH_SEGMENTS_CACHE.heading = headingText;
+        GRAPH_ITEM_PATH_SEGMENTS_CACHE.shareId = shareId;
         GRAPH_ITEM_PATH_SEGMENTS_CACHE.path = path;
         return path;
       }
       function getGraphItemContentUrl() {
         const itemPath = computeGraphItemPath();
+        const shareId = getGraphShareId();
+        if (shareId) {
+          return `${GRAPH_BASE_URL}/shares/${shareId}/driveItem:/${itemPath}:/content`;
+        }
         return `${GRAPH_BASE_URL}/me/drive/root:/${itemPath}:/content`;
       }
       function invalidateGraphItemPathCache() {
         GRAPH_ITEM_PATH_SEGMENTS_CACHE.heading = null;
+        GRAPH_ITEM_PATH_SEGMENTS_CACHE.shareId = null;
         GRAPH_ITEM_PATH_SEGMENTS_CACHE.path = null;
       }
       function setProjectHeadingText(text) {
