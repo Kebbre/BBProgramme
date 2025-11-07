@@ -75,7 +75,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 17.0.3</span>
+    <span class="app-branding-text">Programme Tool : Version 17.0.4</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -245,6 +245,7 @@
   <script type="module">
     import { createPdfExporter } from "./export/pdf.js";
     import { createGanttController } from "./modules/gantt.js";
+    import { createMiniTaskManager } from "./modules/miniTasks.js";
     import {
       createNestablePublicClientApplication,
       InteractionRequiredAuthError
@@ -827,9 +828,45 @@
         getTimelineViewMode,
         adjustGanttOffset
       } = ganttController;
-      let miniTaskDrafts = [];
-      let miniTaskUnit = 'days';
       let currentEntryType = 'task';
+      const miniTaskManager = createMiniTaskManager({
+        elements: {
+          listEl: miniTaskList,
+          sectionEl: miniTaskSection,
+          addButton: addMiniTaskBtn,
+          removeButton: removeMiniTaskBtn,
+          unitButtons: miniUnitButtons
+        },
+        constants: {
+          miniTaskOptions: MINI_TASK_OPTIONS,
+          workingDaysPerWeek: WORKING_DAYS_PER_WEEK,
+          defaultSequenceSteps: DEFAULT_SEQUENCE_STEPS,
+          defaultSequenceMinimumTotal: DEFAULT_SEQUENCE_MINIMUM_TOTAL,
+          defaultSequenceTotalWeight: DEFAULT_SEQUENCE_TOTAL_WEIGHT
+        },
+        getCurrentEntryType: () => currentEntryType,
+        onDraftsChange: () => updateDurationPreview()
+      });
+      const {
+        renderMiniTaskInputs,
+        updateMiniTaskToolbar,
+        setMiniTaskUnit,
+        addMiniTaskRow,
+        removeMiniTaskRow,
+        collectMiniTasks,
+        computeDefaultMiniTaskDurations,
+        createDefaultSequencedMiniTasks,
+        sanitizeMiniTaskDraft,
+        createMiniTaskDraft,
+        setMiniTaskDrafts,
+        getMiniTaskDrafts,
+        getMiniTaskUnit,
+        resetMiniTaskState,
+        getMiniTaskDraftCount,
+        handleEntryTypeChange
+      } = miniTaskManager;
+      renderMiniTaskInputs();
+      updateMiniTaskToolbar();
       const STAGE_PRESET_OPTIONS = [
         { value: 'stage1', label: 'Stage 1' },
         { value: 'stage2', label: 'Stage 2' },
@@ -1041,13 +1078,7 @@
           modalEndDate.disabled = !isTask;
         }
         if (miniTaskSection) miniTaskSection.style.display = isTask ? '' : 'none';
-        if (addMiniTaskBtn) addMiniTaskBtn.disabled = !isTask;
-        if (removeMiniTaskBtn) removeMiniTaskBtn.disabled = !isTask || miniTaskDrafts.length === 0;
-        miniUnitButtons.forEach((button) => {
-          const disabled = !isTask;
-          button.disabled = disabled;
-          button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
-        });
+        handleEntryTypeChange();
         if (isStage && modalTaskDescription) modalTaskDescription.value = '';
         updateMiniTaskToolbar();
         if (!options.skipPreview) {
@@ -2580,65 +2611,6 @@
         renderAll();
       }
 
-      function computeDefaultMiniTaskDurations(totalDuration) {
-        const normalizedTotal = Math.max(
-          DEFAULT_SEQUENCE_MINIMUM_TOTAL,
-          Math.max(1, Math.round(Number(totalDuration) || 0))
-        );
-        const stepData = DEFAULT_SEQUENCE_STEPS.map((step, index) => ({
-          index,
-          weight: Number(step.weight) || 0,
-          duration: Math.max(1, Math.round(((Number(step.weight) || 0) / 100) * normalizedTotal))
-        }));
-        const weightOrder = stepData
-          .slice()
-          .sort((a, b) => b.weight - a.weight);
-        let diff = normalizedTotal - stepData.reduce((sum, item) => sum + item.duration, 0);
-        if (diff !== 0) {
-          const maxGuard = 100;
-          let guard = 0;
-          while (diff !== 0 && guard < maxGuard) {
-            let adjusted = false;
-            for (let idx = 0; idx < weightOrder.length && diff !== 0; idx += 1) {
-              const entry = weightOrder[idx];
-              if (diff > 0) {
-                entry.duration += 1;
-                diff -= 1;
-                adjusted = true;
-              } else if (entry.duration > 1) {
-                entry.duration -= 1;
-                diff += 1;
-                adjusted = true;
-              }
-            }
-            if (!adjusted) break;
-            guard += 1;
-          }
-        }
-        const durations = stepData
-          .slice()
-          .sort((a, b) => a.index - b.index)
-          .map((item) => Math.max(1, Math.round(item.duration)));
-        const finalSum = durations.reduce((sum, value) => sum + value, 0);
-        if (finalSum !== normalizedTotal) {
-          const delta = normalizedTotal - finalSum;
-          const targetIndex = (weightOrder[0] && weightOrder[0].index) || 0;
-          durations[targetIndex] = Math.max(1, durations[targetIndex] + delta);
-        }
-        return durations;
-      }
-
-      function createDefaultSequencedMiniTasks(taskId, totalDuration) {
-        const durations = computeDefaultMiniTaskDurations(totalDuration);
-        return DEFAULT_SEQUENCE_STEPS.map((step, index) => ({
-          id: `${taskId}-mini-${index + 1}`,
-          enabled: true,
-          name: step.name,
-          duration: durations[index] || 1,
-          locked: false
-        }));
-      }
-
       function renderLegend() {
         if (!legendContainer) return;
         legendContainer.innerHTML = '';
@@ -2873,491 +2845,6 @@
         tasks = generatedTasks;
         selectedTaskId = tasks.length ? tasks[0].id : null;
         renderAll();
-      }
-
-      function renderMiniTaskInputs() {
-        if (!miniTaskList) return;
-        miniTaskList.innerHTML = '';
-        miniTaskDrafts.forEach((mini, index) => {
-          const item = document.createElement('div');
-          item.className = 'mini-task-item';
-          item.dataset.index = String(index);
-          if (!mini.enabled) item.classList.add('disabled');
-          if (mini.locked) item.classList.add('locked');
-
-          const toggleLabel = document.createElement('label');
-          const checkbox = document.createElement('input');
-          checkbox.type = 'checkbox';
-          checkbox.checked = Boolean(mini.enabled);
-          checkbox.addEventListener('change', () => {
-            setMiniTaskEnabled(index, checkbox.checked);
-          });
-          const labelText = document.createElement('span');
-          labelText.textContent = String(index + 1);
-          toggleLabel.appendChild(checkbox);
-          toggleLabel.appendChild(labelText);
-
-          const nameSelect = document.createElement('select');
-          nameSelect.disabled = !mini.enabled;
-          const placeholderOption = document.createElement('option');
-          placeholderOption.value = '';
-          placeholderOption.textContent = 'Select description';
-          nameSelect.appendChild(placeholderOption);
-          MINI_TASK_OPTIONS.forEach((option) => {
-            const optionEl = document.createElement('option');
-            optionEl.value = option;
-            optionEl.textContent = option;
-            nameSelect.appendChild(optionEl);
-          });
-          nameSelect.value = MINI_TASK_OPTIONS.includes(mini.name) ? mini.name : '';
-          nameSelect.addEventListener('change', () => {
-            setMiniTaskName(index, nameSelect.value);
-          });
-
-          const isDelay = mini.enabled && mini.name === 'Delays';
-          item.classList.toggle('delay-active', isDelay);
-
-          const durationWrapper = document.createElement('div');
-          durationWrapper.className = 'mini-task-duration';
-          const durationInput = document.createElement('input');
-          durationInput.type = 'number';
-          durationInput.min = miniTaskUnit === 'weeks' ? '0.2' : '1';
-          durationInput.step = miniTaskUnit === 'weeks' ? '0.5' : '1';
-          durationInput.value = String(getDraftDurationInCurrentUnit(mini.duration));
-          durationInput.disabled = !mini.enabled;
-          const handleDurationChange = () => {
-            setMiniTaskDuration(index, parseFloat(durationInput.value));
-          };
-          durationInput.addEventListener('change', handleDurationChange);
-          durationInput.addEventListener('blur', () => {
-            handleDurationChange();
-            const wrapper = durationInput.closest('.mini-task-item');
-            if (wrapper) wrapper.classList.remove('duration-focused');
-          });
-          durationInput.addEventListener('focus', () => {
-            const wrapper = durationInput.closest('.mini-task-item');
-            if (wrapper) wrapper.classList.add('duration-focused');
-          });
-          const durationSuffix = document.createElement('span');
-          durationSuffix.textContent = miniTaskUnit === 'weeks' ? 'weeks' : 'days';
-          durationWrapper.appendChild(durationInput);
-          durationWrapper.appendChild(durationSuffix);
-
-          const delayExtras = document.createElement('div');
-          delayExtras.className = 'mini-delay-extras';
-          const descriptionInput = document.createElement('textarea');
-          descriptionInput.placeholder = 'Delay description';
-          descriptionInput.value = mini.delayDescription || '';
-          descriptionInput.disabled = !isDelay;
-          descriptionInput.addEventListener('input', () => {
-            setMiniTaskDelayDescription(index, descriptionInput.value);
-            autoResizeTextarea(descriptionInput);
-          });
-          autoResizeTextarea(descriptionInput);
-          const controls = document.createElement('div');
-          controls.className = 'mini-task-controls';
-          const upButton = document.createElement('button');
-          upButton.type = 'button';
-          upButton.className = 'mini-move mini-move-up';
-          upButton.textContent = '↑';
-          upButton.title = 'Move step up';
-          upButton.setAttribute('aria-label', `Move step ${index + 1} up`);
-          upButton.disabled = index === 0;
-          upButton.addEventListener('click', () => moveMiniTaskDraft(index, -1));
-
-          const downButton = document.createElement('button');
-          downButton.type = 'button';
-          downButton.className = 'mini-move mini-move-down';
-          downButton.textContent = '↓';
-          downButton.title = 'Move step down';
-          downButton.setAttribute('aria-label', `Move step ${index + 1} down`);
-          downButton.disabled = index === miniTaskDrafts.length - 1;
-          downButton.addEventListener('click', () => moveMiniTaskDraft(index, 1));
-
-          controls.appendChild(upButton);
-          controls.appendChild(downButton);
-
-          const chargeLabel = document.createElement('label');
-          chargeLabel.className = 'mini-delay-charge';
-          const chargeCheckbox = document.createElement('input');
-          chargeCheckbox.type = 'checkbox';
-          chargeCheckbox.checked = isDelay ? Boolean(mini.chargeToClient) : false;
-          chargeCheckbox.disabled = !isDelay;
-          chargeCheckbox.addEventListener('change', () => {
-            setMiniTaskCharge(index, chargeCheckbox.checked);
-          });
-          const chargeText = document.createElement('span');
-          chargeText.textContent = 'Charge to client';
-          chargeLabel.appendChild(chargeCheckbox);
-          chargeLabel.appendChild(chargeText);
-          delayExtras.appendChild(descriptionInput);
-          delayExtras.appendChild(chargeLabel);
-
-          item.appendChild(toggleLabel);
-          item.appendChild(nameSelect);
-          item.appendChild(durationWrapper);
-          item.appendChild(controls);
-          item.appendChild(delayExtras);
-          miniTaskList.appendChild(item);
-        });
-        updateMiniTaskToolbar();
-      }
-
-      function createMiniTaskDraft(overrides = {}) {
-        return sanitizeMiniTaskDraft({
-          enabled: false,
-          name: '',
-          duration: 1,
-          locked: false,
-          delayDescription: '',
-          chargeToClient: false,
-          ...overrides
-        });
-      }
-
-      function sanitizeMiniTaskDraft(draft) {
-        const result = {
-          enabled: Boolean(draft?.enabled),
-          name: typeof draft?.name === 'string' ? draft.name : '',
-          duration: Math.max(1, Math.round(Number.isFinite(draft?.duration) ? draft.duration : 1)),
-          locked: Boolean(draft?.locked),
-          delayDescription: typeof draft?.delayDescription === 'string' ? draft.delayDescription : '',
-          chargeToClient: Boolean(draft?.chargeToClient)
-        };
-        if (result.name !== 'Delays') {
-          result.delayDescription = '';
-          result.chargeToClient = false;
-        }
-        return result;
-      }
-
-      function getDraftDurationInCurrentUnit(durationDays) {
-        const safeDays = Math.max(1, Math.round(Number.isFinite(durationDays) ? durationDays : 1));
-        if (miniTaskUnit === 'weeks') {
-          return Number((safeDays / WORKING_DAYS_PER_WEEK).toFixed(2));
-        }
-        return safeDays;
-      }
-
-      function setMiniTaskUnit(unit) {
-        if (currentEntryType !== 'task') return;
-        if (unit !== 'days' && unit !== 'weeks') return;
-        if (miniTaskUnit === unit) return;
-        miniTaskUnit = unit;
-        updateMiniTaskToolbar();
-        renderMiniTaskInputs();
-        updateDurationPreview();
-      }
-
-      function updateMiniTaskToolbar() {
-        if (!addMiniTaskBtn || !removeMiniTaskBtn) return;
-        const disabled = currentEntryType !== 'task';
-        addMiniTaskBtn.disabled = disabled;
-        removeMiniTaskBtn.disabled = disabled || miniTaskDrafts.length === 0;
-        miniUnitButtons.forEach((button) => {
-          const isActive = button.dataset.unit === miniTaskUnit;
-          button.classList.toggle('active', isActive);
-          button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-          button.disabled = disabled;
-          button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
-          if (disabled) {
-            button.setAttribute('tabindex', '-1');
-          } else {
-            button.removeAttribute('tabindex');
-          }
-        });
-      }
-
-      function setMiniTaskEnabled(index, enabled) {
-        if (!miniTaskDrafts[index]) return;
-        if (enabled) {
-          miniTaskDrafts[index] = sanitizeMiniTaskDraft({ ...miniTaskDrafts[index], enabled: true });
-        } else {
-          miniTaskDrafts[index] = sanitizeMiniTaskDraft({ enabled: false, name: '', duration: 1, locked: false, delayDescription: '', chargeToClient: false });
-        }
-        renderMiniTaskInputs();
-        updateDurationPreview();
-        if (enabled) focusMiniTask(index, 'name');
-      }
-
-      function setMiniTaskName(index, name) {
-        if (!miniTaskDrafts[index]) return;
-        const isDelay = name === 'Delays';
-        miniTaskDrafts[index] = sanitizeMiniTaskDraft({
-          ...miniTaskDrafts[index],
-          name,
-          delayDescription: isDelay ? miniTaskDrafts[index].delayDescription : '',
-          chargeToClient: isDelay ? miniTaskDrafts[index].chargeToClient : false
-        });
-        renderMiniTaskInputs();
-        updateDurationPreview();
-        focusMiniTask(index, isDelay ? 'delayDescription' : 'name');
-      }
-
-      function setMiniTaskDuration(index, value) {
-        if (!miniTaskDrafts[index]) return;
-        let durationValue = Number(value);
-        if (!Number.isFinite(durationValue) || durationValue < 1) durationValue = 1;
-        const durationInDays = miniTaskUnit === 'weeks'
-          ? durationValue * WORKING_DAYS_PER_WEEK
-          : durationValue;
-        miniTaskDrafts[index] = sanitizeMiniTaskDraft({ ...miniTaskDrafts[index], duration: durationInDays });
-        renderMiniTaskInputs();
-        updateDurationPreview();
-      }
-
-      function moveMiniTaskDraft(index, direction) {
-        const targetIndex = index + direction;
-        if (targetIndex < 0 || targetIndex >= miniTaskDrafts.length) return;
-        const nextDrafts = [...miniTaskDrafts];
-        const [moved] = nextDrafts.splice(index, 1);
-        nextDrafts.splice(targetIndex, 0, moved);
-        miniTaskDrafts = nextDrafts.map(sanitizeMiniTaskDraft);
-        renderMiniTaskInputs();
-        updateDurationPreview();
-        focusMiniTask(targetIndex, 'name');
-      }
-
-      function setMiniTaskDelayDescription(index, value) {
-        if (!miniTaskDrafts[index]) return;
-        if (miniTaskDrafts[index].name !== 'Delays') {
-          miniTaskDrafts[index].delayDescription = '';
-          return;
-        }
-        miniTaskDrafts[index].delayDescription = value;
-      }
-
-      function setMiniTaskCharge(index, checked) {
-        if (!miniTaskDrafts[index]) return;
-        if (miniTaskDrafts[index].name !== 'Delays') {
-          miniTaskDrafts[index].chargeToClient = false;
-          return;
-        }
-        miniTaskDrafts[index].chargeToClient = Boolean(checked);
-      }
-
-      function focusMiniTask(index, field = 'name') {
-        if (!miniTaskList) return;
-        requestAnimationFrame(() => {
-          let selector = 'select';
-          if (field === 'duration') selector = '.mini-task-duration input';
-          if (field === 'delayDescription') selector = '.mini-delay-extras textarea';
-          const target = miniTaskList.querySelector(`.mini-task-item[data-index="${index}"] ${selector}`);
-          if (target) target.focus();
-        });
-      }
-
-      function addMiniTaskRow(prefill = {}) {
-        if (currentEntryType !== 'task') return;
-        const prefilled = { ...prefill };
-        if (prefilled.duration != null) {
-          const raw = Number(prefilled.duration);
-          prefilled.duration = Math.max(1, Math.round(raw));
-        } else {
-          prefilled.duration = miniTaskUnit === 'weeks' ? WORKING_DAYS_PER_WEEK : 1;
-        }
-        const draft = sanitizeMiniTaskDraft({ enabled: true, ...prefilled });
-        miniTaskDrafts = [...miniTaskDrafts, draft];
-        renderMiniTaskInputs();
-        updateDurationPreview();
-        focusMiniTask(miniTaskDrafts.length - 1, 'name');
-      }
-
-      function removeMiniTaskRow() {
-        if (currentEntryType !== 'task') return;
-        if (!miniTaskDrafts.length) return;
-        miniTaskDrafts = miniTaskDrafts.slice(0, miniTaskDrafts.length - 1);
-        renderMiniTaskInputs();
-        updateDurationPreview();
-      }
-
-      function updateDurationPreview() {
-        if (currentEntryType === 'stage') {
-          durationPreview.textContent = 'Stage timeline updates automatically when tasks are added.';
-          return;
-        }
-        let start = ensureWeekday(parseDate(modalStartDate.value), 1);
-        if (!start) {
-          durationPreview.textContent = '0 working days';
-          return;
-        }
-        if (currentEntryType === 'single') {
-          const normalized = formatDate(start);
-          if (modalEndDate) modalEndDate.value = normalized;
-          durationPreview.textContent = 'Single event (1 working day)';
-          return;
-        }
-        let end = ensureWeekday(parseDate(modalEndDate.value), -1);
-        if (!end || compareDates(end, start) < 0) {
-          end = new Date(start.getTime());
-        }
-        let baseDuration = Math.max(1, diffInWeekdays(start, end));
-        let miniTotal = 0;
-        let enabledCount = 0;
-        miniTaskDrafts.forEach((mini) => {
-          if (!mini?.enabled) return;
-          enabledCount += 1;
-          miniTotal += Math.max(1, Math.round(mini.duration || 1));
-        });
-        if (enabledCount > 0) {
-          baseDuration = Math.max(miniTotal, enabledCount);
-        }
-        const finalEnd = shiftWeekdays(start, baseDuration - 1);
-        modalEndDate.value = formatDate(finalEnd);
-        durationPreview.textContent = `${baseDuration} working day${baseDuration !== 1 ? 's' : ''}`;
-      }
-
-      function openTaskModal(mode = 'create', taskId = null) {
-        currentMode = mode;
-        editingTaskId = taskId;
-        taskForm.reset();
-        let task = null;
-        if (mode === 'edit' && taskId) {
-          task = tasks.find((item) => item.id === taskId) || null;
-        }
-        if (task) {
-          populateModal(task);
-          modalTitle.textContent = 'Edit';
-          saveTaskBtn.textContent = 'Save';
-        } else {
-          populateModal();
-          modalTitle.textContent = 'New';
-          saveTaskBtn.textContent = 'Create';
-        }
-        document.body.classList.add('modal-open');
-        modalBackdrop.classList.remove('hidden');
-        modalEl.classList.remove('hidden');
-        requestAnimationFrame(() => {
-          if (currentEntryType === 'stage' && modalStagePreset) {
-            modalStagePreset.focus();
-          } else if (modalTaskName && currentEntryType !== 'stage') {
-            modalTaskName.focus();
-          }
-        });
-      }
-
-      function closeTaskModal() {
-        document.body.classList.remove('modal-open');
-        modalBackdrop.classList.add('hidden');
-        modalEl.classList.add('hidden');
-        editingTaskId = null;
-        currentMode = 'create';
-        miniTaskDrafts = [];
-        miniTaskUnit = 'days';
-        setEntryType('task', { skipPreview: true });
-        if (modalTaskName) modalTaskName.value = '';
-        if (modalTaskDescription) modalTaskDescription.value = '';
-        if (modalStageCustomName) modalStageCustomName.value = '';
-        updateMiniTaskToolbar();
-        updateDurationPreview();
-      }
-
-      function populateModal(task = null) {
-        const defaultStart = ensureWeekday(new Date(), 1);
-        miniTaskUnit = 'days';
-        let entryType = 'task';
-        if (task) {
-          if (task.entryType === 'stage') entryType = 'stage';
-          else if (task.entryType === 'single' || task.singleEvent) entryType = 'single';
-        }
-        if (modalStagePreset && !modalStagePreset.options.length) {
-          populateStagePresetOptions();
-        }
-        setEntryType(entryType, { skipPreview: true });
-
-        if (entryType === 'task') {
-          if (task) {
-            const baseMini = Array.isArray(task.miniTasks) ? task.miniTasks : [];
-            miniTaskDrafts = baseMini.map((mini) => sanitizeMiniTaskDraft(mini));
-            const pendingUndefinedDuration = Math.max(0, Math.round(task.undefinedDuration || 0));
-            const hasExplicitUndefined = miniTaskDrafts.some((mini) => mini.enabled && mini.name === 'Undefined');
-            if (pendingUndefinedDuration > 0 && !hasExplicitUndefined) {
-              miniTaskDrafts.push(sanitizeMiniTaskDraft({
-                enabled: true,
-                name: 'Undefined',
-                duration: pendingUndefinedDuration,
-                locked: false
-              }));
-            }
-          } else {
-            let parentTaskDuration = DEFAULT_SEQUENCE_TOTAL_WEIGHT || DEFAULT_SEQUENCE_MINIMUM_TOTAL;
-            if (selectedTaskId) {
-              const selectedTask = tasks.find((item) => item.id === selectedTaskId) || null;
-              if (selectedTask && selectedTask.entryType === 'task') {
-                const selectedStart = ensureWeekday(parseDate(selectedTask.startDate), 1);
-                const selectedEnd = ensureWeekday(parseDate(selectedTask.endDate), -1);
-                const computedDuration = selectedStart && selectedEnd
-                  ? diffInWeekdays(selectedStart, selectedEnd)
-                  : 0;
-                if (computedDuration > 0) parentTaskDuration = computedDuration;
-              } else if (selectedTask && selectedTask.entryType === 'stage') {
-                const stageSummary = computeStageSummary(selectedTask);
-                if (stageSummary.duration > 0) parentTaskDuration = stageSummary.duration;
-              }
-            }
-            const defaultDurations = computeDefaultMiniTaskDurations(parentTaskDuration);
-            miniTaskDrafts = DEFAULT_SEQUENCE_STEPS.map((step, index) => sanitizeMiniTaskDraft({
-              enabled: true,
-              name: step.name,
-              duration: defaultDurations[index] || 1,
-              locked: false
-            }));
-          }
-          if (!miniTaskDrafts.length) {
-            miniTaskDrafts = [sanitizeMiniTaskDraft(createMiniTaskDraft({ enabled: true }))];
-          }
-          modalTaskName.value = task ? task.name || '' : '';
-          modalTaskDescription.value = task ? task.description || '' : '';
-          modalProgress.value = task ? Math.min(100, Math.max(0, Number(task.progress) || 0)) : 0;
-          modalStartDate.value = task ? task.startDate || formatDate(defaultStart) : formatDate(defaultStart);
-          modalEndDate.value = task ? task.endDate || formatDate(defaultStart) : formatDate(defaultStart);
-        } else if (entryType === 'single') {
-          miniTaskDrafts = [];
-          modalTaskName.value = task ? task.name || '' : '';
-          modalTaskDescription.value = task ? task.description || '' : '';
-          const singleDate = task ? task.startDate || formatDate(defaultStart) : formatDate(defaultStart);
-          modalStartDate.value = singleDate;
-          if (modalEndDate) modalEndDate.value = singleDate;
-          modalProgress.value = task ? Math.min(100, Math.max(0, Number(task.progress) || 0)) : 0;
-        } else {
-          // stage
-          miniTaskDrafts = [];
-          modalTaskName.value = '';
-          modalTaskDescription.value = '';
-          const stageMeta = task ? normalizeStageMetadata(task) : normalizeStageMetadata();
-          modalProgress.value = task ? Math.min(100, Math.max(0, Number(task.progress) || 0)) : 0;
-          modalStartDate.value = '';
-          if (modalEndDate) modalEndDate.value = '';
-          const presetValue = stageMeta.stagePreset;
-          if (modalStagePreset) {
-            modalStagePreset.value = presetValue;
-          }
-          if (modalStageCustomName) {
-            if (presetValue === 'other') {
-              modalStageCustomName.value = stageMeta.stageCustomName || '';
-            } else {
-              modalStageCustomName.value = '';
-            }
-          }
-          setEntryType('stage', { skipPreview: true });
-        }
-
-        renderMiniTaskInputs();
-        updateMiniTaskToolbar();
-        updateDurationPreview();
-      }
-
-      function collectMiniTasks(taskId) {
-        if (currentEntryType !== 'task') return [];
-        return miniTaskDrafts.map((mini, index) => ({
-          id: `${taskId || 'new'}-mini-${index + 1}`,
-          enabled: Boolean(mini.enabled),
-          name: typeof mini.name === 'string' ? mini.name : '',
-          duration: Math.max(1, Math.round(mini.duration || 1)),
-          locked: Boolean(mini.locked && mini.enabled),
-          delayDescription: (mini.delayDescription || '').trim(),
-          chargeToClient: Boolean(mini.chargeToClient)
-        }));
       }
 
       function gatherDelayRows() {
@@ -3891,3 +3378,178 @@
   </script>
 </body>
 </html>
+      function updateDurationPreview() {
+        if (!durationPreview) return;
+        if (currentEntryType === 'stage') {
+          durationPreview.textContent = 'Stage timeline updates automatically when tasks are added.';
+          return;
+        }
+        let start = ensureWeekday(parseDate(modalStartDate.value), 1);
+        if (!start) {
+          durationPreview.textContent = '0 working days';
+          return;
+        }
+        if (currentEntryType === 'single') {
+          const normalized = formatDate(start);
+          if (modalEndDate) modalEndDate.value = normalized;
+          durationPreview.textContent = 'Single event (1 working day)';
+          return;
+        }
+        let end = ensureWeekday(parseDate(modalEndDate.value), -1);
+        if (!end || compareDates(end, start) < 0) {
+          end = new Date(start.getTime());
+        }
+        let baseDuration = Math.max(1, diffInWeekdays(start, end));
+        let miniTotal = 0;
+        let enabledCount = 0;
+        getMiniTaskDrafts().forEach((mini) => {
+          if (!mini?.enabled) return;
+          enabledCount += 1;
+          miniTotal += Math.max(1, Math.round(mini.duration || 1));
+        });
+        if (enabledCount > 0) {
+          baseDuration = Math.max(miniTotal, enabledCount);
+        }
+        const finalEnd = shiftWeekdays(start, baseDuration - 1);
+        modalEndDate.value = formatDate(finalEnd);
+        durationPreview.textContent = `${baseDuration} working day${baseDuration !== 1 ? 's' : ''}`;
+      }
+
+      function openTaskModal(mode = 'create', taskId = null) {
+        currentMode = mode;
+        editingTaskId = taskId;
+        taskForm.reset();
+        let task = null;
+        if (mode === 'edit' && taskId) {
+          task = tasks.find((item) => item.id === taskId) || null;
+        }
+        if (task) {
+          populateModal(task);
+          modalTitle.textContent = 'Edit';
+          saveTaskBtn.textContent = 'Save';
+        } else {
+          populateModal();
+          modalTitle.textContent = 'New';
+          saveTaskBtn.textContent = 'Create';
+        }
+        document.body.classList.add('modal-open');
+        modalBackdrop.classList.remove('hidden');
+        modalEl.classList.remove('hidden');
+        requestAnimationFrame(() => {
+          if (currentEntryType === 'stage' && modalStagePreset) {
+            modalStagePreset.focus();
+          } else if (modalTaskName && currentEntryType !== 'stage') {
+            modalTaskName.focus();
+          }
+        });
+      }
+
+      function closeTaskModal() {
+        document.body.classList.remove('modal-open');
+        modalBackdrop.classList.add('hidden');
+        modalEl.classList.add('hidden');
+        editingTaskId = null;
+        currentMode = 'create';
+        resetMiniTaskState({ silent: true });
+        setEntryType('task', { skipPreview: true });
+        if (modalTaskName) modalTaskName.value = '';
+        if (modalTaskDescription) modalTaskDescription.value = '';
+        if (modalStageCustomName) modalStageCustomName.value = '';
+        updateMiniTaskToolbar();
+        updateDurationPreview();
+      }
+
+      function populateModal(task = null) {
+        const defaultStart = ensureWeekday(new Date(), 1);
+        let entryType = 'task';
+        if (task) {
+          if (task.entryType === 'stage') entryType = 'stage';
+          else if (task.entryType === 'single' || task.singleEvent) entryType = 'single';
+        }
+        if (modalStagePreset && !modalStagePreset.options.length) {
+          populateStagePresetOptions();
+        }
+        setEntryType(entryType, { skipPreview: true });
+
+        if (entryType === 'task') {
+          setMiniTaskUnit('days', { silent: true });
+          let drafts = [];
+          if (task) {
+            const baseMini = Array.isArray(task.miniTasks) ? task.miniTasks : [];
+            drafts = baseMini.map((mini) => sanitizeMiniTaskDraft(mini));
+            const pendingUndefinedDuration = Math.max(0, Math.round(task.undefinedDuration || 0));
+            const hasExplicitUndefined = drafts.some((mini) => mini.enabled && mini.name === 'Undefined');
+            if (pendingUndefinedDuration > 0 && !hasExplicitUndefined) {
+              drafts.push(sanitizeMiniTaskDraft({
+                enabled: true,
+                name: 'Undefined',
+                duration: pendingUndefinedDuration,
+                locked: false
+              }));
+            }
+          } else {
+            let parentTaskDuration = DEFAULT_SEQUENCE_TOTAL_WEIGHT || DEFAULT_SEQUENCE_MINIMUM_TOTAL;
+            if (selectedTaskId) {
+              const selectedTask = tasks.find((item) => item.id === selectedTaskId) || null;
+              if (selectedTask && selectedTask.entryType === 'task') {
+                const selectedStart = ensureWeekday(parseDate(selectedTask.startDate), 1);
+                const selectedEnd = ensureWeekday(parseDate(selectedTask.endDate), -1);
+                const computedDuration = selectedStart && selectedEnd
+                  ? diffInWeekdays(selectedStart, selectedEnd)
+                  : 0;
+                if (computedDuration > 0) parentTaskDuration = computedDuration;
+              } else if (selectedTask && selectedTask.entryType === 'stage') {
+                const stageSummary = computeStageSummary(selectedTask);
+                if (stageSummary.duration > 0) parentTaskDuration = stageSummary.duration;
+              }
+            }
+            const defaultDurations = computeDefaultMiniTaskDurations(parentTaskDuration);
+            drafts = DEFAULT_SEQUENCE_STEPS.map((step, index) => sanitizeMiniTaskDraft({
+              enabled: true,
+              name: step.name,
+              duration: defaultDurations[index] || 1,
+              locked: false
+            }));
+          }
+          if (!drafts.length) {
+            drafts = [sanitizeMiniTaskDraft(createMiniTaskDraft({ enabled: true }))];
+          }
+          setMiniTaskDrafts(drafts, { silent: true });
+          modalTaskName.value = task ? task.name || '' : '';
+          modalTaskDescription.value = task ? task.description || '' : '';
+          modalProgress.value = task ? Math.min(100, Math.max(0, Number(task.progress) || 0)) : 0;
+          modalStartDate.value = task ? task.startDate || formatDate(defaultStart) : formatDate(defaultStart);
+          modalEndDate.value = task ? task.endDate || formatDate(defaultStart) : formatDate(defaultStart);
+        } else if (entryType === 'single') {
+          setMiniTaskDrafts([], { silent: true });
+          modalTaskName.value = task ? task.name || '' : '';
+          modalTaskDescription.value = task ? task.description || '' : '';
+          const singleDate = task ? task.startDate || formatDate(defaultStart) : formatDate(defaultStart);
+          modalStartDate.value = singleDate;
+          if (modalEndDate) modalEndDate.value = singleDate;
+          modalProgress.value = task ? Math.min(100, Math.max(0, Number(task.progress) || 0)) : 0;
+        } else {
+          setMiniTaskDrafts([], { silent: true });
+          modalTaskName.value = '';
+          modalTaskDescription.value = '';
+          const stageMeta = task ? normalizeStageMetadata(task) : normalizeStageMetadata();
+          modalProgress.value = task ? Math.min(100, Math.max(0, Number(task.progress) || 0)) : 0;
+          modalStartDate.value = '';
+          if (modalEndDate) modalEndDate.value = '';
+          const presetValue = stageMeta.stagePreset;
+          if (modalStagePreset) {
+            modalStagePreset.value = presetValue;
+          }
+          if (modalStageCustomName) {
+            if (presetValue === 'other') {
+              modalStageCustomName.value = stageMeta.stageCustomName || '';
+            } else {
+              modalStageCustomName.value = '';
+            }
+          }
+          setEntryType('stage', { skipPreview: true });
+        }
+
+        updateMiniTaskToolbar();
+        updateDurationPreview();
+      }
