@@ -75,7 +75,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 17.0.6</span>
+    <span class="app-branding-text">Programme Tool : Version 17.0.5 FIXED</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -246,7 +246,6 @@
     import { createPdfExporter } from "./export/pdf.js";
     import { createGanttController } from "./modules/gantt.js";
     import { createMiniTaskManager } from "./modules/miniTasks.js";
-    import constants from "./constants.json" assert { type: "json" };
     import {
       createNestablePublicClientApplication,
       InteractionRequiredAuthError
@@ -257,18 +256,29 @@
       const MAX_ZOOM_SCALE = 2.4;
       const ZOOM_STEP = 0.2;
       const ZOOM_TOLERANCE = 0.01;
-      const {
-        MINI_TASK_OPTIONS,
-        DEFAULT_SEQUENCE_STEPS,
-        WORKING_DAYS_PER_WEEK,
-        TASK_COLOR_MAP,
-        DEFAULT_SEGMENT_COLOR
-      } = constants;
+      const MINI_TASK_OPTIONS = ['Bond Bryan Design', 'Bond Bryan review', 'CDP', 'Client Comments', 'Delays', 'Undefined'];
+      const DEFAULT_SEQUENCE_STEPS = [
+        { name: 'Bond Bryan Design', weight: 50 },
+        { name: 'CDP', weight: 10 },
+        { name: 'Bond Bryan review', weight: 15 },
+        { name: 'Client Comments', weight: 10 },
+        { name: 'Bond Bryan review', weight: 15 }
+      ];
       const DEFAULT_SEQUENCE_MINIMUM_TOTAL = DEFAULT_SEQUENCE_STEPS.length;
       const DEFAULT_SEQUENCE_TOTAL_WEIGHT = DEFAULT_SEQUENCE_STEPS.reduce(
         (sum, step) => sum + (Number(step.weight) || 0),
         0
       );
+      const WORKING_DAYS_PER_WEEK = 5;
+      const TASK_COLOR_MAP = {
+        'Bond Bryan Design': 'rgb(176, 207, 255)',
+        'Bond Bryan review': 'rgb(255, 192, 203)',
+        'CDP': 'rgb(196, 235, 214)',
+        'Client Comments': 'rgb(255, 223, 186)',
+        'Delays': 'rgb(220, 220, 230)',
+        'Undefined': 'rgb(245, 245, 245)'
+      };
+      const DEFAULT_SEGMENT_COLOR = '#3056d3';
       // Graph configuration for OneDrive storage
       const GRAPH_SCOPES = ['User.Read', 'Files.ReadWrite.All'];
       const GRAPH_BASE_URL = 'https://graph.microsoft.com/v1.0';
