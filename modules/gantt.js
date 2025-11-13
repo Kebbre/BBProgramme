@@ -1,9 +1,25 @@
+import colorConstants from './constants.js';
+
+const TASK_COLOR_MAP = colorConstants?.TASK_COLOR_MAP || {};
+const DEFAULT_SEGMENT_COLOR = colorConstants?.DEFAULT_SEGMENT_COLOR || '#3056d3';
+const TASK_COLOR_LOOKUP = new Map(
+  Object.entries(TASK_COLOR_MAP).map(([label, color]) => [String(label).trim().toLowerCase(), color])
+);
+
+function resolveSegmentColor(name) {
+  if (name == null) return DEFAULT_SEGMENT_COLOR;
+  const normalized = String(name).trim().toLowerCase();
+  if (!normalized) return DEFAULT_SEGMENT_COLOR;
+  return TASK_COLOR_LOOKUP.get(normalized) || TASK_COLOR_MAP[name] || DEFAULT_SEGMENT_COLOR;
+}
+
 export function createGanttController({
   elements,
   constants,
   accessors,
   helpers
 }) {
+
   const {
     timelineHeaderEl,
     ganttBodyEl,
@@ -74,6 +90,9 @@ export function createGanttController({
     timelineHorizontalSyncFrame: null
   };
 
+  const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
   function getDayWidth() {
     const baseWidth = state.timelineViewMode === 'weeks'
       ? Math.max(1, DEFAULT_DAY_WIDTH / 5)
@@ -123,6 +142,16 @@ export function createGanttController({
     renderGantt();
     updateZoomControls();
   }
+
+  function applyHeaderHighlightClasses(element, highlightSet) {
+    if (!element || !(highlightSet instanceof Set)) return;
+    if (highlightSet.has('today')) element.classList.add('today');
+    if (highlightSet.has('deadline')) element.classList.add('milestone-deadline');
+    if (highlightSet.has('standdown')) element.classList.add('milestone-standdown');
+    if (highlightSet.has('standdown-start')) element.classList.add('milestone-standdown-start');
+    if (highlightSet.has('standdown-end')) element.classList.add('milestone-standdown-end');
+  }
+
 
   function setTimelineViewMode(mode) {
     if (mode !== 'days' && mode !== 'weeks') return;
@@ -278,7 +307,14 @@ export function createGanttController({
       }
       element.style.left = `${(startWorkingIndex - startIndex) * dayWidth}px`;
       element.style.width = `${(segmentEndWorkingIndex - startWorkingIndex + 1) * dayWidth}px`;
-      element.classList.toggle('is-undefined', Boolean(segment.isUndefined));
+      const isUndefinedSegment = Boolean(segment.isUndefined);
+      element.classList.toggle('is-undefined', isUndefinedSegment);
+      element.classList.toggle('undefined', isUndefinedSegment);
+      const segmentColorKey = isUndefinedSegment ? 'Undefined' : segment?.name;
+      const segmentColor = resolveSegmentColor(segmentColorKey);
+      element.style.background = segmentColor;
+      element.style.backgroundColor = segmentColor;
+      element.style.setProperty('--mini-color', segmentColor);
       element.querySelectorAll('.mini-handle').forEach((handleEl) => {
         const isDisabled = Boolean(segment.locked || segment.isUndefined);
         handleEl.classList.toggle('disabled', isDisabled);
@@ -861,96 +897,167 @@ export function createGanttController({
       if (ganttBodyScrollEl) ganttBodyScrollEl.scrollTop = 0;
       return;
     }
+    const timelineDays = state.timelineDays;
     const dayWidth = getDayWidth();
-    timelineHeaderEl.style.gridTemplateColumns = `repeat(${state.timelineDays.length}, ${dayWidth}px)`;
-    const yearGroups = groupTimelineDaysByYear(state.timelineDays);
-    const monthGroups = groupTimelineDaysByMonth(state.timelineDays);
-    if (state.timelineViewMode === 'weeks') {
-      timelineHeaderEl.classList.add('week-view');
-      timelineHeaderEl.style.gridTemplateRows = 'auto auto auto';
-    } else {
-      timelineHeaderEl.classList.add('day-view');
-      timelineHeaderEl.style.gridTemplateRows = 'auto auto auto auto';
-    }
-    adjustGanttOffset();
-
-    normalizedSegments.forEach((segment) => {
-      const highlightEl = document.createElement('div');
-      highlightEl.className = `timeline-highlight timeline-highlight--${segment.type}`;
-      if (segment.type === 'standdown') {
-        highlightEl.classList.add('timeline-highlight-standdown');
+    const isWeeksView = state.timelineViewMode === 'weeks';
+    if (timelineHeaderEl) {
+      timelineHeaderEl.innerHTML = '';
+      timelineHeaderEl.classList.remove('week-view', 'day-view');
+      timelineHeaderEl.style.gridTemplateColumns = `repeat(${timelineDays.length}, ${dayWidth}px)`;
+      const yearGroups = groupTimelineDaysByYear(timelineDays);
+      const monthGroups = groupTimelineDaysByMonth(timelineDays);
+      if (isWeeksView) {
+        timelineHeaderEl.classList.add('week-view');
+        timelineHeaderEl.style.gridTemplateRows = 'auto auto auto';
+      } else {
+        timelineHeaderEl.classList.add('day-view');
+        timelineHeaderEl.style.gridTemplateRows = 'auto auto auto auto';
       }
-      highlightEl.style.gridColumn = `${segment.startIndex + 1} / ${segment.endIndex + 2}`;
-      highlightEl.style.gridRow = '1 / -1';
-      if (segment.type === 'today') {
-        highlightEl.title = 'Today';
-      } else if (segment.name) {
-        const label = segment.type === 'deadline' ? 'Deadline' : 'Stand-down';
-        highlightEl.title = `${segment.name} • ${label}`;
+
+      if (!isWeeksView) {
+        normalizedSegments.forEach((segment) => {
+          const highlightEl = document.createElement('div');
+          highlightEl.className = `timeline-highlight timeline-highlight--${segment.type}`;
+          if (segment.type === 'standdown') {
+            highlightEl.classList.add('timeline-highlight-standdown');
+          }
+          highlightEl.style.gridColumn = `${segment.startIndex + 1} / ${segment.endIndex + 2}`;
+          highlightEl.style.gridRow = '1 / -1';
+          if (segment.type === 'today') {
+            highlightEl.title = 'Today';
+          } else if (segment.name) {
+            const label = segment.type === 'deadline' ? 'Deadline' : 'Stand-down';
+            highlightEl.title = `${segment.name} • ${label}`;
+          }
+          timelineHeaderEl.appendChild(highlightEl);
+        });
       }
-      timelineHeaderEl.appendChild(highlightEl);
-    });
 
-    yearGroups.forEach((group) => {
-      const cell = document.createElement('div');
-      cell.className = 'timeline-year';
-      cell.textContent = String(group.year);
-      cell.style.gridColumn = `${group.startIndex + 1} / ${group.endIndex + 2}`;
-      cell.style.gridRow = '1';
-      timelineHeaderEl.appendChild(cell);
-    });
-
-    monthGroups.forEach((group) => {
-      const cell = document.createElement('div');
-      cell.className = 'timeline-month';
-      cell.textContent = group.name || '';
-      cell.style.gridColumn = `${group.startIndex + 1} / ${group.endIndex + 2}`;
-      cell.style.gridRow = '2';
-      timelineHeaderEl.appendChild(cell);
-    });
-
-    if (state.timelineViewMode === 'weeks') {
-      const weekGroups = groupTimelineDaysByWeek(state.timelineDays);
-      weekGroups.forEach((group) => {
+      yearGroups.forEach((group) => {
         const cell = document.createElement('div');
-        cell.className = 'timeline-week';
-        cell.textContent = `W${String(group.weekNumber).padStart(2, '0')}`;
-        cell.style.gridColumn = `${group.startIndex + 1} / ${group.endIndex + 2}`;
-        cell.style.gridRow = '3';
+        cell.className = 'timeline-year';
+        cell.textContent = String(group.year);
+        cell.style.gridColumn = `${group.startIndex + 1} / span ${group.length}`;
+        cell.style.gridRow = '1';
         timelineHeaderEl.appendChild(cell);
       });
-    } else {
-      state.timelineDays.forEach((day, index) => {
-        const highlightSet = dayHighlightMap[index] || new Set();
-        const dayName = document.createElement('div');
-        dayName.className = 'timeline-day-name';
-        dayName.textContent = day.toLocaleDateString('en-GB', { weekday: 'short' });
-        dayName.style.gridRow = '3';
-        dayName.style.gridColumn = `${index + 1}`;
-        if (day.getUTCDay() === 1) dayName.classList.add('is-monday');
-        if (highlightSet.has('today')) dayName.classList.add('today');
-        if (highlightSet.has('deadline')) dayName.classList.add('milestone-deadline');
-        if (highlightSet.has('standdown')) dayName.classList.add('milestone-standdown');
-        if (highlightSet.has('standdown-start')) dayName.classList.add('milestone-standdown-start');
-        if (highlightSet.has('standdown-end')) dayName.classList.add('milestone-standdown-end');
-        timelineHeaderEl.appendChild(dayName);
 
-        const dayNumber = document.createElement('div');
-        dayNumber.className = 'timeline-day-number';
-        dayNumber.textContent = formatShortDate(day).split('/')[0];
-        dayNumber.style.gridRow = '4';
-        dayNumber.style.gridColumn = `${index + 1}`;
-        if (day.getUTCDay() === 1) {
-          dayNumber.classList.add('is-monday');
-        }
-        if (highlightSet.has('today')) dayNumber.classList.add('today');
-        if (highlightSet.has('deadline')) dayNumber.classList.add('milestone-deadline');
-        if (highlightSet.has('standdown')) dayNumber.classList.add('milestone-standdown');
-        if (highlightSet.has('standdown-start')) dayNumber.classList.add('milestone-standdown-start');
-        if (highlightSet.has('standdown-end')) dayNumber.classList.add('milestone-standdown-end');
-        timelineHeaderEl.appendChild(dayNumber);
+      monthGroups.forEach((group) => {
+        const cell = document.createElement('div');
+        cell.className = 'timeline-month';
+        const label = state.timelineViewMode === 'weeks'
+          ? MONTH_NAMES[group.month].slice(0, 3)
+          : MONTH_NAMES[group.month];
+        cell.textContent = label;
+        cell.style.gridColumn = `${group.startIndex + 1} / span ${group.length}`;
+        cell.style.gridRow = '2';
+        timelineHeaderEl.appendChild(cell);
       });
+
+      if (isWeeksView) {
+        const weekGroups = groupTimelineDaysByWeek(timelineDays);
+        const highlightTypes = ['today', 'deadline', 'standdown'];
+        const getWeekEndIndex = (group, span) => {
+          const fallbackEnd = group.startIndex + Math.max(1, span) - 1;
+          const rawEnd = typeof group.endIndex === 'number' ? group.endIndex : fallbackEnd;
+          const maxIndex = timelineDays.length - 1;
+          return Math.max(group.startIndex, Math.min(rawEnd, maxIndex));
+        };
+        const segmentsByType = normalizedSegments.reduce((map, segment) => {
+          if (!highlightTypes.includes(segment.type)) return map;
+          if (!map.has(segment.type)) map.set(segment.type, []);
+          map.get(segment.type).push(segment);
+          return map;
+        }, new Map());
+        const weekMeta = weekGroups.map((group) => {
+          const span = Math.max(1, group.length);
+          const endIndex = getWeekEndIndex(group, span);
+          const highlightSet = new Set();
+          for (let offset = 0; offset < span; offset += 1) {
+            const dayIndex = group.startIndex + offset;
+            if (dayIndex < 0 || dayIndex >= dayHighlightMap.length) continue;
+            dayHighlightMap[dayIndex]?.forEach((type) => {
+              if (highlightTypes.includes(type)) {
+                highlightSet.add(type);
+              }
+            });
+          }
+          return { group, span, endIndex, highlightSet };
+        });
+
+        weekMeta.forEach(({ group, endIndex, highlightSet }) => {
+          const columnStart = group.startIndex + 1;
+          const columnEnd = endIndex + 2;
+          highlightTypes.forEach((type) => {
+            if (!highlightSet.has(type)) return;
+            const highlightEl = document.createElement('div');
+            highlightEl.className = `timeline-highlight timeline-highlight--${type}`;
+            if (type === 'standdown') {
+              highlightEl.classList.add('timeline-highlight-standdown');
+            }
+            highlightEl.style.gridColumn = `${columnStart} / ${columnEnd}`;
+            highlightEl.style.gridRow = '1 / -1';
+            const overlappingSegments = (segmentsByType.get(type) || []).filter(
+              (segment) => segment.startIndex <= endIndex && segment.endIndex >= group.startIndex
+            );
+            if (type === 'today') {
+              highlightEl.title = 'This week includes Today';
+            } else if (overlappingSegments.length) {
+              const names = overlappingSegments
+                .map((segment) => segment.name)
+                .filter(Boolean);
+              if (names.length) {
+                const label = type === 'deadline' ? 'Deadline' : 'Stand-down';
+                const plural = names.length > 1 ? 's' : '';
+                highlightEl.title = `${label}${plural ? 's' : ''}: ${names.join(', ')}`;
+              } else if (type === 'deadline') {
+                highlightEl.title = 'Deadline';
+              } else if (type === 'standdown') {
+                highlightEl.title = 'Stand-down';
+              }
+            }
+            timelineHeaderEl.appendChild(highlightEl);
+          });
+        });
+
+        weekMeta.forEach(({ group, span }) => {
+          const cell = document.createElement('div');
+          cell.className = 'timeline-week';
+          cell.style.gridColumn = `${group.startIndex + 1} / span ${span}`;
+          const monday = new Date(group.start.getTime());
+          const dayOfWeek = monday.getUTCDay();
+          const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+          monday.setUTCDate(monday.getUTCDate() - diff);
+          const mondayShort = formatShortDate(monday);
+          cell.textContent = mondayShort.split('/')[0];
+          cell.title = `${formatDisplayDate(group.start)} → ${formatDisplayDate(group.end)} (${group.length} working day${group.length !== 1 ? 's' : ''})`;
+          timelineHeaderEl.appendChild(cell);
+        });
+      } else {
+        timelineDays.forEach((day, index) => {
+          const highlightSet = dayHighlightMap[index] || new Set();
+          const dayNameEl = document.createElement('div');
+          dayNameEl.className = 'timeline-day-name';
+          dayNameEl.textContent = DAY_NAMES[day.getUTCDay()];
+          dayNameEl.style.gridRow = '3';
+          dayNameEl.style.gridColumn = `${index + 1}`;
+          applyHeaderHighlightClasses(dayNameEl, highlightSet);
+          timelineHeaderEl.appendChild(dayNameEl);
+
+          const dayNumberEl = document.createElement('div');
+          dayNumberEl.className = 'timeline-day-number';
+          dayNumberEl.textContent = formatShortDate(day).split('/')[0];
+          dayNumberEl.style.gridRow = '4';
+          dayNumberEl.style.gridColumn = `${index + 1}`;
+          if (day.getUTCDay() === 1) {
+            dayNumberEl.classList.add('is-monday');
+          }
+          applyHeaderHighlightClasses(dayNumberEl, highlightSet);
+          timelineHeaderEl.appendChild(dayNumberEl);
+        });
+      }
     }
+    adjustGanttOffset();
 
     const tasks = getTasks();
     if (!tasks.length) {

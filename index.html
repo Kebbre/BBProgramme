@@ -4,312 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Architecture Project Planner</title>
-  <style>
-    *,*::before,*::after{box-sizing:border-box;}
-    :root{--sidebar-width:600px;--day-width:32px;--row-height:54px;--primary:#3056d3;--surface:#fff;--surface-alt:#f2f4f9;--border:#d6dbe7;--text:#1f2937;--text-muted:#4b5563;--top-offset:1rem;--header-vertical-offset:5rem;--sidebar-header-height:0px;--header-band-height:0rem;--body-offset: 10rem; --task-header-height:4.5rem;--vertical-header-offset:15.55rem; --timeline-header-height:4.5rem;--task-header-top:calc(var(--top-offset) + var(--content-offset));--timeline-header-top:calc(var(--top-offset) + var(--content-offset));--gantt-header-height:0px;--task-scroll-height:calc(100vh - 100px);--gantt-scroll-height:calc(100vh - 100px);--content-offset:0.88rem;}
-    html{height:100%;overflow:hidden;}
-    body{margin:0;font-family:"Inter","Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;background:#eef1f7;color:var(--text);min-height:100vh;height:100vh;overflow:hidden;display:flex;flex-direction:column;font-size:.94rem;}
-    h1,h2,h3{margin:0;}
-    button{border:0;background:var(--primary);color:#fff;border-radius:8px;padding:.5rem 1rem;font-size:.95rem;font-weight:600;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;}
-    button:disabled{opacity:.4;cursor:not-allowed;}
-    button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 10px 18px rgba(48,86,211,.16);}
-    input,textarea{font:inherit;border-radius:6px;border:1px solid var(--border);padding:.35rem .5rem;width:100%;background:#fff;color:inherit;}
-    input:focus,textarea:focus{outline:2px solid rgba(48,86,211,.25);border-color:transparent;}
-    textarea{resize:vertical;min-height:96px;}
-    .top-bar{display:flex;flex-direction:column;gap:1rem;padding:1.1rem 1.75rem 1rem;background:#fff;border-bottom:1px solid var(--border);box-shadow:0 2px 8px rgba(31,45,61,.08);position:sticky;top:0;z-index:5;}
-    .top-bar-row{display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;justify-content:flex-start;width:100%;}
-    .top-bar-row.heading-row{justify-content:flex-start;}
-    .top-bar-row.primary-actions-row{justify-content:flex-start;}
-    .top-bar-row.legend-row{justify-content:flex-end;}
-    .top-bar-row.secondary-actions-row{justify-content:space-between;}
-    .project-heading{display:flex;align-items:center;gap:1.1rem;flex-wrap:wrap;justify-content:flex-start;}
-    .project-heading h1{font-size:1.45rem;font-weight:700;margin:0;}
-    .top-bar-sidebar-actions{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;justify-content:flex-start;}
-    .top-bar .top-bar-sidebar-actions button{flex:0 0 auto;min-width:0;}
-    .top-bar .button-row{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;}
-    .top-bar .button-row .secondary{background:var(--surface-alt);color:var(--text);border:1px solid var(--border);box-shadow:none;}
-    .top-bar .button-row .secondary:hover{transform:none;color:var(--primary);border-color:var(--primary);}
-    .legend{display:flex;flex-wrap:wrap;gap:.85rem;align-items:center;}
-    .legend-item{display:flex;align-items:center;gap:.45rem;font-size:.78rem;color:var(--text-muted);}
-    .legend-swatch{width:16px;height:16px;border-radius:6px;box-shadow:0 0 0 1px rgba(15,23,42,.1);}
-    .app{display:flex;flex:1;min-height:0;}
-    .sidebar{width:var(--sidebar-width);flex:0 0 var(--sidebar-width);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;left:0;z-index:6;min-height:0;}
-    .sidebar-actions{display:flex;gap:.6rem;flex-wrap:wrap;}
-    .sidebar-actions button{flex:1 0 48%;min-width:0;}
-    .sidebar-actions .icon-btn{flex:0 0 auto;width:42px;padding:.45rem;background:var(--surface-alt);color:var(--text);border:1px solid var(--border);box-shadow:none;font-size:1rem;line-height:1;border-radius:8px;}
-    .sidebar-actions .icon-btn:hover{transform:none;color:var(--primary);border-color:var(--primary);}
-    .sidebar-actions .secondary{background:var(--surface-alt);color:var(--text);border:1px solid var(--border);box-shadow:none;}
-    .sidebar-actions .secondary:hover{transform:none;color:var(--primary);border-color:var(--primary);}
-    .task-list-header,
-    .task-row{display:grid;grid-template-columns:50px 120px 110px 110px 70px 90px;column-gap:0.6px;align-items:center;}
-    .task-list-header{padding:0 1rem;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);background:rgba(48,86,211,.08);position:sticky;top:var(--task-header-top, calc(var(--top-offset) + var(--content-offset)));z-index:6;align-items:center;border-top:1px solid var(--border);height:var(--task-header-height);min-height:var(--task-header-height);}
-    .task-list-header span{display:flex;align-items:center;justify-content:flex-end;padding:0 .35rem;}
-    .task-header-identifier{justify-content:center;}
-    .task-header-name{justify-content:flex-start;}
-    .task-list-scroll{display:flex;flex-direction:column;padding-bottom: 17px;justify-content:flex-start;flex:1;overflow-y:auto;overflow-x:visible;max-height:var(--task-scroll-height);scrollbar-gutter:stable;background:var(--surface);min-height:0;direction:rtl;scroll-padding-top:var(--task-header-height);}
-    .task-list-scroll > *{direction:ltr;}
-    .task-list{flex:0;overflow:visible;padding:0;min-height:0;margin-top:0;transform:none;}
-    .task-row{align-items:center;padding:0 1.5rem;height:var(--row-height);border-bottom:1px solid rgba(15,23,42,.06);cursor:pointer;transition:background .15s ease,box-shadow .15s ease;font-size:.7rem;}
-    .task-row > *{width:100%;box-sizing:border-box;height:100%;display:flex;align-items:center;padding:0 .35rem;}
-    .task-row .task-identifier{justify-content:center;font-weight:700;font-size:.595rem;text-transform:uppercase;font-variant-numeric:tabular-nums;color:var(--text);}
-    .task-row.stage-row .task-identifier{color:#7c6c1f;}
-    .task-row .task-identifier.identifier-placeholder{color:var(--text-muted);font-weight:600;}
-    .task-row .task-name{justify-content:flex-start;}
-    .task-row .task-start,
-    .task-row .task-end,
-    .task-row .task-duration-cell,
-    .task-row .task-progress{justify-content:flex-end;}
-    .task-row:hover{background:rgba(48,86,211,.08);}
-    .task-row.selected{background:rgba(48,86,211,.14);box-shadow:inset 4px 0 0 var(--primary);}
-    .task-row.dragging{opacity:.55;}
-    .task-row.drag-over{background:rgba(48,86,211,.18);box-shadow:inset 0 0 0 2px rgba(48,86,211,.35);}
-    .task-row.stage-row{background:rgb(250,250,210);}
-    .task-row.stage-row.selected{box-shadow:inset 4px 0 0 rgba(212,163,18,.85);}
-    .task-row.stage-child .task-name{padding-left:1.25rem;}
-    .task-row.stage-row .stage-meta-hidden{visibility:hidden;pointer-events:none;}
-    .task-name{display:flex;align-items:center;font-size:inherit;font-weight:600;color:var(--text);}
-    .task-duration{font-size:.7rem;font-weight:600;text-align:center;padding:.3rem .5rem;border-radius:999px;background:rgba(48,86,211,.12);color:var(--primary);height:30px;display:inline-flex;align-items:center;justify-content:center;line-height:1;}
-    .task-progress{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:.2rem;height:100%;}
-    .task-row input[type="date"],.task-row input[type="number"]{font-size:.7rem;padding:.25rem .4rem;height:30px;line-height:30px;}
-    .task-row input[type="date"]{width:100%;}
-    .task-progress input{text-align:right;width:68px;min-width:unset;padding-right:1.3rem;}
-    .task-progress span{position:relative;right:.35rem;transform:none;font-size:.65rem;color:var(--text-muted);}
-    .gantt-wrapper{flex:1;display:flex;flex-direction:column;min-width:0;}
-    .gantt-header{padding:0rem 1.75rem 1rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;position:sticky;top:var(--top-offset);z-index:5;background:#fff;}
-    .gantt-header h2{font-size:1.2rem;font-weight:600;}
-    .gantt-header-left{display:inline-flex;align-items:center;gap:.75rem;flex-wrap:wrap;}
-    .timeline-controls{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;}
-    .view-mode-toggle{display:inline-flex;align-items:center;background:var(--surface-alt);border:1px solid var(--border);border-radius:999px;padding:2px;}
-    .view-mode-toggle button{border:0;background:transparent;color:var(--text-muted);font-size:.75rem;font-weight:600;padding:.3rem .75rem;border-radius:999px;cursor:pointer;transition:background .15s ease,color .15s ease,box-shadow .15s ease;}
-    .view-mode-toggle button.active{background:var(--primary);color:#fff;box-shadow:0 6px 14px rgba(48,86,211,.2);}
-    .view-mode-toggle button:focus-visible{outline:2px solid rgba(48,86,211,.35);outline-offset:2px;}
-    .zoom-controls{display:inline-flex;align-items:center;background:var(--surface-alt);border:1px solid var(--border);border-radius:999px;padding:2px;}
-    .zoom-controls button{border:0;background:transparent;color:var(--text-muted);font-size:.85rem;font-weight:700;padding:.28rem .6rem;border-radius:999px;cursor:pointer;transition:background .15s ease,color .15s ease,box-shadow .15s ease;}
-    .zoom-controls button:hover:not(:disabled){color:var(--primary);background:rgba(48,86,211,.12);}
-    .zoom-controls button:disabled{cursor:not-allowed;opacity:.45;}
-    .zoom-controls button:focus-visible{outline:2px solid rgba(48,86,211,.35);outline-offset:2px;}
-    .planner-viewport{flex:1;display:flex;overflow-x:auto;overflow-y:hidden;position:relative;min-height:0;min-width:0;scrollbar-gutter:stable both-edges;align-items:flex-start;scroll-padding-top:var(--content-offset);padding-top:var(--content-offset);box-sizing:border-box;}
-    .gantt-calendar{flex:1;background:var(--surface);border-top:1px solid var(--border);position:relative;display:flex;flex-direction:column;min-width:0;}
-    .timeline-header{position:sticky;top:var(--timeline-header-top, calc(var(--top-offset) + var(--content-offset)));z-index:5;display:grid;background:#fff;border-bottom:1px solid var(--border);box-shadow:0 4px 12px rgba(15,23,42,.08);grid-auto-flow:column;height:var(--timeline-header-height);min-height:var(--timeline-header-height);align-content:stretch;}
-    .timeline-header .timeline-year,
-    .timeline-header .timeline-month,
-    .timeline-header .timeline-week{display:flex;align-items:center;justify-content:center;padding:.4rem .6rem;font-weight:700;font-size:.78rem;color:var(--text);border-left:1px solid rgba(15,23,42,.08);background:rgba(48,86,211,.06);}
-    .timeline-header .timeline-month{font-weight:600;font-size:.75rem;color:var(--text-muted);background:rgba(48,86,211,.02);}
-    .timeline-header .timeline-week{background:rgba(48,86,211,.08);color:var(--text);}
-    .timeline-header .timeline-day-name,
-    .timeline-header .timeline-day-number{display:flex;align-items:center;justify-content:center;padding:.35rem .25rem;border-left:1px solid rgba(15,23,42,.06);}
-    .timeline-header > *{position:relative;z-index:2;}
-    .timeline-highlight{background:rgba(220,38,38,.12);border-left:2px solid transparent;border-right:2px solid transparent;border-radius:6px;pointer-events:none;z-index:1;}
-    .timeline-highlight--today{background:rgba(220,38,38,.12);border-color:#dc2626;}
-    .timeline-highlight--deadline{background:rgba(253,224,140,.28);border-color:#d97706;}
-    .timeline-highlight--standdown{background:repeating-linear-gradient(135deg,rgba(107,114,128,.55)0,rgba(107,114,128,.55)8px,rgba(107,114,128,0)8px,rgba(107,114,128,0)16px);background-attachment:fixed; background-position: 0 0 ;border:none;box-shadow:inset 0 0 0 1px rgba(71,85,105,.55);z-index:2;}
-    .timeline-header.week-view .timeline-highlight{border-radius:4px;}
-    .timeline-header .timeline-day-name.today,
-    .timeline-header .timeline-day-number.today,
-    .timeline-header .timeline-week.today{color:#dc2626;font-weight:700;}
-    .timeline-header .timeline-day-name.milestone-deadline,
-    .timeline-header .timeline-day-number.milestone-deadline,
-    .timeline-header .timeline-week.milestone-deadline{color:#b45309;font-weight:700;}
-    .timeline-header .timeline-day-name.milestone-standdown,
-    .timeline-header .timeline-day-number.milestone-standdown,
-    .timeline-header .timeline-week.milestone-standdown{color:#334155;font-weight:700;border-left-color:transparent;}
-    .timeline-header .timeline-day-name.milestone-standdown-start,
-    .timeline-header .timeline-day-number.milestone-standdown-start,
-    .timeline-header .timeline-week.milestone-standdown-start{border-left:1px solid rgba(71,85,105,.6);}
-    .timeline-header .timeline-day-name.milestone-standdown-end,
-    .timeline-header .timeline-day-number.milestone-standdown-end,
-    .timeline-header .timeline-week.milestone-standdown-end{box-shadow:inset -1px 0 0 rgba(71,85,105,.6);}
-    .timeline-header .timeline-day-name.milestone-standdown-start.milestone-standdown-end,
-    .timeline-header .timeline-day-number.milestone-standdown-start.milestone-standdown-end,
-    .timeline-header .timeline-week.milestone-standdown-start.milestone-standdown-end{border-left:1px solid rgba(71,85,105,.6);box-shadow:inset -1px 0 0 rgba(71,85,105,.6);}
-    .timeline-header .timeline-day-name{font-size:.72rem;font-weight:600;color:var(--text-muted);letter-spacing:.03em;text-transform:uppercase;}
-    .timeline-header.day-view .timeline-day-name{font-size:calc(.72rem * .7);transform:rotate(-90deg);transform-origin:center;line-height:1;white-space:nowrap;padding:.15rem 0;}
-    .timeline-header .timeline-day-number{font-size:.76rem;font-weight:700;color:var(--text);}
-    .timeline-header.day-view .timeline-day-number:not(.today):not(.milestone-deadline):not(.milestone-standdown):not(.milestone-standdown-start):not(.milestone-standdown-end){color:var(--text-muted);}
-    .timeline-header.day-view .timeline-day-number.is-monday:not(.today):not(.milestone-deadline):not(.milestone-standdown):not(.milestone-standdown-start):not(.milestone-standdown-end){color:#000;}
-    .timeline-header .timeline-year:first-child,
-    .timeline-header .timeline-month:first-child,
-    .timeline-header .timeline-week:first-child,
-    .timeline-header .timeline-day-name:first-child,
-    .timeline-header .timeline-day-number:first-child{border-left:none;}
-    .timeline-header.week-view .timeline-year,
-    .timeline-header.week-view .timeline-month{background:rgba(48,86,211,.04);}
-    .gantt-body-scroll{flex:0;overflow-y:auto;overflow-x:visible;max-height:var(--gantt-scroll-height);scrollbar-gutter:stable;background:var(--surface);min-height:0;scroll-padding-top:var(--timeline-header-height);margin-top: -2px;}
-    .gantt-body{margin-top:0;display:flex;flex-direction:column;gap:0;transition:margin-top .2s ease;min-width:100%;}
-    .gantt-row{position:relative;height:var(--row-height);min-width:100%;overflow:visible;border-bottom: 1px solid rgba(15,23,42,.06);}
-    .gantt-row.stage-row{background:transparent;}
-    .gantt-row.stage-child .task-label{padding-left:1rem;}
-    .gantt-grid{position:absolute;inset:0;display:grid;pointer-events:none;z-index:0;}
-    .gantt-grid .day-cell{position:relative;border-left:1px solid rgba(15,23,42,.05);background:rgba(240,243,248,.9);}
-    .gantt-grid .day-cell:nth-child(5n+1){background:rgba(48,86,211,.08);}
-    .gantt-grid .day-cell::before,
-    .gantt-grid .day-cell::after{content:"";position:absolute;top:0;bottom:0;left:0;right:0;border-radius:6px;pointer-events:none;}
-    .gantt-grid .day-cell::before{background:transparent;opacity:0;}
-    .gantt-grid .day-cell.milestone-deadline::before{background:rgba(253,224,140,.28);border-left:2px solid #d97706;border-right:2px solid #d97706;opacity:1;}
-    .gantt-grid .day-cell.milestone-standdown{border-left-color:transparent;}
-   .gantt-grid .day-cell.milestone-standdown::before{background-color:rgba(230,232,235,0.9);background-image:repeating-linear-gradient(135deg,rgba(107,114,128,0.5)0,rgba(107,114,128,0.5)3px,rgba(107,114,128,0)3px,rgba(107,114,128,0)16px);background-attachment:fixed;background-position:0 0;opacity:1;border-left:0;border-right:0;z-index:1;left:-1px;right:-1px;}
-    .gantt-grid .day-cell.milestone-standdown-start::before{border-left:1px solid rgba(71,85,105,.6);}
-    .gantt-grid .day-cell.milestone-standdown-end::before{border-right:1px solid rgba(71,85,105,.6);}
-    .gantt-grid .day-cell.milestone-standdown-start.milestone-standdown-end::before{border-left:1px solid rgba(71,85,105,.6);border-right:1px solid rgba(71,85,105,.6);}
-    .gantt-grid .day-cell.today::after{background:rgba(220,38,38,.12);border-left:2px solid #dc2626;border-right:2px solid #dc2626;}
-    .stage-empty-label{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-weight:600;color:#7c6c1f;pointer-events:none;}
-    .task-bar{position:absolute;top:50%;transform:translateY(-50%);height:35px;min-height:35px;border-radius:8px;background:rgba(48,86,211,.22);border:1px solid rgba(48,86,211,.32);display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:.12rem;padding:.25rem .7rem;cursor:pointer;transition:box-shadow .2s ease,transform .2s ease;overflow:visible;}
-    .task-bar:hover{transform:translateY(calc(-50% - 0.5px));box-shadow:0 12px 22px rgba(48,86,211,.2);}
-    .task-bar.selected{background:rgba(48,86,211,.32);border-color:rgba(48,86,211,.55);box-shadow:0 12px 26px rgba(48,86,211,.26);}
-    .task-bar.stage-bar{background:rgb(250,250,210)!important;border-color:rgba(212,163,18,.85)!important;box-shadow:0 2px 6px rgba(212,163,18,.25);}
-    .task-bar.stage-bar:hover,
-    .task-bar.stage-bar.selected{background:rgb(255,247,190)!important;border-color:rgba(180,140,0,.9)!important;}
-    .task-bar.stage-bar .progress{background:rgba(255,255,255,.35);}
-    .task-label{font-size:.85rem;font-weight:600;line-height:1.05;white-space:nowrap;pointer-events:none;color:#000;position:relative;z-index:5;text-shadow:0 1px 2px rgba(255,255,255,.25);max-width:none;overflow:visible;text-overflow:clip;flex-shrink:0;}
-    .task-dates{font-size:.74rem;line-height:1.05;color:rgba(0,0,0,.72);pointer-events:none;position:relative;z-index:5;max-width:none;overflow:visible;text-overflow:clip;white-space:nowrap;flex-shrink:0;}
-    .task-bar .progress{position:absolute;top:0;bottom:0;left:0;width:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,.9)0,rgba(255,255,255,.9)6px,rgba(255,255,255,.25)6px,rgba(255,255,255,.25)12px);background-color:rgba(255,255,255,.25);border-radius:8px 0 0 8px;pointer-events:none;transition:width .2s ease;z-index:5;box-shadow:inset -1px 0 0 rgba(0,0,0,.08);overflow:hidden;}
-    .task-bar .progress.is-full{border-radius:8px;}
-    .mini-layer{position:absolute;inset:0;pointer-events:auto;border-radius:8px;overflow:visible;z-index:4;}
-    .single-event-marker{position:absolute;top:50%;transform:translate(-50%,-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:16px solid #2fb879;cursor:pointer;pointer-events:auto;z-index:6;}
-    .single-event-marker:hover{filter:brightness(1.05);}
-    .single-event-marker.selected{border-bottom-color:#228a5f;}
-    .mini-segment{position:absolute;top:0;bottom:0;opacity:.92;pointer-events:auto;border-radius:10px;box-shadow:inset 0 0 0 1px rgba(15,23,42,.12);cursor:pointer;transition:box-shadow .15s ease;}
-    .mini-segment.locked{box-shadow:inset 0 0 0 3px rgba(17,24,39,.65);}
-    .mini-segment.undefined{background:rgb(245,245,245);box-shadow:inset 0 0 0 1px rgba(107,114,128,.35);}
-    .mini-segment .mini-handle{position:absolute;top:50%;transform:translateY(-50%);width:16px;height:70%;border-radius:10px;cursor:col-resize;background:transparent;border:1px solid transparent;box-shadow:none;display:flex;align-items:center;justify-content:center;z-index:5;transition:transform .15s ease;}
-    .mini-segment .mini-handle::before{display:none;}
-    .mini-segment .mini-handle:hover{transform:translateY(-50%) scale(1.05);}
-    .mini-segment .mini-handle-left{left:-7px;}
-    .mini-segment .mini-handle-right{right:-7px;}
-    .progress-handle{position:absolute;top:50%;transform:translate(-50%,-50%);width:16px;height:70%;border-radius:10px;cursor:ew-resize;background:transparent;border:1px solid transparent;box-shadow:none;display:flex;align-items:center;justify-content:center;pointer-events:auto;z-index:6;transition:transform .15s ease;}
-    .progress-handle::before{display:none;}
-    .progress-handle:hover{transform:translate(-50%,-50%) scale(1.05);}
-    .mini-segment .mini-handle.disabled{cursor:not-allowed;opacity:.2;background:transparent;box-shadow:none;}
-    .mini-segment.locked .mini-handle{cursor:not-allowed;background:transparent;opacity:.2;}
-    .mini-segment.locked .mini-handle:hover{background:transparent;}
-    .standdown-layer{position:absolute;inset:0;pointer-events:none;z-index:5;}
-    .standdown-gap{position:absolute;top:-2px;bottom:-2px;background-color:rgba(230,232,235,0.9);background-image:repeating-linear-gradient(135deg,rgba(107,114,128,0.5)0,rgba(107,114,128,0.5)3px,rgba(107,114,128,0)3px,rgba(107,114,128,0)16px);background-attachment:fixed;background-position:0 0;border:none;box-shadow:inset 0 0 0 1px rgba(71,85,105,.4);border-radius:8px;}
-    .standdown-gap.standdown-gap-start{border-top-left-radius:10px;border-bottom-left-radius:10px;box-shadow:inset 1px 0 0 rgba(71,85,105,.65), inset 0 0 0 1px rgba(71,85,105,.6);}
-    .standdown-gap.standdown-gap-end{border-top-right-radius:10px;border-bottom-right-radius:10px;box-shadow:inset -1px 0 0 rgba(71,85,105,.65), inset 0 0 0 1px rgba(71,85,105,.6);}
-    .standdown-gap.standdown-gap-start.standdown-gap-end{box-shadow:inset 1px 0 0 rgba(71,85,105,.65), inset -1px 0 0 rgba(71,85,105,.65), inset 0 0 0 1px rgba(71,85,105,.6);}
-    .mini-0{background:rgba(48,86,211,.88);} .mini-1{background:rgba(46,160,67,.85);} .mini-2{background:rgba(191,135,0,.85);} .mini-3{background:rgba(219,97,162,.85);} .mini-4{background:rgba(137,87,229,.85);} .mini-5{background:rgba(64,193,213,.85);} .mini-6{background:rgba(231,120,67,.85);}
-    .handle{position:absolute;top:0;bottom:0;width:10px;background:rgba(15,23,42,.18);border-radius:4px;cursor:ew-resize;opacity:0;transition:opacity .15s ease;z-index:6;}
-    .task-bar:hover .handle,.task-bar.selected .handle{opacity:1;}
-    .handle-start{left:-4px;}
-    .handle-end{right:-4px;}
-    .empty-state{padding:2rem 1.5rem;color:var(--text-muted);font-size:.95rem;text-align:center;}
-    .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);z-index:10;}
-    .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:11;padding:2rem;}
-    .modal.hidden,.modal-backdrop.hidden{display:none;}
-    .modal-content{background:#fff;border-radius:14px;width:min(720px,96vw);max-height:92vh;display:flex;flex-direction:column;box-shadow:0 28px 64px rgba(15,23,42,.3);overflow:auto;}
-    .modal-header{padding:1.3rem 1.75rem 1rem;border-bottom:1px solid rgba(15,23,42,.08);display:flex;align-items:center;justify-content:space-between;}
-    .modal-body{padding:1.4rem 1.75rem;display:flex;flex-direction:column;gap:1.4rem;}
-    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem 1.4rem;}
-    .form-group{display:flex;flex-direction:column;gap:.4rem;font-size:.88rem;}
-    .form-group label{font-weight:600;color:var(--text-muted);}
-    .duration-indicator{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .6rem;border-radius:999px;background:rgba(48,86,211,.12);color:var(--primary);font-size:.8rem;font-weight:600;}
-    .mini-task-section{border:1px solid rgba(15,23,42,.08);border-radius:12px;background:rgba(48,86,211,.05);padding:1.1rem 1.4rem;display:flex;flex-direction:column;gap:1rem;}
-    .mini-task-section h3{font-size:1rem;font-weight:700;}
-    .mini-task-section p{margin:0;font-size:.85rem;color:var(--text-muted);}
-    .mini-task-header{display:flex;justify-content:space-between;align-items:flex-start;gap:.8rem;flex-wrap:wrap;}
-    .mini-task-heading{flex:1 1 auto;min-width:220px;}
-    .mini-task-toolbar{display:inline-flex;align-items:center;gap:.4rem;}
-    .mini-task-toolbar button{border:1px solid var(--border);background:#fff;color:var(--text);border-radius:8px;padding:.32rem .65rem;font-size:.82rem;font-weight:600;cursor:pointer;transition:color .15s ease,border-color .15s ease,transform .15s ease;}
-    .mini-task-toolbar button:hover:not(:disabled){color:var(--primary);border-color:var(--primary);transform:translateY(-1px);}
-    .mini-task-toolbar button:disabled{cursor:not-allowed;opacity:.45;transform:none;}
-    .mini-task-controls-row{display:flex;justify-content:flex-end;align-items:center;gap:.6rem;flex-wrap:wrap;margin-top:-.3rem;}
-    .mini-unit-toggle{display:inline-flex;align-items:center;background:#fff;border:1px solid var(--border);border-radius:999px;padding:2px;}
-    .mini-unit-toggle .mini-unit-btn{border:0;background:transparent;color:var(--text-muted);font-size:.74rem;font-weight:600;padding:.28rem .6rem;border-radius:999px;cursor:pointer;transition:background .15s ease,color .15s ease;}
-    .mini-unit-toggle .mini-unit-btn.active{background:var(--primary);color:#fff;}
-    .mini-unit-toggle .mini-unit-btn:focus-visible{outline:2px solid rgba(48,86,211,.35);outline-offset:2px;}
-    .mini-task-list{display:flex;flex-direction:column;gap:.8rem;}
-    .mini-task-item{display:grid;grid-template-columns:auto 300px 110px auto;gap:.55rem;align-items:center;padding:.45rem .65rem;border-radius:10px;background:rgba(255,255,255,.9);border:1px solid rgba(15,23,42,.05);transition:box-shadow .15s ease, border-color .15s ease;}
-    .mini-task-item.duration-focused{box-shadow:0 0 0 2px rgba(48,86,211,.35);border-color:rgba(48,86,211,.55);}
-    .mini-task-item.locked{border-color:rgba(48,86,211,.6);box-shadow:0 0 0 2px rgba(48,86,211,.45) inset;}
-    .mini-task-item.disabled{opacity:.4;}
-    .mini-task-item label{display:flex;align-items:center;gap:.4rem;font-weight:600;font-size:.82rem;}
-    .mini-task-item input[type="checkbox"]{width:18px;height:18px;accent-color:var(--primary);}
-    .mini-task-item select{font:inherit;border-radius:6px;border:1px solid var(--border);padding:.4rem .5rem;background:#fff;color:inherit;}
-    .mini-task-item select:disabled{background:#fff;}
-    .mini-task-duration{display:flex;align-items:center;gap:.3rem;font-size:.75rem;color:var(--text-muted);}
-    .mini-task-duration input{width:58px;text-align:right;padding-right:.3rem;font-size:.75rem;height:28px;}
-    .mini-task-controls{display:flex;flex-direction:column;gap:.35rem;align-items:center;align-self:flex-start;}
-    .mini-task-controls button{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--text);font-size:.8rem;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:color .15s ease,border-color .15s ease,transform .15s ease;}
-    .mini-task-controls button:hover:not(:disabled){color:var(--primary);border-color:var(--primary);transform:translateY(-1px);}
-    .mini-task-controls button:disabled{opacity:.35;cursor:not-allowed;transform:none;}
-    .single-event-toggle{display:inline-flex;align-items:center;gap:.5rem;font-weight:600;color:var(--text);}
-    .single-event-toggle input{width:18px;height:18px;accent-color:var(--primary);}
-    .mini-delay-extras{display:none;grid-column:1 / -1;width:100%;flex-direction:column;align-items:flex-start;gap:.5rem;margin-top:.4rem;}
-    .mini-task-item.delay-active .mini-delay-extras{display:flex;}
-    .mini-task-item.delay-active .mini-task-duration{margin-bottom:.2rem;}
-    .mini-delay-extras textarea{font-size:.8rem;padding:.35rem .5rem;border:1px solid var(--border);border-radius:6px;width:300px;min-height:96px;resize:vertical;}
-    .mini-delay-extras textarea:disabled{background:#f9fafb;color:var(--text-muted);cursor:not-allowed;}
-    .mini-delay-extras .mini-delay-charge{display:flex;align-items:center;gap:.4rem;font-size:.76rem;color:var(--text-muted);}
-    .delay-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);z-index:14;}
-    .delay-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:15;padding:2rem;}
-    .delay-modal.hidden,.delay-modal-backdrop.hidden{display:none;}
-    .delay-modal-content{background:#fff;border-radius:14px;width:min(720px,95vw);max-height:92vh;display:flex;flex-direction:column;box-shadow:0 28px 64px rgba(15,23,42,.3);overflow:hidden;}
-    .delay-modal-header{display:flex;align-items:center;justify-content:space-between;padding:1.2rem 1.5rem;border-bottom:1px solid rgba(15,23,42,.08);}
-    .delay-modal-header h2{margin:0;font-size:1.2rem;font-weight:700;}
-    .delay-close-btn{border:none;background:transparent;font-size:1.4rem;line-height:1;cursor:pointer;color:var(--text-muted);padding:.2rem .4rem;border-radius:6px;}
-    .delay-close-btn:hover{color:var(--primary);}
-    .delay-modal-body{padding:1.2rem 1.5rem;overflow:auto;}
-    .delay-table{width:100%;border-collapse:collapse;font-size:.85rem;}
-    .delay-table th,.delay-table td{border:1px solid rgba(15,23,42,.12);padding:.55rem .6rem;text-align:left;vertical-align:middle;white-space:normal;word-break:break-word;}
-    .delay-table thead{background:rgba(48,86,211,.08);font-weight:700;}
-    .delay-table tbody tr:nth-child(even){background:rgba(248,250,255,.7);}
-    .delay-table tbody tr:hover{background:rgba(48,86,211,.1);}
-    .delay-table tbody textarea{width:300px;max-width:100%;box-sizing:border-box;font-size:.82rem;padding:.3rem .45rem;border:1px solid rgba(15,23,42,.2);border-radius:6px;min-height:96px;resize:vertical;}
-    .delay-charge-cell{padding:0;text-align:center;vertical-align:middle;}
-    .delay-charge-cell .delay-charge-wrapper{display:flex;justify-content:center;align-items:center;height:100%;padding:.55rem 0;}
-    .delay-table-empty{text-align:center;color:var(--text-muted);font-style:italic;}
-    .modal-footer{padding:1rem 1.75rem 1.35rem;border-top:1px solid rgba(15,23,42,.08);display:flex;justify-content:flex-end;gap:.75rem;}
-    .modal-footer .secondary{background:#fff;color:var(--text);border:1px solid var(--border);}
-    .modal-footer .secondary:hover{color:var(--primary);border-color:var(--primary);transform:none;}
-    .app-branding{position:fixed;bottom:1.5rem;left:1.5rem;display:flex;align-items:center;gap:.75rem;z-index:4;}
-    .app-branding img{width:80px;height:80px;object-fit:contain;}
-    .app-branding-text{font-size:.9rem;color:var(--text-muted);font-weight:600;}
-    .schedule-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);z-index:12;}
-    .schedule-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:13;padding:2rem;}
-    .schedule-modal.hidden,.schedule-modal-backdrop.hidden{display:none;}
-    .schedule-modal-content{background:#fff;border-radius:14px;width:min(660px,95vw);max-height:92vh;display:flex;flex-direction:column;box-shadow:0 28px 64px rgba(15,23,42,.3);}
-    .schedule-modal-header{padding:1.4rem 1.75rem 1rem;border-bottom:1px solid rgba(15,23,42,.08);display:flex;flex-direction:column;gap:.45rem;}
-    .schedule-modal-header h2{margin:0;font-size:1.25rem;font-weight:700;}
-    .schedule-modal-header p{margin:0;font-size:.88rem;color:var(--text-muted);}
-    .schedule-modal-body{padding:1.4rem 1.75rem;display:flex;flex-direction:column;gap:1rem;overflow:auto;}
-    .milestone-toolbar{display:flex;gap:.6rem;flex-wrap:wrap;}
-    .milestone-toolbar button{background:var(--primary);color:#fff;border:none;border-radius:8px;padding:.45rem 1rem;font-size:.85rem;font-weight:600;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;}
-    .milestone-toolbar button:hover{transform:translateY(-1px);box-shadow:0 8px 16px rgba(48,86,211,.18);}
-    .milestone-toolbar button:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
-    .milestone-toolbar .neutral{background:#fff;color:var(--text);border:1px solid var(--border);box-shadow:none;}
-    .milestone-toolbar .neutral:hover{transform:none;color:var(--primary);border-color:var(--primary);}
-    .milestone-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.75rem;}
-    .milestone-item{display:grid;grid-template-columns:minmax(0,1fr) 140px repeat(2,minmax(130px,1fr));gap:.75rem;align-items:center;padding:.8rem 1rem;border:1px solid rgba(15,23,42,.08);border-radius:10px;background:rgba(248,250,255,.9);position:relative;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;}
-    .milestone-item:hover{border-color:rgba(48,86,211,.35);box-shadow:0 12px 28px rgba(15,23,42,.16);}
-    .milestone-item.selected{border-color:var(--primary);box-shadow:0 14px 34px rgba(48,86,211,.24);background:#fff;}
-    .milestone-item .field{display:flex;flex-direction:column;gap:.3rem;}
-    .milestone-item .field label{font-size:.72rem;font-weight:600;color:var(--text-muted);}
-    .milestone-item input[type="text"]{border:1px solid var(--border);border-radius:8px;padding:.4rem .6rem;font-size:.85rem;}
-    .milestone-item select,
-    .milestone-item input[type="date"]{border:1px solid var(--border);border-radius:8px;padding:.35rem .5rem;font-size:.8rem;}
-    .milestone-item .placeholder{display:flex;align-items:center;justify-content:center;font-size:.78rem;color:var(--text-muted);background:rgba(15,23,42,.04);border:1px dashed rgba(15,23,42,.16);border-radius:8px;padding:.45rem;}
-    .empty-milestones{padding:1.2rem;border:1px dashed rgba(15,23,42,.2);border-radius:12px;text-align:center;color:var(--text-muted);font-size:.9rem;}
-    .schedule-modal-footer{padding:1rem 1.75rem 1.35rem;border-top:1px solid rgba(15,23,42,.08);display:flex;justify-content:flex-end;gap:.75rem;background:#fff;border-radius:0 0 14px 14px;}
-    .schedule-modal-footer .secondary{background:#fff;color:var(--text);border:1px solid var(--border);padding:.55rem 1.15rem;font-size:.9rem;border-radius:8px;}
-    .schedule-modal-footer .secondary:hover{color:var(--primary);border-color:var(--primary);transform:none;}
-    .schedule-modal-footer button:not(.secondary){background:var(--primary);color:#fff;border:none;padding:.55rem 1.25rem;font-size:.95rem;font-weight:600;border-radius:8px;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;}
-    .schedule-modal-footer button:not(.secondary):hover{transform:translateY(-1px);box-shadow:0 10px 20px rgba(48,86,211,.18);}
-    .generate-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);z-index:12;}
-    .generate-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:13;padding:2rem;}
-    .generate-modal.hidden,.generate-modal-backdrop.hidden{display:none;}
-    .generate-modal-content{background:#fff;border-radius:14px;width:min(520px,92vw);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 28px 64px rgba(15,23,42,.3);}
-    .generate-modal-header{padding:1.4rem 1.75rem 1rem;border-bottom:1px solid rgba(15,23,42,.08);display:flex;flex-direction:column;gap:.4rem;}
-    .generate-modal-header h2{margin:0;font-size:1.2rem;font-weight:700;}
-    .generate-modal-header p{margin:0;font-size:.9rem;color:var(--text-muted);}
-    .generate-modal-body{padding:1.4rem 1.75rem;overflow:auto;}
-    .generate-modal-footer{padding:1rem 1.75rem 1.3rem;border-top:1px solid rgba(15,23,42,.08);display:flex;justify-content:flex-end;gap:.75rem;background:#fff;border-radius:0 0 14px 14px;}
-    .generate-modal-footer .secondary{background:#fff;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:.55rem 1.1rem;font-size:.9rem;}
-    .generate-modal-footer .secondary:hover{color:var(--primary);border-color:var(--primary);}
-    .generate-modal-footer button:not(.secondary){background:var(--primary);color:#fff;border:none;padding:.55rem 1.25rem;font-size:.95rem;font-weight:600;border-radius:8px;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;}
-    .generate-modal-footer button:not(.secondary):hover{transform:translateY(-1px);box-shadow:0 10px 20px rgba(48,86,211,.18);}
-    @media(max-width:1200px){:root{--sidebar-width:320px;--day-width:28px;}}
-    @media(max-width:960px){:root{--sidebar-width:100%;}.app{flex-direction:column;}.sidebar{width:100%;flex:auto;max-height:55vh;border-right:none;border-bottom:1px solid var(--border);position:relative;left:auto;z-index:auto;}.task-list-header,.task-row{grid-template-columns:64px minmax(0,1.2fr) 92px 92px 92px 76px;}.task-duration{display:none;}}
-  </style>
+  <link rel="stylesheet" href="styles/app.css">
 </head>
 <body>
   <header class="top-bar">
@@ -380,7 +75,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 16.0.1</span>
+    <span class="app-branding-text">Programme Tool : Version 02.00.01</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -548,18 +243,37 @@
     }
   </script>
   <script type="module">
+    import { createPdfExporter } from "./export/pdf.js";
+    import { createGanttController } from "./modules/gantt.js";
+    import { createMiniTaskManager } from "./modules/miniTasks.js";
+    import colorConstants from "./modules/constants.js";
     import {
       createNestablePublicClientApplication,
       InteractionRequiredAuthError
     } from "https://cdn.jsdelivr.net/npm/@azure/msal-browser@latest/+esm";
+
     (async function () {
+      const {
+        TASK_COLOR_MAP = {},
+        DEFAULT_SEGMENT_COLOR = '#3056d3',
+        STAGE_COLOR = 'rgba(250, 250, 210, 1)',
+        SINGLE_EVENT_COLOR = '#2fb879',
+        SINGLE_EVENT_SELECTED_COLOR = '#228a5f'
+      } = colorConstants || {};
+      applyVisualThemeColors({
+        stage: STAGE_COLOR,
+        singleEvent: SINGLE_EVENT_COLOR,
+        singleEventSelected: SINGLE_EVENT_SELECTED_COLOR
+      });
+      const MINI_TASK_OPTION_KEYS = Object.keys(TASK_COLOR_MAP || {});
+      const MINI_TASK_OPTIONS = MINI_TASK_OPTION_KEYS.length
+        ? MINI_TASK_OPTION_KEYS
+        : ['Bond Bryan Design', 'Bond Bryan review', 'CDP', 'Client Comments', 'Delays', 'Undefined'];
       const DEFAULT_DAY_WIDTH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--day-width'), 10) || 32;
       const MIN_ZOOM_SCALE = 0.6;
       const MAX_ZOOM_SCALE = 2.4;
       const ZOOM_STEP = 0.2;
       const ZOOM_TOLERANCE = 0.01;
-      let dayWidthScale = 1;
-      const MINI_TASK_OPTIONS = ['Bond Bryan Design', 'Bond Bryan review', 'CDP', 'Client Comments', 'Delays', 'Undefined'];
       const DEFAULT_SEQUENCE_STEPS = [
         { name: 'Bond Bryan Design', weight: 50 },
         { name: 'CDP', weight: 10 },
@@ -573,15 +287,7 @@
         0
       );
       const WORKING_DAYS_PER_WEEK = 5;
-      const TASK_COLOR_MAP = {
-        'Bond Bryan Design': 'rgb(176, 207, 255)',
-        'Bond Bryan review': 'rgb(255, 192, 203)',
-        'CDP': 'rgb(196, 235, 214)',
-        'Client Comments': 'rgb(255, 223, 186)',
-        'Delays': 'rgb(220, 220, 230)',
-        'Undefined': 'rgb(245, 245, 245)'
-      };
-      const DEFAULT_SEGMENT_COLOR = '#3056d3';
+      const DEFAULT_BUILDING_TYPE = 'school';
       // Graph configuration for OneDrive storage
       const GRAPH_SCOPES = ['User.Read', 'Files.ReadWrite.All'];
       const GRAPH_BASE_URL = 'https://graph.microsoft.com/v1.0';
@@ -617,6 +323,20 @@
           storeAuthStateInCookie: false
         }
       };
+      function applyVisualThemeColors(colors = {}) {
+        const root = document.documentElement;
+        if (!root) return;
+        const { stage, singleEvent, singleEventSelected } = colors;
+        if (typeof stage === 'string' && stage) {
+          root.style.setProperty('--stage-fill-color', stage);
+        }
+        if (typeof singleEvent === 'string' && singleEvent) {
+          root.style.setProperty('--single-event-marker-color', singleEvent);
+        }
+        if (typeof singleEventSelected === 'string' && singleEventSelected) {
+          root.style.setProperty('--single-event-marker-selected-color', singleEventSelected);
+        }
+      }
       let teamsChannelAutoLoadRequested = false;
       let hasAttemptedInitialTeamsAutoLoad = false;
       function sanitizeFilenameSegment(raw) {
@@ -951,48 +671,148 @@
       }
 
       const DATABASE_FALLBACK = [
-        {"buildingType":"school","task":"GA Plan","weekdays":10,"squareMeterFactor":0.01,"difficultyFactor":3,"levelsFactor":2},
-        {"buildingType":"school","task":"Elevations","weekdays":15,"squareMeterFactor":0.02,"difficultyFactor":5,"levelsFactor":1},
-        {"buildingType":"school","task":"Circulation Plans","weekdays":5,"squareMeterFactor":0.03,"difficultyFactor":6,"levelsFactor":2},
-        {"buildingType":"Residential tower","task":"GA Plan","weekdays":20,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":2},
-        {"buildingType":"Residential tower","task":"Stairs drawings","weekdays":20,"squareMeterFactor":0.01,"difficultyFactor":3,"levelsFactor":6},
-        {"buildingType":"Residential tower","task":"Kitchen layouts","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":1,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Existing","weekdays":2,"squareMeterFactor":0.01,"difficultyFactor":2,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Site Plan Proposed","weekdays":15,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
-        {"buildingType":"Landscape","task":"Kerb Drawings","weekdays":5,"squareMeterFactor":0.01,"difficultyFactor":6,"levelsFactor":1},
+        {
+    "buildingType": "school",
+    "task": "Proposed Site Plan",
+    "weekdays": 10.0,
+    "squareMeterFactor": 0.0008,
+    "difficultyFactor": 0.2,
+    "levelsFactor": 0.03,
+    "Stage": "Stage 2"
+  },
+  {
+    "buildingType": "school",
+    "task": "Proposed Site Plan",
+    "weekdays": 10.0,
+    "squareMeterFactor": 0.0008,
+    "difficultyFactor": 0.2,
+    "levelsFactor": 0.03,
+    "Stage": "Stage 3"
+  },
+  {
+    "buildingType": "school",
+    "task": "Proposed Site Plan",
+    "weekdays": 10.0,
+    "squareMeterFactor": 0.0008,
+    "difficultyFactor": 0.2,
+    "levelsFactor": 0.03,
+    "Stage": "Stage 4"
+  },{
+    "buildingType": "school",
+    "task": "Proposed GA Elevations (Design)",
+    "weekdays": 10.0,
+    "squareMeterFactor": 0.0008,
+    "difficultyFactor": 0.2,
+    "levelsFactor": 0.03,
+    "Stage": "Stage 2"
+  },
+  {
+    "buildingType": "school",
+    "task": "Proposed GA Elevations (Design)",
+    "weekdays": 10.0,
+    "squareMeterFactor": 0.0008,
+    "difficultyFactor": 0.2,
+    "levelsFactor": 0.03,
+    "Stage": "Stage 3"
+  },
+  {
+    "buildingType": "school",
+    "task": "Proposed GA Elevations (Design)",
+    "weekdays": 10.0,
+    "squareMeterFactor": 0.0008,
+    "difficultyFactor": 0.2,
+    "levelsFactor": 0.03,
+    "Stage": "Stage 4"
+  },
+  {
+    "buildingType": "school",
+    "task": "Proposed GA Elevations (Design)",
+    "weekdays": 10.0,
+    "squareMeterFactor": 0.0008,
+    "difficultyFactor": 0.2,
+    "levelsFactor": 0.03,
+    "Stage": "Stage 5"
+  },{
+    "buildingType": "school",
+    "task": "Access Hatch Details",
+    "weekdays": 10.0,
+    "squareMeterFactor": 0.0008,
+    "difficultyFactor": 0.2,
+    "levelsFactor": 0.03,
+    "Stage": "Stage 5"
+  },
+  {
+    "buildingType": "school",
+    "task": "External Signage Setting Out",
+    "weekdays": 10.0,
+    "squareMeterFactor": 0.0008,
+    "difficultyFactor": 0.2,
+    "levelsFactor": 0.03,
+    "Stage": "Stage 4"
+  },
+  {
+    "buildingType": "school",
+    "task": "External Signage Setting Out",
+    "weekdays": 10.0,
+    "squareMeterFactor": 0.0008,
+    "difficultyFactor": 0.2,
+    "levelsFactor": 0.03,
+    "Stage": "Stage 5"
+  },
+  {
+    "buildingType": "school",
+    "task": "Slab / Waterproofing Details",
+    "weekdays": 10.0,
+    "squareMeterFactor": 0.0008,
+    "difficultyFactor": 0.2,
+    "levelsFactor": 0.03,
+    "Stage": "Stage 4"
+  },
+  {
+    "buildingType": "school",
+    "task": "Slab / Waterproofing Details",
+    "weekdays": 10.0,
+    "squareMeterFactor": 0.0008,
+    "difficultyFactor": 0.2,
+    "levelsFactor": 0.03,
+    "Stage": "Stage 5"
+  },
+  {
+    "buildingType": "school",
+    "task": "External Wall Plan Junction Details",
+    "weekdays": 10.0,
+    "squareMeterFactor": 0.0008,
+    "difficultyFactor": 0.2,
+    "levelsFactor": 0.03,
+    "Stage": "Stage 4"
+  },
+  {
+    "buildingType": "school",
+    "task": "External Wall Plan Junction Details",
+    "weekdays": 10.0,
+    "squareMeterFactor": 0.0008,
+    "difficultyFactor": 0.2,
+    "levelsFactor": 0.03,
+    "Stage": "Stage 5"
+  },
+  {
+    "buildingType": "school",
+    "task": "External Wall Section Details",
+    "weekdays": 10.0,
+    "squareMeterFactor": 0.0008,
+    "difficultyFactor": 0.2,
+    "levelsFactor": 0.03,
+    "Stage": "Stage 4"
+  },
+  {
+    "buildingType": "school",
+    "task": "External Wall Section Details",
+    "weekdays": 10.0,
+    "squareMeterFactor": 0.0008,
+    "difficultyFactor": 0.2,
+    "levelsFactor": 0.03,
+    "Stage": "Stage 5"
+  },
         
       ];
       const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -1003,16 +823,10 @@
       let tasks = [];
       let selectedTaskId = null;
       let draggedTaskId = null;
-      let timelineDays = [];
-      let timelineRangeStart = null;
-      let timelineRangeEnd = null;
       let currentMode = 'create';
       let editingTaskId = null;
       let databaseRecords = [];
-      let timelineViewMode = 'days';
       let standdownDateSet = new Set();
-      let timelineDayIndexMap = new Map();
-      let currentStanddownSegments = [];
       let milestones = [];
       let milestoneDrafts = [];
       let selectedMilestoneId = null;
@@ -1021,44 +835,6 @@
       let graphAccount = null;
       let activeAccountEmail = null;
       let renderFrameHandle = null;
-      let pdfLogoPromise = null;
-      let isSyncingScroll = false;
-
-      async function loadPdfLogo() {
-        if (!pdfLogoPromise) {
-          pdfLogoPromise = (async () => {
-            try {
-              const response = await fetch('assets/bb-logo.png', { cache: 'no-store' });
-              if (!response || !response.ok) throw new Error(`Logo request failed: ${response?.status}`);
-              const blob = await response.blob();
-              const arrayBuffer = await blob.arrayBuffer();
-              const bytes = new Uint8Array(arrayBuffer);
-              let binary = '';
-              for (let i = 0; i < bytes.length; i += 1) {
-                binary += String.fromCharCode(bytes[i]);
-              }
-              const base64 = btoa(binary);
-              const dataUrl = `data:image/png;base64,${base64}`;
-              const dimensions = await new Promise((resolve, reject) => {
-                const img = new Image();
-                img.onload = () => {
-                  resolve({
-                    width: img.naturalWidth || img.width || 1,
-                    height: img.naturalHeight || img.height || 1
-                  });
-                };
-                img.onerror = (error) => reject(error);
-                img.src = dataUrl;
-              });
-              return { dataUrl, ...dimensions };
-            } catch (error) {
-              console.warn('Unable to load PDF logo asset.', error);
-              return null;
-            }
-          })();
-        }
-        return pdfLogoPromise;
-      }
 
       const taskListEl = document.getElementById('taskList');
       const addTaskBtn = document.getElementById('addTaskBtn');
@@ -1104,9 +880,116 @@
       const addMiniTaskBtn = document.getElementById('addMiniTaskBtn');
       const removeMiniTaskBtn = document.getElementById('removeMiniTaskBtn');
       const miniUnitButtons = Array.from(document.querySelectorAll('.mini-unit-btn'));
-      let miniTaskDrafts = [];
-      let miniTaskUnit = 'days';
+      const ganttController = createGanttController({
+        elements: {
+          timelineHeaderEl,
+          ganttBodyEl,
+          ganttBodyScrollEl,
+          plannerViewportEl,
+          taskListHeaderEl,
+          taskListScrollEl,
+          taskListEl,
+          topBarEl,
+          viewModeButtons,
+          zoomInBtn,
+          zoomOutBtn
+        },
+        constants: {
+          DEFAULT_DAY_WIDTH,
+          MIN_ZOOM_SCALE,
+          MAX_ZOOM_SCALE,
+          ZOOM_TOLERANCE,
+          WEEKS_HEADER_HEIGHT,
+          DAYS_HEADER_HEIGHT
+        },
+        accessors: {
+          getTasks: () => tasks,
+          getSelectedTaskId: () => selectedTaskId,
+          setSelectedTaskId: (value) => { selectedTaskId = value; }
+        },
+        helpers: {
+          renderAll,
+          selectTask,
+          computeTimelineRange,
+          buildTimelineDays,
+          getTodayUtc,
+          isSameUtcDay,
+          formatDate,
+          parseDate,
+          compareDates,
+          buildMilestoneSegments,
+          groupTimelineDaysByYear,
+          groupTimelineDaysByMonth,
+          groupTimelineDaysByWeek,
+          buildMiniSegments,
+          buildMiniSegmentsPreview,
+          minimumTaskDuration,
+          ensureWeekday,
+          shiftWeekdays,
+          diffInWeekdays,
+          sanitiseUndefinedDuration,
+          computeMiniDurationSum,
+          isStanddownDay,
+          formatDisplayDate,
+          formatShortDate,
+          reconcileMiniDurationsForTask,
+          getOrderedTasks
+        }
+      });
+
+      const {
+        renderGantt,
+        adjustZoom,
+        setTimelineViewMode,
+        updateViewModeButtons,
+        updateStickyMetrics,
+        scheduleTimelineHorizontalSync,
+        syncScrollPositions,
+        updateTaskStartDate,
+        updateTaskEndDate,
+        getTimelineDays,
+        getTimelineViewMode,
+        adjustGanttOffset
+      } = ganttController;
       let currentEntryType = 'task';
+      const miniTaskManager = createMiniTaskManager({
+        elements: {
+          listEl: miniTaskList,
+          sectionEl: miniTaskSection,
+          addButton: addMiniTaskBtn,
+          removeButton: removeMiniTaskBtn,
+          unitButtons: miniUnitButtons
+        },
+        constants: {
+          miniTaskOptions: MINI_TASK_OPTIONS,
+          workingDaysPerWeek: WORKING_DAYS_PER_WEEK,
+          defaultSequenceSteps: DEFAULT_SEQUENCE_STEPS,
+          defaultSequenceMinimumTotal: DEFAULT_SEQUENCE_MINIMUM_TOTAL,
+          defaultSequenceTotalWeight: DEFAULT_SEQUENCE_TOTAL_WEIGHT
+        },
+        getCurrentEntryType: () => currentEntryType,
+        onDraftsChange: () => updateDurationPreview()
+      });
+      const {
+        renderMiniTaskInputs,
+        updateMiniTaskToolbar,
+        setMiniTaskUnit,
+        addMiniTaskRow,
+        removeMiniTaskRow,
+        collectMiniTasks,
+        computeDefaultMiniTaskDurations,
+        createDefaultSequencedMiniTasks,
+        sanitizeMiniTaskDraft,
+        createMiniTaskDraft,
+        setMiniTaskDrafts,
+        getMiniTaskDrafts,
+        getMiniTaskUnit,
+        resetMiniTaskState,
+        getMiniTaskDraftCount,
+        handleEntryTypeChange
+      } = miniTaskManager;
+      renderMiniTaskInputs();
+      updateMiniTaskToolbar();
       const STAGE_PRESET_OPTIONS = [
         { value: 'stage1', label: 'Stage 1' },
         { value: 'stage2', label: 'Stage 2' },
@@ -1145,6 +1028,31 @@
       const delayModal = document.getElementById('delayModal');
       const closeDelayModalBtn = document.getElementById('closeDelayModalBtn');
       const delayTableBody = document.getElementById('delayTableBody');
+      const handleSavePdf = createPdfExporter({
+        getTasks: () => tasks,
+        getTimelineDays: () => getTimelineDays(),
+        getTimelineViewMode: () => getTimelineViewMode(),
+        renderGantt,
+        updateAllStageSummaries,
+        getOrderedTasks,
+        buildTaskIdentifiers,
+        getTodayUtc,
+        compareDates,
+        formatDate,
+        parseDate,
+        formatShortDate,
+        buildMilestoneSegments,
+        buildMiniSegments,
+        getMiniColor,
+        getTaskDuration,
+        isStanddownDay,
+        groupTimelineDaysByYear,
+        groupTimelineDaysByWeek,
+        parseColorToRgb,
+        taskColorMap: TASK_COLOR_MAP,
+        defaultSegmentColor: DEFAULT_SEGMENT_COLOR,
+        stageColor: STAGE_COLOR
+      });
 
       function parseDate(value) {
         if (!value) return null;
@@ -1152,21 +1060,6 @@
         if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
         return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
       }
-      function updateHeaderOffset() {
-        const root = document.documentElement;
-        const headerHeight = timelineViewMode === 'weeks' ? WEEKS_HEADER_HEIGHT : DAYS_HEADER_HEIGHT;
-        root.style.setProperty('--timeline-header-height', headerHeight);
-        root.style.setProperty('--task-header-height', headerHeight);
-        if (taskListHeaderEl) {
-          taskListHeaderEl.style.height = headerHeight;
-          taskListHeaderEl.style.minHeight = headerHeight;
-        }
-        if (timelineHeaderEl) {
-          timelineHeaderEl.style.height = headerHeight;
-          timelineHeaderEl.style.minHeight = headerHeight;
-        }
-      }
-
       function formatDate(date) {
         return date instanceof Date ? date.toISOString().slice(0, 10) : '';
       }
@@ -1309,13 +1202,7 @@
           modalEndDate.disabled = !isTask;
         }
         if (miniTaskSection) miniTaskSection.style.display = isTask ? '' : 'none';
-        if (addMiniTaskBtn) addMiniTaskBtn.disabled = !isTask;
-        if (removeMiniTaskBtn) removeMiniTaskBtn.disabled = !isTask || miniTaskDrafts.length === 0;
-        miniUnitButtons.forEach((button) => {
-          const disabled = !isTask;
-          button.disabled = disabled;
-          button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
-        });
+        handleEntryTypeChange();
         if (isStage && modalTaskDescription) modalTaskDescription.value = '';
         updateMiniTaskToolbar();
         if (!options.skipPreview) {
@@ -1350,37 +1237,6 @@
             current = addDays(current, 1);
             guard += 1;
           }
-        });
-      }
-
-      function refreshStanddownLayer(barElement) {
-        const layer = barElement.querySelector('.standdown-layer');
-        if (!layer) return;
-        layer.innerHTML = '';
-        const startIndex = Number(barElement.dataset.startIndex);
-        const endIndex = Number(barElement.dataset.endIndex);
-        if (!Number.isFinite(startIndex) || !Number.isFinite(endIndex)) return;
-        const dayWidth = getDayWidth();
-        currentStanddownSegments.forEach((segment) => {
-          const overlapStart = Math.max(startIndex, segment.startIndex);
-          const overlapEnd = Math.min(endIndex, segment.endIndex);
-          if (overlapStart > overlapEnd) return;
-          const mask = document.createElement('div');
-          mask.className = 'standdown-gap';
-          mask.style.left = `${(overlapStart - startIndex) * dayWidth}px`;
-          mask.style.width = `${(overlapEnd - overlapStart + 1) * dayWidth}px`;
-          if (overlapStart === segment.startIndex) mask.classList.add('standdown-gap-start');
-          if (overlapEnd === segment.endIndex) mask.classList.add('standdown-gap-end');
-          const rangeStart = timelineDays[overlapStart];
-          const rangeEnd = timelineDays[overlapEnd];
-          if (rangeStart) {
-            const labelPrefix = segment.name ? `${segment.name} • ` : '';
-            const dateLabel = overlapStart === overlapEnd
-              ? `${formatDisplayDate(rangeStart)}`
-              : `${formatDisplayDate(rangeStart)} → ${formatDisplayDate(rangeEnd)}`;
-            mask.title = `${labelPrefix}Stand-down ${dateLabel}`;
-          }
-          layer.appendChild(mask);
         });
       }
 
@@ -1429,10 +1285,6 @@
 
       function getStageChildren(stageId) {
         return tasks.filter((task) => task.parentId === stageId);
-      }
-
-      function detectStagePresetFromName(name) {
-        return mapStagePresetFromLabel(name);
       }
 
       function computeStageSummary(stageTask) {
@@ -2117,13 +1969,6 @@
         }
       }
 
-      function getDayWidth() {
-        const baseWidth = timelineViewMode === 'weeks'
-          ? Math.max(1, DEFAULT_DAY_WIDTH / 5)
-          : DEFAULT_DAY_WIDTH;
-        return Math.max(1, Math.round(baseWidth * dayWidthScale));
-      }
-
       function isWeekend(date) {
         const day = date.getUTCDay();
         return day === 0 || day === 6;
@@ -2178,24 +2023,6 @@
         return count;
       }
 
-      function weekdayOffset(from, to) {
-        if (!from || !to) return 0;
-        const target = ensureWeekday(to, from <= to ? 1 : -1);
-        if (!target) return 0;
-        if (from.getTime() === target.getTime()) return 0;
-        const forward = from < target;
-        let steps = 0;
-        let cursor = ensureWeekday(from, forward ? 1 : -1);
-        const guard = 5000;
-        let guardCount = 0;
-        while (cursor.getTime() !== target.getTime() && guardCount < guard) {
-          cursor = addDays(cursor, forward ? 1 : -1);
-          if (isWorkingDay(cursor)) steps += forward ? 1 : -1;
-          guardCount += 1;
-        }
-        return steps;
-      }
-
       function compareDates(a, b) {
         if (!a || !b) return 0;
         const diff = a.getTime() - b.getTime();
@@ -2245,11 +2072,13 @@
         days.forEach((day, index) => {
           const month = day.getUTCMonth();
           const year = day.getUTCFullYear();
+          const monthLabel = MONTH_NAMES[month] ? MONTH_NAMES[month].toUpperCase() : '';
           let group = groups[groups.length - 1];
           if (!group || group.month !== month || group.year !== year) {
             group = {
               year,
               month,
+              name: monthLabel,
               start: day,
               end: day,
               length: 1,
@@ -2259,6 +2088,9 @@
           } else {
             group.end = day;
             group.length += 1;
+            if (!group.name && monthLabel) {
+              group.name = monthLabel;
+            }
           }
         });
         return groups;
@@ -2286,72 +2118,30 @@
         });
         return groups;
       }
-
-function adjustGanttOffset() {
-  const ganttBody  = document.querySelector('.gantt-body');
-  if (!ganttBody) return;
-  ganttBody.style.marginTop = '0px';
-}
-
-
-      function updateViewModeButtons() {
-        viewModeButtons.forEach((button) => {
-          const isActive = button.dataset.viewMode === timelineViewMode;
-          button.classList.toggle('active', isActive);
-          button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-        });
-      }
-
-      function updateZoomControls() {
-        if (!zoomInBtn || !zoomOutBtn) return;
-        zoomOutBtn.disabled = dayWidthScale <= MIN_ZOOM_SCALE + ZOOM_TOLERANCE;
-        zoomInBtn.disabled = dayWidthScale >= MAX_ZOOM_SCALE - ZOOM_TOLERANCE;
-      }
-
-      function clampZoom(value) {
-        return Math.min(MAX_ZOOM_SCALE, Math.max(MIN_ZOOM_SCALE, value));
-      }
-
-      function adjustZoom(delta) {
-        const nextScale = clampZoom(dayWidthScale + delta);
-        if (Math.abs(nextScale - dayWidthScale) <= ZOOM_TOLERANCE) return;
-        dayWidthScale = nextScale;
-        renderGantt();
-        updateZoomControls();
-      }
-
-      function setTimelineViewMode(mode) {
-        if (mode !== 'days' && mode !== 'weeks') return;
-        if (timelineViewMode === mode) {
-          updateHeaderOffset();
-          updateStickyMetrics();
-          return;
-        }
-        timelineViewMode = mode;
-        updateHeaderOffset();
-        updateViewModeButtons();
-        renderGantt();
-        updateZoomControls();
-        updateStickyMetrics();
-      }
-
       function getMiniColor(name) {
         if (!name) return DEFAULT_SEGMENT_COLOR;
         return TASK_COLOR_MAP[name] || DEFAULT_SEGMENT_COLOR;
       }
 
-      function parseColorToRgb(value) {
-        if (typeof value !== 'string' || !value) {
-          return { r: 48, g: 86, b: 211 };
-        }
+      function parseColorString(value) {
+        if (typeof value !== 'string' || !value) return null;
         const trimmed = value.trim();
-        const rgbMatch = trimmed.match(/^rgb\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
+        const rgbMatch = trimmed.match(/^rgba?\s*\((.+)\)$/i);
         if (rgbMatch) {
-          return {
-            r: Math.max(0, Math.min(255, parseInt(rgbMatch[1], 10))),
-            g: Math.max(0, Math.min(255, parseInt(rgbMatch[2], 10))),
-            b: Math.max(0, Math.min(255, parseInt(rgbMatch[3], 10)))
-          };
+          const components = rgbMatch[1].split(',').map((component) => component.trim()).filter(Boolean);
+          if (components.length >= 3) {
+            const toByte = (component) => {
+              const numeric = Number(component);
+              if (!Number.isFinite(numeric)) return null;
+              return Math.max(0, Math.min(255, Math.round(numeric)));
+            };
+            const r = toByte(components[0]);
+            const g = toByte(components[1]);
+            const b = toByte(components[2]);
+            if ([r, g, b].every((component) => component != null)) {
+              return { r, g, b };
+            }
+          }
         }
         if (trimmed.startsWith('#')) {
           let hex = trimmed.slice(1);
@@ -2366,98 +2156,15 @@ function adjustGanttOffset() {
             };
           }
         }
-        return { r: 48, g: 86, b: 211 };
-      }
-
-      let jsPdfConstructorCache = null;
-      let jsPdfLoaderPromise = null;
-
-      function setGlobalJsPdf(ctor) {
-        if (!ctor) return;
-        if (!window.jspdf) window.jspdf = { jsPDF: ctor };
-        else if (typeof window.jspdf.jsPDF !== 'function') window.jspdf.jsPDF = ctor;
-      }
-
-      function loadJsPdfFromScript(options) {
-        if (window.jspdf && typeof window.jspdf.jsPDF === 'function') {
-          return Promise.resolve(window.jspdf.jsPDF);
-        }
-        const { src, integrity } = options;
-        return new Promise((resolve) => {
-          const existing = document.querySelector(`script[data-jspdf-source="${src}"]`);
-          const finalize = () => {
-            const ctor = window.jspdf && typeof window.jspdf.jsPDF === 'function' ? window.jspdf.jsPDF : null;
-            if (ctor) setGlobalJsPdf(ctor);
-            resolve(ctor);
-          };
-          const handleError = () => resolve(null);
-          if (existing) {
-            existing.addEventListener('load', finalize, { once: true });
-            existing.addEventListener('error', handleError, { once: true });
-            return;
-          }
-          const script = document.createElement('script');
-          script.src = src;
-          script.async = true;
-          script.dataset.jspdfSource = src;
-          script.referrerPolicy = 'no-referrer';
-          if (integrity) {
-            script.integrity = integrity;
-            script.crossOrigin = 'anonymous';
-          }
-          script.addEventListener('load', finalize, { once: true });
-          script.addEventListener('error', handleError, { once: true });
-          document.head.appendChild(script);
-        });
-      }
-
-      async function loadJsPdfFallbacks() {
-        const sources = [
-          {
-            src: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-            integrity: 'sha512-2JvIUMI5KOZ6+Jo7oBMnp1vOSfQ1+avG4v8M45bNaMdWOh9fvydMBaTlM3Dd3yXTVzTuvq8rqBiTWLY4dTqHOg=='
-          },
-          {
-            src: 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js'
-          }
-        ];
-        for (let index = 0; index < sources.length; index += 1) {
-          const ctor = await loadJsPdfFromScript(sources[index]);
-          if (typeof ctor === 'function') return ctor;
-        }
         return null;
       }
 
-      async function ensureJsPdfLoaded() {
-        if (jsPdfConstructorCache) return jsPdfConstructorCache;
-        if (window.jspdf && typeof window.jspdf.jsPDF === 'function') {
-          jsPdfConstructorCache = window.jspdf.jsPDF;
-          return jsPdfConstructorCache;
-        }
-        if (jsPdfLoaderPromise) return jsPdfLoaderPromise;
-        jsPdfLoaderPromise = import('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.es.min.js')
-          .then((module) => {
-            const ctor = module?.jsPDF || module?.default || (window.jspdf && window.jspdf.jsPDF);
-            if (typeof ctor === 'function') {
-              jsPdfConstructorCache = ctor;
-              setGlobalJsPdf(ctor);
-            }
-            return jsPdfConstructorCache;
-          })
-          .catch(async (error) => {
-            console.error('Failed to load jsPDF ESM bundle', error);
-            const fallbackCtor = await loadJsPdfFallbacks();
-            if (typeof fallbackCtor === 'function') {
-              jsPdfConstructorCache = fallbackCtor;
-              setGlobalJsPdf(fallbackCtor);
-            }
-            return jsPdfConstructorCache;
-          })
-          .finally(() => {
-            jsPdfLoaderPromise = null;
-          });
-        return jsPdfLoaderPromise;
+      const DEFAULT_SEGMENT_RGB = parseColorString(DEFAULT_SEGMENT_COLOR) || { r: 48, g: 86, b: 211 };
+
+      function parseColorToRgb(value) {
+        return parseColorString(value) || DEFAULT_SEGMENT_RGB;
       }
+
 
       function countEnabledMiniTasks(task) {
         if (task?.singleEvent) return 0;
@@ -2938,1779 +2645,6 @@ function adjustGanttOffset() {
         });
         return segments;
       }
-
-      function createMiniSegmentElement() {
-        const element = document.createElement('div');
-        element.className = 'mini-segment mini-control';
-        const handleLeft = document.createElement('div');
-        handleLeft.className = 'mini-handle mini-handle-left mini-control';
-        handleLeft.dataset.edge = 'left';
-        handleLeft.setAttribute('role', 'button');
-        handleLeft.setAttribute('tabindex', '-1');
-        const handleRight = document.createElement('div');
-        handleRight.className = 'mini-handle mini-handle-right mini-control';
-        handleRight.dataset.edge = 'right';
-        handleRight.setAttribute('role', 'button');
-        handleRight.setAttribute('tabindex', '-1');
-        element.appendChild(handleLeft);
-        element.appendChild(handleRight);
-        return element;
-      }
-
-      function bindMiniSegmentEvents(element, segment, task, barElement, segments, index) {
-        if (element._miniCleanup) {
-          element._miniCleanup();
-          element._miniCleanup = null;
-        }
-        if (!task || !segment || segment.isUndefined) {
-          element.removeAttribute('aria-label');
-          element.removeAttribute('aria-pressed');
-          element.removeAttribute('role');
-          element.removeAttribute('tabindex');
-          element.querySelectorAll('.mini-handle').forEach((handle) => {
-            handle.classList.add('disabled');
-          });
-          return;
-        }
-        const cleanups = [];
-        const accessibleLabel = segment.locked ? 'Unlock mini-task length' : 'Lock mini-task length';
-        element.setAttribute('role', 'button');
-        element.setAttribute('tabindex', '0');
-        element.setAttribute('aria-label', accessibleLabel);
-        element.setAttribute('aria-pressed', segment.locked ? 'true' : 'false');
-        const onClick = (event) => {
-          if (event.target.closest('.mini-handle')) return;
-          event.preventDefault();
-          event.stopPropagation();
-          toggleMiniSegmentLock(task, segment.id);
-        };
-        element.addEventListener('click', onClick);
-        cleanups.push(() => element.removeEventListener('click', onClick));
-        const onKeyDown = (event) => {
-          if (event.key !== 'Enter' && event.key !== ' ') return;
-          event.preventDefault();
-          event.stopPropagation();
-          toggleMiniSegmentLock(task, segment.id);
-        };
-        element.addEventListener('keydown', onKeyDown);
-        cleanups.push(() => element.removeEventListener('keydown', onKeyDown));
-        const previousEnabled = (() => {
-          if (index <= 0) return null;
-          for (let i = index - 1; i >= 0; i -= 1) {
-            const candidate = segments[i];
-            if (candidate && !candidate.isUndefined) return candidate;
-          }
-          return null;
-        })();
-        element.querySelectorAll('.mini-handle').forEach((handle) => {
-          const edge = handle.dataset.edge || 'right';
-          const needsNeighbor = edge === 'left';
-          if (segment.locked || (needsNeighbor && !previousEnabled)) {
-            handle.classList.add('disabled');
-            return;
-          }
-          handle.classList.remove('disabled');
-          const onPointerDown = (event) => {
-            beginMiniSegmentResize(event, task, segment.id, barElement, edge, previousEnabled?.id || null);
-          };
-          handle.addEventListener('pointerdown', onPointerDown);
-          cleanups.push(() => handle.removeEventListener('pointerdown', onPointerDown));
-        });
-        element._miniCleanup = () => {
-          cleanups.forEach((fn) => fn());
-        };
-      }
-
-      function updateMiniLayerElements(barElement, segments, options = {}) {
-        const miniLayer = barElement.querySelector('.mini-layer');
-        if (!miniLayer) return;
-        const interactive = options.interactive !== false;
-        const task = options.task || null;
-        const dayWidth = getDayWidth();
-        const startIndex = Number(barElement.dataset.startIndex);
-        const endIndex = Number(barElement.dataset.endIndex);
-        if (!Number.isFinite(startIndex) || !Number.isFinite(endIndex)) return;
-        const workingDayIndices = [];
-        for (let index = startIndex; index <= endIndex; index += 1) {
-          const day = timelineDays[index];
-          if (!isStanddownDay(day)) workingDayIndices.push(index);
-        }
-
-        while (miniLayer.children.length < segments.length) {
-          miniLayer.appendChild(createMiniSegmentElement());
-        }
-
-        if (!interactive) {
-          miniLayer.querySelectorAll('.mini-segment').forEach((element) => {
-            if (element._miniCleanup) {
-              element._miniCleanup();
-              element._miniCleanup = null;
-            }
-          });
-        }
-
-        const miniElements = Array.from(miniLayer.querySelectorAll('.mini-segment'));
-        let workingPointer = 0;
-        segments.forEach((segment, index) => {
-          const element = miniElements[index];
-          if (!element) return;
-          const startWorkingIndex = workingDayIndices[workingPointer];
-          const requiredSpan = Math.max(1, Math.round(segment.duration || 1));
-          const segmentEndWorkingIndex = workingDayIndices[Math.min(
-            workingPointer + Math.max(0, requiredSpan - 1),
-            workingDayIndices.length - 1
-          )];
-          if (startWorkingIndex == null || segmentEndWorkingIndex == null || segmentEndWorkingIndex < startWorkingIndex) {
-            element.style.display = 'none';
-            return;
-          }
-          const left = (startWorkingIndex - startIndex) * dayWidth;
-          const width = ((segmentEndWorkingIndex - startWorkingIndex) + 1) * dayWidth;
-          element.style.display = 'block';
-          element.style.left = `${left}px`;
-          element.style.width = `${width}px`;
-          element.dataset.segmentId = segment.id || '';
-          element.dataset.sourceIndex = Number.isFinite(segment.sourceIndex) ? String(segment.sourceIndex) : '';
-          const isUndefinedSegment = Boolean(segment.isUndefined || segment.name === 'Undefined');
-          element.classList.toggle('locked', Boolean(segment.locked));
-          element.classList.toggle('undefined', isUndefinedSegment);
-          const segmentLabel = `${segment.name || 'Step'} • ${requiredSpan} day${requiredSpan !== 1 ? 's' : ''}`;
-          if (!isUndefinedSegment && segment.name === 'Delays') {
-            const description = typeof segment.delayDescription === 'string'
-              ? segment.delayDescription.trim()
-              : '';
-            element.title = description || segmentLabel;
-          } else {
-            element.title = segmentLabel;
-          }
-          const segmentColor = getMiniColor(segment.name);
-          element.style.background = segmentColor;
-          const accessibleLabel = segment.locked ? 'Unlock mini-task length' : 'Lock mini-task length';
-          if (isUndefinedSegment) {
-            element.removeAttribute('aria-label');
-            element.removeAttribute('aria-pressed');
-            element.removeAttribute('role');
-            element.removeAttribute('tabindex');
-          } else {
-            element.setAttribute('aria-label', accessibleLabel);
-            element.setAttribute('aria-pressed', segment.locked ? 'true' : 'false');
-            if (interactive) {
-              element.setAttribute('role', 'button');
-              element.setAttribute('tabindex', '0');
-            } else {
-              element.removeAttribute('role');
-              element.removeAttribute('tabindex');
-            }
-          }
-          element.querySelectorAll('.mini-handle').forEach((handleEl) => {
-            const isDisabled = Boolean(segment.locked || isUndefinedSegment);
-            handleEl.classList.toggle('disabled', isDisabled);
-          });
-          if (interactive && task && !isUndefinedSegment) {
-            bindMiniSegmentEvents(element, segment, task, barElement, segments, index);
-            element.dataset.boundSegmentId = segment.id || '';
-          }
-          workingPointer += requiredSpan;
-        });
-
-        for (let i = segments.length; i < miniElements.length; i += 1) {
-          const element = miniElements[i];
-          if (!element) continue;
-          if (interactive && element._miniCleanup) {
-            element._miniCleanup();
-            element._miniCleanup = null;
-          }
-          element.style.display = 'none';
-          element.dataset.segmentId = '';
-          element.dataset.boundSegmentId = '';
-        }
-      }
-
-      function toggleMiniSegmentLock(task, segmentId) {
-        if (!task || !segmentId) return;
-        const target = task.miniTasks.find((mini) => mini.id === segmentId);
-        if (!target || !target.enabled) return;
-        target.locked = !target.locked;
-        selectedTaskId = task.id;
-        renderAll();
-      }
-
-      function findNearestDonor(enabledSegments, targetIndex) {
-        for (let offset = 1; offset < enabledSegments.length; offset += 1) {
-          const rightIndex = targetIndex + offset;
-          if (rightIndex < enabledSegments.length) {
-            const candidate = enabledSegments[rightIndex];
-            const current = Math.max(1, Math.round(candidate.duration || 1));
-            if (!candidate.locked && current > 1) return candidate;
-          }
-          const leftIndex = targetIndex - offset;
-          if (leftIndex >= 0) {
-            const candidate = enabledSegments[leftIndex];
-            const current = Math.max(1, Math.round(candidate.duration || 1));
-            if (!candidate.locked && current > 1) return candidate;
-          }
-        }
-        return null;
-      }
-
-      function findNearestRecipient(enabledSegments, targetIndex) {
-        for (let offset = 1; offset < enabledSegments.length; offset += 1) {
-          const rightIndex = targetIndex + offset;
-          if (rightIndex < enabledSegments.length) {
-            const candidate = enabledSegments[rightIndex];
-            if (!candidate.locked) return candidate;
-          }
-          const leftIndex = targetIndex - offset;
-          if (leftIndex >= 0) {
-            const candidate = enabledSegments[leftIndex];
-            if (!candidate.locked) return candidate;
-          }
-        }
-        return null;
-      }
-
-      function adjustMiniDurationStep(state, segmentId, direction) {
-        const enabled = state.miniTasks.filter((mini) => mini.enabled);
-        const targetIndex = enabled.findIndex((mini) => mini.id === segmentId);
-        if (targetIndex === -1) return false;
-        const target = enabled[targetIndex];
-        if (!target || target.locked) return false;
-        const targetDuration = Math.max(1, Math.round(target.duration || 1));
-        if (direction > 0) {
-          const donor = findNearestDonor(enabled, targetIndex);
-          if (donor) {
-            const donorDuration = Math.max(1, Math.round(donor.duration || 1));
-            if (donorDuration <= 1) return false;
-            donor.duration = donorDuration - 1;
-            target.duration = targetDuration + 1;
-            return true;
-          }
-          target.duration = targetDuration + 1;
-          state.undefinedDuration = sanitiseUndefinedDuration(state.undefinedDuration + 1);
-          return true;
-        }
-        if (direction < 0) {
-          if (targetDuration <= 1) return false;
-          target.duration = targetDuration - 1;
-          const recipient = findNearestRecipient(enabled, targetIndex);
-          if (recipient) {
-            recipient.duration = Math.max(1, Math.round(recipient.duration || 1)) + 1;
-            return true;
-          }
-          if (state.undefinedDuration > 0) {
-            state.undefinedDuration = sanitiseUndefinedDuration(state.undefinedDuration - 1);
-            return true;
-          }
-          // Total duration shrinks naturally when no recipient is available.
-          return true;
-        }
-        return false;
-      }
-
-      function beginMiniSegmentResize(event, task, segmentId, barElement, edge = 'right', neighborId = null) {
-        if (!task || !segmentId) return;
-        const handleEdge = edge === 'left' ? 'left' : 'right';
-        const segmentOrder = task.miniTasks.filter((mini) => mini.enabled);
-        const targetIndex = segmentOrder.findIndex((mini) => mini.id === segmentId);
-        if (targetIndex === -1) return;
-        const segment = segmentOrder[targetIndex];
-        if (!segment || segment.locked) return;
-        let activeSegmentId = segmentId;
-        if (handleEdge === 'left') {
-          const previous = neighborId
-            ? segmentOrder.find((mini) => mini.id === neighborId)
-            : segmentOrder[targetIndex - 1];
-          if (!previous || previous.locked) return;
-          activeSegmentId = previous.id;
-        }
-        event.preventDefault();
-        event.stopPropagation();
-        const handle = event.currentTarget;
-        if (!handle || typeof handle.setPointerCapture !== 'function') return;
-        const pointerId = event.pointerId;
-        handle.setPointerCapture(pointerId);
-        const state = {
-          miniTasks: task.miniTasks.map((mini) => ({ ...mini })),
-          undefinedDuration: sanitiseUndefinedDuration(task.undefinedDuration || 0)
-        };
-        computeMiniDurationSum(state.miniTasks);
-        const dayWidth = getDayWidth();
-        const initialPointerX = event.clientX;
-        const initialStartDate = parseDate(task.startDate);
-        if (!initialStartDate) {
-          handle.releasePointerCapture(pointerId);
-          return;
-        }
-        const initialStartIndex = Number(barElement.dataset.startIndex);
-        let appliedDelta = 0;
-
-        const applyPreview = () => {
-          const totalDuration = Math.max(1, computeMiniDurationSum(state.miniTasks) + sanitiseUndefinedDuration(state.undefinedDuration));
-          const previewEndDate = shiftWeekdays(initialStartDate, totalDuration - 1);
-          const previewTask = {
-            id: task.id,
-            miniTasks: state.miniTasks.map((mini) => ({ ...mini })),
-            undefinedDuration: sanitiseUndefinedDuration(state.undefinedDuration),
-            startDate: formatDate(initialStartDate),
-            endDate: formatDate(previewEndDate)
-          };
-          const previewSegments = buildMiniSegments(previewTask);
-          updateMiniLayerElements(barElement, previewSegments, { interactive: false });
-          const previewEndIndex = timelineDayIndexMap.get(formatDate(previewEndDate));
-          if (typeof previewEndIndex === 'number') {
-            barElement.dataset.endIndex = String(previewEndIndex);
-            const width = Math.max(dayWidth, (previewEndIndex - initialStartIndex + 1) * dayWidth);
-            barElement.style.width = `${width}px`;
-          } else {
-            const fallbackWidth = Math.max(dayWidth, totalDuration * dayWidth);
-            barElement.style.width = `${fallbackWidth}px`;
-          }
-        };
-
-        const applyDelta = (desiredDelta) => {
-          let diff = desiredDelta - appliedDelta;
-          if (!diff) return;
-          while (diff !== 0) {
-            const step = diff > 0 ? 1 : -1;
-            const success = adjustMiniDurationStep(state, activeSegmentId, step);
-            if (!success) break;
-            appliedDelta += step;
-            diff -= step;
-          }
-          applyPreview();
-        };
-
-        const onPointerMove = (moveEvent) => {
-          const deltaPx = moveEvent.clientX - initialPointerX;
-          const desiredDelta = Math.round(deltaPx / dayWidth);
-          applyDelta(desiredDelta);
-        };
-
-        const cleanupPointer = () => {
-          handle.removeEventListener('pointermove', onPointerMove);
-          handle.removeEventListener('pointerup', onPointerUp);
-          handle.removeEventListener('pointercancel', onPointerUp);
-          if (handle.hasPointerCapture(pointerId)) {
-            handle.releasePointerCapture(pointerId);
-          }
-        };
-
-        const onPointerUp = () => {
-          cleanupPointer();
-          if (appliedDelta === 0) {
-            selectedTaskId = task.id;
-            renderAll();
-            return;
-          }
-          computeMiniDurationSum(state.miniTasks);
-          task.miniTasks.forEach((mini, index) => {
-            if (!state.miniTasks[index]) return;
-            mini.duration = state.miniTasks[index].duration;
-          });
-          task.undefinedDuration = sanitiseUndefinedDuration(state.undefinedDuration);
-          const finalTotalDuration = Math.max(1, computeMiniDurationSum(task.miniTasks) + task.undefinedDuration);
-          const finalEndDate = shiftWeekdays(initialStartDate, finalTotalDuration - 1);
-          task.startDate = formatDate(initialStartDate);
-          task.endDate = formatDate(finalEndDate);
-          selectedTaskId = task.id;
-          renderAll();
-        };
-
-        handle.addEventListener('pointermove', onPointerMove);
-        handle.addEventListener('pointerup', onPointerUp);
-        handle.addEventListener('pointercancel', onPointerUp);
-        applyPreview();
-      }
-
-      function setBarLabel(barElement, task, startDate, endDate) {
-        const label = barElement.querySelector('.task-label');
-        const datesEl = barElement.querySelector('.task-dates') || document.createElement('span');
-        const duration = Math.max(1, diffInWeekdays(startDate, endDate));
-        barElement.title = `${task.name}
-${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)} (${duration} days)`;
-        datesEl.className = 'task-dates';
-        datesEl.textContent = `${formatDisplayDate(startDate)} → ${formatDisplayDate(endDate)}`;
-        if (!datesEl.isConnected) {
-          const handle = barElement.querySelector('.handle');
-          if (handle) {
-            barElement.insertBefore(datesEl, handle);
-          } else {
-            barElement.appendChild(datesEl);
-          }
-        }
-        if (label) label.textContent = task.name;
-      }
-
-      function attachResizeHandles(barElement, task) {
-        barElement.querySelectorAll('.handle').forEach((handle) => {
-          const type = handle.classList.contains('handle-start') ? 'start' : 'end';
-          handle.addEventListener('pointerdown', (event) => {
-            event.stopPropagation();
-            event.preventDefault();
-            handle.setPointerCapture(event.pointerId);
-            const initialStart = parseDate(task.startDate);
-            const initialEnd = parseDate(task.endDate);
-            let previewStart = new Date(initialStart.getTime());
-            let previewEnd = new Date(initialEnd.getTime());
-            const progressEl = barElement.querySelector('.progress');
-
-            const onPointerMove = (moveEvent) => {
-              const calendarEl = plannerViewportEl || document.scrollingElement || document.documentElement;
-              const headerRect = timelineHeaderEl.getBoundingClientRect();
-              const relativeX = moveEvent.clientX - headerRect.left + calendarEl.scrollLeft;
-              const dayWidth = getDayWidth();
-              let dayIndex = Math.round(relativeX / dayWidth);
-              dayIndex = Math.max(0, Math.min(dayIndex, timelineDays.length - 1));
-              const targetDate = timelineDays[dayIndex];
-              if (!targetDate) return;
-
-              if (type === 'start') {
-                let candidate = ensureWeekday(targetDate, 1);
-                if (compareDates(candidate, previewEnd) > 0) {
-                  candidate = shiftWeekdays(previewEnd, -(minimumTaskDuration(task) - 1));
-                }
-                previewStart = candidate;
-              } else {
-                let candidate = ensureWeekday(targetDate, -1);
-                if (compareDates(candidate, previewStart) < 0) {
-                  candidate = shiftWeekdays(previewStart, minimumTaskDuration(task) - 1);
-                }
-                previewEnd = candidate;
-              }
-
-              const duration = Math.max(minimumTaskDuration(task), diffInWeekdays(previewStart, previewEnd));
-              const dayWidthForRender = getDayWidth();
-              const previewStartIndex = timelineDayIndexMap.get(formatDate(previewStart));
-              const previewEndIndex = timelineDayIndexMap.get(formatDate(previewEnd));
-              if (typeof previewStartIndex !== 'number' || typeof previewEndIndex !== 'number') return;
-              barElement.style.left = `${previewStartIndex * dayWidthForRender}px`;
-              barElement.style.width = `${Math.max(dayWidthForRender, (previewEndIndex - previewStartIndex + 1) * dayWidthForRender)}px`;
-              barElement.dataset.startIndex = String(previewStartIndex);
-              barElement.dataset.endIndex = String(previewEndIndex);
-              const previewSegments = buildMiniSegmentsPreview(task, duration);
-              updateMiniLayerElements(barElement, previewSegments, { interactive: false });
-              refreshStanddownLayer(barElement);
-              if (progressEl) {
-                const progressValue = Math.min(100, Math.max(0, task.progress));
-                progressEl.style.width = `${progressValue}%`;
-                progressEl.classList.toggle('is-full', progressValue >= 99.5);
-              }
-              setBarLabel(barElement, task, previewStart, previewEnd);
-            };
-
-            const onPointerUp = () => {
-              handle.removeEventListener('pointermove', onPointerMove);
-              handle.removeEventListener('pointerup', onPointerUp);
-              handle.removeEventListener('pointercancel', onPointerUp);
-              handle.releasePointerCapture(event.pointerId);
-              if (type === 'start') {
-                applyNewStartDate(task, previewStart, initialEnd);
-              } else {
-                applyNewEndDate(task, initialStart, previewEnd);
-              }
-              renderAll();
-              selectTask(task.id);
-            };
-
-            handle.addEventListener('pointermove', onPointerMove);
-            handle.addEventListener('pointerup', onPointerUp);
-            handle.addEventListener('pointercancel', onPointerUp);
-          });
-        });
-      }
-
-      function attachProgressHandle(barElement, task) {
-        if (!barElement || !task || task.entryType === 'stage') return;
-        const progressEl = barElement.querySelector('.progress');
-        if (!progressEl) return;
-        let handle = barElement.querySelector('.progress-handle');
-        if (!handle) {
-          handle = document.createElement('div');
-          handle.className = 'progress-handle mini-control';
-          handle.setAttribute('role', 'slider');
-          handle.setAttribute('aria-valuemin', '0');
-          handle.setAttribute('aria-valuemax', '100');
-          handle.setAttribute('aria-orientation', 'horizontal');
-          handle.setAttribute('tabindex', '-1');
-          barElement.appendChild(handle);
-        }
-
-        const updateAria = (value) => {
-          const taskName = ((task.name || '').trim()) || 'task';
-          handle.setAttribute('aria-valuenow', String(value));
-          handle.setAttribute('aria-valuetext', `${value}%`);
-          handle.setAttribute('aria-label', `Adjust progress for ${taskName}`);
-        };
-
-        const updateFromClientX = (clientX) => {
-          const barRect = barElement.getBoundingClientRect();
-          const width = Math.max(1, barRect.width);
-          let offset = clientX - barRect.left;
-          offset = Math.max(0, Math.min(offset, width));
-          const progressValue = Math.round((offset / width) * 100);
-          task.progress = progressValue;
-          progressEl.style.width = `${progressValue}%`;
-          progressEl.classList.toggle('is-full', progressValue >= 99.5);
-          handle.style.left = `${progressValue}%`;
-          updateAria(progressValue);
-          const listRow = taskListEl ? taskListEl.querySelector(`.task-row[data-task-id="${task.id}"]`) : null;
-          if (listRow) {
-            const input = listRow.querySelector('.task-progress input');
-            if (input) {
-              input.value = progressValue;
-            } else {
-              const display = listRow.querySelector('.task-progress');
-              if (display) display.textContent = `${progressValue}%`;
-            }
-          }
-        };
-
-        if (!handle._progressHandleReady) {
-          handle.addEventListener('pointerdown', (event) => {
-            event.stopPropagation();
-            event.preventDefault();
-            selectedTaskId = task.id;
-            const pointerId = event.pointerId;
-            handle.setPointerCapture(pointerId);
-            updateFromClientX(event.clientX);
-
-            const onPointerMove = (moveEvent) => {
-              updateFromClientX(moveEvent.clientX);
-            };
-
-            const onPointerUp = () => {
-              if (handle.hasPointerCapture(pointerId)) handle.releasePointerCapture(pointerId);
-              handle.removeEventListener('pointermove', onPointerMove);
-              handle.removeEventListener('pointerup', onPointerUp);
-              handle.removeEventListener('pointercancel', onPointerUp);
-              renderAll();
-            };
-
-            handle.addEventListener('pointermove', onPointerMove);
-            handle.addEventListener('pointerup', onPointerUp);
-            handle.addEventListener('pointercancel', onPointerUp);
-          });
-          Object.defineProperty(handle, '_progressHandleReady', {
-            value: true,
-            enumerable: false,
-            configurable: true,
-            writable: false
-          });
-        }
-        const currentProgress = Math.min(100, Math.max(0, Number(task.progress) || 0));
-        updateAria(currentProgress);
-        handle.style.left = `${currentProgress}%`;
-      }
-
-      function enableBarDrag(barElement, task) {
-        barElement.addEventListener('pointerdown', (event) => {
-          if (event.button && event.button !== 0) return;
-          if (event.target.closest('.handle') || event.target.closest('.mini-handle')) return;
-          if (event.target.closest('button, input, select, textarea, label')) return;
-          event.stopPropagation();
-          const initialStart = parseDate(task.startDate);
-          const initialEnd = parseDate(task.endDate);
-          if (!initialStart || !initialEnd) return;
-          const calendarEl = plannerViewportEl || document.scrollingElement || document.documentElement;
-          if (!calendarEl) return;
-          const initialPointer = event.clientX + calendarEl.scrollLeft;
-          const initialLeft = barElement.style.left;
-          let latestShift = 0;
-          let dragActive = false;
-
-          const activateDrag = () => {
-            if (dragActive) return;
-            dragActive = true;
-            barElement.setPointerCapture(event.pointerId);
-          };
-
-          const cleanup = () => {
-            barElement.removeEventListener('pointermove', onPointerMove);
-            barElement.removeEventListener('pointerup', onPointerUp);
-            barElement.removeEventListener('pointercancel', onPointerUp);
-            if (dragActive && barElement.hasPointerCapture(event.pointerId)) {
-              barElement.releasePointerCapture(event.pointerId);
-            }
-          };
-
-          const onPointerMove = (moveEvent) => {
-            const currentPointer = moveEvent.clientX + calendarEl.scrollLeft;
-            const deltaPx = currentPointer - initialPointer;
-            const dayWidth = getDayWidth();
-            if (!dragActive && Math.abs(deltaPx) >= Math.max(6, dayWidth * 0.35)) {
-              activateDrag();
-            }
-            if (!dragActive) return;
-            moveEvent.preventDefault();
-            const shift = Math.round(deltaPx / dayWidth);
-            if (shift === latestShift) return;
-            latestShift = shift;
-            const previewStart = shiftWeekdays(initialStart, shift);
-            const previewEnd = shiftWeekdays(initialEnd, shift);
-            const previewStartIndex = timelineDayIndexMap.get(formatDate(previewStart));
-            const previewEndIndex = timelineDayIndexMap.get(formatDate(previewEnd));
-            if (typeof previewStartIndex !== 'number' || typeof previewEndIndex !== 'number') return;
-            barElement.style.left = `${previewStartIndex * dayWidth}px`;
-            barElement.dataset.startIndex = String(previewStartIndex);
-            barElement.dataset.endIndex = String(previewEndIndex);
-            refreshStanddownLayer(barElement);
-            setBarLabel(barElement, task, previewStart, previewEnd);
-          };
-
-          const onPointerUp = () => {
-            if (dragActive) {
-              if (latestShift !== 0) {
-                const newStart = shiftWeekdays(initialStart, latestShift);
-                const newEnd = shiftWeekdays(initialEnd, latestShift);
-                task.startDate = formatDate(newStart);
-                task.endDate = formatDate(newEnd);
-                renderAll();
-                selectTask(task.id);
-              } else {
-                barElement.style.left = initialLeft;
-                const originalStartIndex = timelineDayIndexMap.get(task.startDate);
-                const originalEndIndex = timelineDayIndexMap.get(task.endDate);
-                if (typeof originalStartIndex === 'number') {
-                  barElement.dataset.startIndex = String(originalStartIndex);
-                } else {
-                  delete barElement.dataset.startIndex;
-                }
-                if (typeof originalEndIndex === 'number') {
-                  barElement.dataset.endIndex = String(originalEndIndex);
-                } else {
-                  delete barElement.dataset.endIndex;
-                }
-                refreshStanddownLayer(barElement);
-                setBarLabel(barElement, task, initialStart, initialEnd);
-              }
-            }
-            cleanup();
-          };
-
-          barElement.addEventListener('pointermove', onPointerMove);
-          barElement.addEventListener('pointerup', onPointerUp);
-          barElement.addEventListener('pointercancel', onPointerUp);
-        });
-      }
-
-      function renderGantt() {
-        const previousScrollTop = ganttBodyScrollEl ? ganttBodyScrollEl.scrollTop : 0;
-        ganttBodyEl.innerHTML = '';
-        timelineHeaderEl.innerHTML = '';
-        timelineHeaderEl.classList.remove('week-view', 'day-view');
-        const { start, end } = computeTimelineRange();
-        timelineRangeStart = start;
-        timelineRangeEnd = end;
-        timelineDays = buildTimelineDays(start, end);
-        const todayUtc = getTodayUtc();
-        const todayIndex = todayUtc ? timelineDays.findIndex((day) => isSameUtcDay(day, todayUtc)) : -1;
-        timelineDayIndexMap = new Map();
-        timelineDays.forEach((day, index) => {
-          timelineDayIndexMap.set(formatDate(day), index);
-        });
-        const getTimelineIndex = (value) => {
-          if (typeof value === 'number' && Number.isFinite(value)) return value;
-          const key = typeof value === 'string' ? value : formatDate(value instanceof Date ? value : parseDate(value));
-          if (typeof key === 'string' && timelineDayIndexMap.has(key)) {
-            const stored = timelineDayIndexMap.get(key);
-            if (typeof stored === 'number') return stored;
-          }
-          const date = typeof value === 'string' ? parseDate(value) : (value instanceof Date ? value : null);
-          if (!(date instanceof Date)) return -1;
-          for (let i = 0; i < timelineDays.length; i += 1) {
-            if (compareDates(timelineDays[i], date) === 0) return i;
-          }
-          return -1;
-        };
-        const dayHighlightMap = timelineDays.map(() => new Set());
-        const highlightSegments = [];
-        if (todayIndex !== -1) {
-          highlightSegments.push({
-            id: 'today',
-            type: 'today',
-            startIndex: todayIndex,
-            endIndex: todayIndex
-          });
-        }
-        const milestoneSegments = buildMilestoneSegments(timelineDays);
-        milestoneSegments.forEach((segment) => {
-          highlightSegments.push(segment);
-        });
-        const normalizedSegments = highlightSegments
-          .map((segment) => {
-            const startIndex = Math.max(0, Math.min(timelineDays.length - 1, segment.startIndex));
-            const endIndex = Math.max(startIndex, Math.min(timelineDays.length - 1, segment.endIndex));
-            return { ...segment, startIndex, endIndex };
-          })
-          .filter((segment) => segment.startIndex <= segment.endIndex);
-        currentStanddownSegments = normalizedSegments.filter((segment) => segment.type === 'standdown');
-        normalizedSegments.forEach((segment) => {
-          for (let index = segment.startIndex; index <= segment.endIndex; index += 1) {
-            dayHighlightMap[index]?.add(segment.type);
-          }
-          if (segment.type === 'standdown') {
-            dayHighlightMap[segment.startIndex]?.add('standdown-start');
-            dayHighlightMap[segment.endIndex]?.add('standdown-end');
-          }
-        });
-        if (!timelineDays.length) {
-          timelineHeaderEl.classList.remove('week-view', 'day-view');
-          const emptyHeader = document.createElement('div');
-          emptyHeader.className = 'empty-state';
-          emptyHeader.textContent = 'No working days to display.';
-          timelineHeaderEl.appendChild(emptyHeader);
-          updateZoomControls();
-          if (ganttBodyScrollEl) ganttBodyScrollEl.scrollTop = 0;
-          return;
-        }
-        const dayWidth = getDayWidth();
-        timelineHeaderEl.style.gridTemplateColumns = `repeat(${timelineDays.length}, ${dayWidth}px)`;
-        const yearGroups = groupTimelineDaysByYear(timelineDays);
-        const monthGroups = groupTimelineDaysByMonth(timelineDays);
-        if (timelineViewMode === 'weeks') {
-          timelineHeaderEl.classList.add('week-view');
-          timelineHeaderEl.style.gridTemplateRows = 'auto auto auto';
-        } else {
-          timelineHeaderEl.classList.add('day-view');
-          timelineHeaderEl.style.gridTemplateRows = 'auto auto auto auto';
-        }
-        adjustGanttOffset();
-
-        normalizedSegments.forEach((segment) => {
-          const highlightEl = document.createElement('div');
-          highlightEl.className = `timeline-highlight timeline-highlight--${segment.type}`;
-          if (segment.type === 'standdown') {
-            highlightEl.classList.add('timeline-highlight-standdown');
-          }
-          highlightEl.style.gridColumn = `${segment.startIndex + 1} / ${segment.endIndex + 2}`;
-          highlightEl.style.gridRow = '1 / -1';
-          if (segment.type === 'today') {
-            highlightEl.title = 'Today';
-          } else if (segment.name) {
-            const label = segment.type === 'deadline' ? 'Deadline' : 'Stand-down';
-            highlightEl.title = `${segment.name} • ${label}`;
-          }
-          timelineHeaderEl.appendChild(highlightEl);
-        });
-
-        yearGroups.forEach((group) => {
-          const cell = document.createElement('div');
-          cell.className = 'timeline-year';
-          cell.textContent = String(group.year);
-          cell.style.gridColumn = `${group.startIndex + 1} / span ${group.length}`;
-          cell.style.gridRow = '1';
-          timelineHeaderEl.appendChild(cell);
-        });
-
-        monthGroups.forEach((group) => {
-          const cell = document.createElement('div');
-          cell.className = 'timeline-month';
-          const label = timelineViewMode === 'weeks'
-            ? MONTH_NAMES[group.month].slice(0, 3)
-            : MONTH_NAMES[group.month];
-          cell.textContent = label;
-          cell.style.gridColumn = `${group.startIndex + 1} / span ${group.length}`;
-          cell.style.gridRow = '2';
-          timelineHeaderEl.appendChild(cell);
-        });
-
-        if (timelineViewMode === 'weeks') {
-          const weekGroups = groupTimelineDaysByWeek(timelineDays);
-          weekGroups.forEach((group) => {
-            const cell = document.createElement('div');
-            cell.className = 'timeline-week';
-            cell.style.gridColumn = `${group.startIndex + 1} / span ${Math.max(1, group.length)}`;
-            const monday = new Date(group.start.getTime());
-            const dayOfWeek = monday.getUTCDay();
-            const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-            monday.setUTCDate(monday.getUTCDate() - diff);
-            const mondayShort = formatShortDate(monday);
-            cell.textContent = mondayShort.split('/')[0];
-            cell.title = `${formatDisplayDate(group.start)} → ${formatDisplayDate(group.end)} (${group.length} working day${group.length !== 1 ? 's' : ''})`;
-            cell.style.gridRow = '3';
-            const highlightSet = new Set();
-            const span = Math.max(1, group.length);
-            for (let offsetIndex = 0; offsetIndex < span; offsetIndex += 1) {
-              const dayIndex = group.startIndex + offsetIndex;
-              dayHighlightMap[dayIndex]?.forEach((type) => highlightSet.add(type));
-            }
-            if (highlightSet.has('today')) cell.classList.add('today');
-            if (highlightSet.has('deadline')) cell.classList.add('milestone-deadline');
-            if (highlightSet.has('standdown')) cell.classList.add('milestone-standdown');
-            if (highlightSet.has('standdown-start')) cell.classList.add('milestone-standdown-start');
-            if (highlightSet.has('standdown-end')) cell.classList.add('milestone-standdown-end');
-            timelineHeaderEl.appendChild(cell);
-          });
-        } else {
-          timelineDays.forEach((day, index) => {
-            const dayName = document.createElement('div');
-            dayName.className = 'timeline-day-name';
-            dayName.textContent = DAY_NAMES[day.getUTCDay()];
-            dayName.style.gridRow = '3';
-            dayName.style.gridColumn = `${index + 1}`;
-            const highlightSet = dayHighlightMap[index] || new Set();
-            if (highlightSet.has('today')) dayName.classList.add('today');
-            if (highlightSet.has('deadline')) dayName.classList.add('milestone-deadline');
-            if (highlightSet.has('standdown')) dayName.classList.add('milestone-standdown');
-            if (highlightSet.has('standdown-start')) dayName.classList.add('milestone-standdown-start');
-            if (highlightSet.has('standdown-end')) dayName.classList.add('milestone-standdown-end');
-            timelineHeaderEl.appendChild(dayName);
-
-            const dayNumber = document.createElement('div');
-            dayNumber.className = 'timeline-day-number';
-            dayNumber.textContent = formatShortDate(day).split('/')[0];
-            dayNumber.style.gridRow = '4';
-            dayNumber.style.gridColumn = `${index + 1}`;
-            if (day.getUTCDay() === 1) {
-              dayNumber.classList.add('is-monday');
-            }
-            if (highlightSet.has('today')) dayNumber.classList.add('today');
-            if (highlightSet.has('deadline')) dayNumber.classList.add('milestone-deadline');
-            if (highlightSet.has('standdown')) dayNumber.classList.add('milestone-standdown');
-            if (highlightSet.has('standdown-start')) dayNumber.classList.add('milestone-standdown-start');
-            if (highlightSet.has('standdown-end')) dayNumber.classList.add('milestone-standdown-end');
-            timelineHeaderEl.appendChild(dayNumber);
-          });
-        }
-
-        if (!tasks.length) {
-          const empty = document.createElement('div');
-          empty.className = 'empty-state';
-          empty.textContent = 'Create a task to visualise the schedule.';
-          ganttBodyEl.appendChild(empty);
-          updateZoomControls();
-          if (ganttBodyScrollEl) ganttBodyScrollEl.scrollTop = 0;
-          return;
-        }
-
-        const orderedEntries = getOrderedTasks();
-        orderedEntries.forEach(({ task, depth }) => {
-          const isStage = task.entryType === 'stage';
-          const isStageChild = depth > 0 && !isStage;
-          const row = document.createElement('div');
-          row.className = 'gantt-row';
-          row.style.width = `${timelineDays.length * dayWidth}px`;
-          row.dataset.taskId = task.id;
-          if (isStage) row.classList.add('stage-row');
-          if (isStageChild) row.classList.add('stage-child');
-
-          const grid = document.createElement('div');
-          grid.className = 'gantt-grid';
-          grid.style.gridTemplateColumns = `repeat(${timelineDays.length}, ${dayWidth}px)`;
-          timelineDays.forEach((_, index) => {
-            const cell = document.createElement('div');
-            cell.className = 'day-cell';
-            if (index % 5 === 0) cell.classList.add('week-start');
-            const highlightSet = dayHighlightMap[index] || new Set();
-            if (highlightSet.has('today')) cell.classList.add('today');
-            if (highlightSet.has('deadline')) cell.classList.add('milestone-deadline');
-            if (highlightSet.has('standdown')) cell.classList.add('milestone-standdown');
-            if (highlightSet.has('standdown-start')) cell.classList.add('milestone-standdown-start');
-            if (highlightSet.has('standdown-end')) cell.classList.add('milestone-standdown-end');
-            grid.appendChild(cell);
-          });
-
-          row.appendChild(grid);
-
-          const startDate = parseDate(task.startDate);
-          const startIndex = getTimelineIndex(task.startDate);
-          if (isStage && (!startDate || typeof startIndex !== 'number')) {
-            row.addEventListener('click', () => selectTask(task.id));
-            ganttBodyEl.appendChild(row);
-            return;
-          }
-          if (!isStage && (!startDate || typeof startIndex !== 'number')) {
-            return;
-          }
-          const isSingleEvent = Boolean(task.singleEvent);
-          if (isSingleEvent) {
-            const marker = document.createElement('div');
-            marker.className = 'single-event-marker';
-            if (task.id === selectedTaskId) marker.classList.add('selected');
-            const markerLeft = (startIndex * dayWidth) + (dayWidth / 2);
-            marker.style.left = `${markerLeft}px`;
-            marker.dataset.startIndex = String(startIndex);
-            marker.dataset.endIndex = String(startIndex);
-            marker.title = `${task.name}
-${formatDisplayDate(startDate)} (Single event)`;
-            marker.addEventListener('click', (event) => {
-              event.stopPropagation();
-              selectTask(task.id);
-            });
-            row.appendChild(marker);
-            ganttBodyEl.appendChild(row);
-            return;
-          }
-          const endDate = parseDate(task.endDate);
-          const endIndex = getTimelineIndex(task.endDate);
-          if (typeof endIndex !== 'number' || startIndex > endIndex) {
-            return;
-          }
-          const barLeft = startIndex * dayWidth;
-          const barWidth = Math.max(dayWidth, (endIndex - startIndex + 1) * dayWidth);
-          const bar = document.createElement('div');
-          bar.className = 'task-bar';
-          if (isStage) bar.classList.add('stage-bar');
-          if (task.id === selectedTaskId) bar.classList.add('selected');
-          bar.style.left = `${barLeft}px`;
-          bar.style.width = `${barWidth}px`;
-          bar.dataset.startIndex = String(startIndex);
-          bar.dataset.endIndex = String(endIndex);
-
-          const label = document.createElement('span');
-          label.className = 'task-label';
-          label.textContent = task.name;
-
-          const progress = document.createElement('div');
-          progress.className = 'progress';
-          const progressValue = Math.min(100, Math.max(0, task.progress));
-          progress.style.width = `${progressValue}%`;
-          progress.classList.toggle('is-full', progressValue >= 99.5);
-
-          let miniLayer = null;
-          let standdownLayer = null;
-          if (!isStage) {
-            miniLayer = document.createElement('div');
-            miniLayer.className = 'mini-layer';
-            const segments = buildMiniSegments(task);
-            segments.forEach(() => {
-              miniLayer.appendChild(createMiniSegmentElement());
-            });
-            standdownLayer = document.createElement('div');
-            standdownLayer.className = 'standdown-layer';
-            bar.appendChild(miniLayer);
-            bar.appendChild(progress);
-            bar.appendChild(standdownLayer);
-            refreshStanddownLayer(bar);
-            bar.appendChild(label);
-            const handleStart = document.createElement('div');
-            handleStart.className = 'handle handle-start';
-            const handleEnd = document.createElement('div');
-            handleEnd.className = 'handle handle-end';
-            bar.appendChild(handleStart);
-            bar.appendChild(handleEnd);
-            setBarLabel(bar, task, startDate, endDate);
-            updateMiniLayerElements(bar, segments, { task });
-            attachResizeHandles(bar, task);
-            attachProgressHandle(bar, task);
-            enableBarDrag(bar, task);
-          } else {
-            standdownLayer = document.createElement('div');
-            standdownLayer.className = 'standdown-layer';
-            bar.appendChild(progress);
-            bar.appendChild(standdownLayer);
-            refreshStanddownLayer(bar);
-            bar.appendChild(label);
-            setBarLabel(bar, task, startDate, endDate);
-          }
-
-          bar.addEventListener('click', (event) => {
-            event.stopPropagation();
-            selectTask(task.id);
-          });
-
-          row.appendChild(bar);
-          row.addEventListener('click', () => selectTask(task.id));
-          ganttBodyEl.appendChild(row);
-        });
-        adjustGanttOffset();
-        updateZoomControls();
-        if (ganttBodyScrollEl) ganttBodyScrollEl.scrollTop = previousScrollTop;
-        scheduleTimelineHorizontalSync();
-      }
-
-      async function handleSavePdf() {
-        const jsPdfCtor = await ensureJsPdfLoaded();
-        if (typeof jsPdfCtor !== 'function') {
-          console.error('jsPDF library failed to load.');
-          window.alert('Unable to save the PDF because the export component failed to load.');
-          return;
-        }
-        if (!tasks.length) {
-          window.alert('Add at least one task before saving the PDF.');
-          return;
-        }
-        if (!timelineDays.length) {
-          renderGantt();
-        }
-        if (!timelineDays.length) {
-          window.alert('Generate the schedule before exporting it as a PDF.');
-          return;
-        }
-
-        updateAllStageSummaries();
-
-        const doc = new jsPdfCtor({ orientation: 'landscape', unit: 'mm', format: 'a3' });
-        const margin = 8;
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const contentWidth = pageWidth - (margin * 2);
-        const contentHeight = pageHeight - (margin * 2);
-        const leftColumnWidth = 95;
-        const rightColumnWidth = contentWidth - leftColumnWidth;
-        const columnLabels = ['ID', 'Task', 'Start', 'End', 'Duration', 'Progress'];
-        const columnWeights = [45, 115, 85, 85, 60, 70];
-        const totalWeight = columnWeights.reduce((sum, weight) => sum + weight, 0);
-        const columnWidths = columnWeights.map((weight) => (weight / totalWeight) * leftColumnWidth);
-        const orderedEntries = getOrderedTasks();
-        const identifierMap = buildTaskIdentifiers(orderedEntries);
-        const tasksSnapshot = orderedEntries.map(({ task, depth }) => ({
-          ...task,
-          depth: depth || 0,
-          identifier: identifierMap.get(task.id) || '—',
-          miniTasks: Array.isArray(task.miniTasks) ? task.miniTasks.map((mini) => ({ ...mini })) : []
-        }));
-        const dayCount = timelineDays.length;
-        const dayWidth = dayCount ? rightColumnWidth / dayCount : rightColumnWidth;
-        const timelineRowHeight = 6;
-        const timelineRowCount = 2;
-        const timelineHeaderHeight = timelineRowHeight * timelineRowCount;
-        const textPadding = 1.5;
-        const timelineStartX = margin + leftColumnWidth;
-        const pageBottom = margin + contentHeight;
-        const defaultTextColor = { r: 31, g: 41, b: 55 };
-        const defaultDrawColor = { r: 214, g: 219, b: 231 };
-        const headerFill = { r: 234, g: 238, b: 248 };
-        const zebraFill = { r: 246, g: 248, b: 252 };
-        const stageFill = { r: 250, g: 250, b: 210 };
-        const legendItems = Object.entries(TASK_COLOR_MAP);
-        const supportsOpacity = typeof doc.GState === 'function';
-        const progressOverlayState = supportsOpacity ? doc.GState({ opacity: 0.35 }) : null;
-        const resetOpacityState = supportsOpacity ? doc.GState({ opacity: 1 }) : null;
-        const todayUtcPdf = getTodayUtc();
-        const todayIndexPdf = todayUtcPdf ? timelineDays.findIndex((day) => compareDates(day, todayUtcPdf) === 0) : -1;
-        const todayMarker = todayIndexPdf !== -1 ? {
-          index: todayIndexPdf,
-          x: timelineStartX + (todayIndexPdf * dayWidth)
-        } : null;
-        const pdfTimelineIndexMap = new Map();
-        timelineDays.forEach((day, index) => {
-          pdfTimelineIndexMap.set(formatDate(day), index);
-        });
-        const getPdfDayIndex = (date) => {
-          if (!(date instanceof Date)) return -1;
-          const key = formatDate(date);
-          if (pdfTimelineIndexMap.has(key)) return pdfTimelineIndexMap.get(key);
-          for (let i = 0; i < timelineDays.length; i += 1) {
-            if (compareDates(timelineDays[i], date) === 0) return i;
-          }
-          return -1;
-        };
-        const highlightPriority = { standdown: 0, deadline: 1, today: 2 };
-        const highlightIndexOffset = timelineViewMode === 'days'
-          ? -1
-          : (timelineViewMode === 'weeks' ? 1 : 0);
-        const standdownFillColor = { r: 220, g: 223, b: 230 };
-        const standdownBorderColor = { r: 0, g: 0, b: 0 };
-        const standdownBoundaryLineWidth = 0.8;
-        const highlightPalette = {
-          today: { fill: { r: 255, g: 228, b: 232 }, border: { r: 220, g: 38, b: 38 } },
-          deadline: { fill: { r: 255, g: 243, b: 207 }, border: { r: 217, g: 119, b: 6 } },
-          standdown: { fill: standdownFillColor, border: standdownBorderColor }
-        };
-        const timelineDateFontSize = 4;
-        const logoImage = await loadPdfLogo();
-        const highlightSegmentsPdf = [];
-        if (todayMarker) {
-          highlightSegmentsPdf.push({
-            type: 'today',
-            startIndex: todayMarker.index,
-            endIndex: todayMarker.index
-          });
-        }
-        const milestoneSegmentsPdf = buildMilestoneSegments(timelineDays);
-        milestoneSegmentsPdf.forEach((segment) => {
-          highlightSegmentsPdf.push(segment);
-        });
-        const normalizedHighlightSegmentsRaw = highlightSegmentsPdf
-          .map((segment) => {
-            let startIndex = Number.isFinite(segment.startIndex) ? segment.startIndex : NaN;
-            let endIndex = Number.isFinite(segment.endIndex) ? segment.endIndex : NaN;
-            if (!Number.isFinite(startIndex) || !Number.isFinite(endIndex)) return null;
-            startIndex = Math.max(0, Math.min(dayCount - 1, startIndex));
-            endIndex = Math.max(startIndex, Math.min(dayCount - 1, endIndex));
-            if (startIndex > endIndex) return null;
-            return { ...segment, startIndex, endIndex };
-          })
-          .filter(Boolean);
-        const normalizedHighlightSegments = normalizedHighlightSegmentsRaw
-          .map((segment) => {
-            let startIndex = Number.isFinite(segment.startIndex) ? segment.startIndex + highlightIndexOffset : NaN;
-            let endIndex = Number.isFinite(segment.endIndex) ? segment.endIndex + highlightIndexOffset : NaN;
-            if (!Number.isFinite(startIndex) || !Number.isFinite(endIndex)) return null;
-            startIndex = Math.max(0, Math.min(dayCount - 1, startIndex));
-            endIndex = Math.max(startIndex, Math.min(dayCount - 1, endIndex));
-            if (startIndex > endIndex) return null;
-            return { ...segment, startIndex, endIndex };
-          })
-          .filter(Boolean);
-        const segmentsForDrawing = normalizedHighlightSegments
-          .slice()
-          .sort((a, b) => {
-            const priorityDifference = (highlightPriority[a.type] ?? 0) - (highlightPriority[b.type] ?? 0);
-            if (priorityDifference !== 0) return priorityDifference;
-            return a.startIndex - b.startIndex;
-          });
-        const pdfDayHighlights = timelineDays.map(() => new Set());
-        normalizedHighlightSegmentsRaw.forEach((segment) => {
-          for (let index = segment.startIndex; index <= segment.endIndex; index += 1) {
-            pdfDayHighlights[index]?.add(segment.type);
-          }
-        });
-        const pdfDayHighlightsShifted = timelineDays.map(() => new Set());
-        normalizedHighlightSegments.forEach((segment) => {
-          for (let index = segment.startIndex; index <= segment.endIndex; index += 1) {
-            pdfDayHighlightsShifted[index]?.add(segment.type);
-          }
-        });
-        const standdownSegmentsPdf = normalizedHighlightSegments.filter((segment) => segment.type === 'standdown');
-        const boundaryTypes = {};
-        const applyBoundaryType = (index, type) => {
-          if (index < 0 || index > dayCount) return;
-          const existing = boundaryTypes[index];
-          if (!existing || (highlightPriority[type] ?? 0) >= (highlightPriority[existing] ?? 0)) {
-            boundaryTypes[index] = type;
-          }
-        };
-        segmentsForDrawing.forEach((segment) => {
-          applyBoundaryType(segment.startIndex, segment.type);
-          applyBoundaryType(segment.endIndex + 1, segment.type);
-        });
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        doc.setLineHeightFactor(1.2);
-        doc.setTextColor(defaultTextColor.r, defaultTextColor.g, defaultTextColor.b);
-        doc.setLineWidth(0.2);
-
-        const truncateText = (value, maxWidth) => {
-          if (!value) return '';
-          let text = String(value);
-          if (doc.getTextWidth(text) <= maxWidth) return text;
-          const ellipsis = '...';
-          while (text.length > 0 && doc.getTextWidth(`${text}${ellipsis}`) > maxWidth) {
-            text = text.slice(0, -1);
-          }
-          return text.length ? `${text}${ellipsis}` : ellipsis;
-        };
-
-        const lineHeight = (doc.getFontSize() * doc.getLineHeightFactor()) / doc.internal.scaleFactor;
-        const minRowHeight = 12;
-        const verticalPadding = 2;
-        const nameColumnWidth = Math.max(10, columnWidths[1] - (textPadding * 2));
-
-        const formatDateCell = (value) => {
-          const date = parseDate(value);
-          if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-            return ['--/--', '----'];
-          }
-          const day = String(date.getUTCDate()).padStart(2, '0');
-          const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-          const year = String(date.getUTCFullYear());
-          return [`${day}/${month}`, year];
-        };
-
-        const buildNameLines = (rowTask) => {
-          const depth = Math.max(0, rowTask?.depth || 0);
-          const indent = depth ? ''.padStart(depth * 2, ' ') : '';
-          const baseName = (rowTask?.name || '').trim() || (rowTask?.entryType === 'stage' ? 'Stage' : 'Untitled task');
-          const label = `${indent}${baseName}`;
-          let lines = doc.splitTextToSize(label, nameColumnWidth);
-          if (!Array.isArray(lines) || !lines.length) lines = ['Untitled task'];
-          const maxLines = 3;
-          if (lines.length > maxLines) {
-            const limited = lines.slice(0, maxLines);
-            const ellipsis = '...';
-            let last = limited[maxLines - 1].trimEnd();
-            while (last.length && doc.getTextWidth(`${last}${ellipsis}`) > nameColumnWidth) {
-              last = last.slice(0, -1).trimEnd();
-            }
-            limited[maxLines - 1] = last ? `${last}${ellipsis}` : ellipsis;
-            return limited;
-          }
-          return lines;
-        };
-
-        const computeRowLayout = (task) => {
-          const duration = getTaskDuration(task);
-          const progressValue = Math.min(100, Math.max(0, Number.isFinite(task.progress) ? task.progress : 0));
-          const columnLines = [
-            [task.identifier || task.id || '—'],
-            buildNameLines(task),
-            formatDateCell(task.startDate),
-            formatDateCell(task.endDate),
-            [String(duration), 'Days'],
-            [`${Math.round(progressValue)}%`]
-          ].map((cellLines) => cellLines.map((line) => (line === undefined || line === null ? '' : String(line))));
-          const lineCounts = columnLines.map((lines) => Math.max(1, lines.length));
-          const maxLineCount = Math.max(...lineCounts);
-          const rowHeight = Math.max(minRowHeight, (maxLineCount * lineHeight) + (verticalPadding * 2));
-          return { rowHeight, columnLines, lineCounts, duration, progressValue };
-        };
-
-        const applyHighlightTextStyle = (types) => {
-          if (types.has('today')) {
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(220, 38, 38);
-            return true;
-          }
-          if (types.has('deadline')) {
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(180, 83, 9);
-            return true;
-          }
-          if (types.has('standdown')) {
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(51, 65, 85);
-            return true;
-          }
-          return false;
-        };
-
-        const resetHighlightTextStyle = () => {
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(timelineDateFontSize);
-          doc.setTextColor(defaultTextColor.r, defaultTextColor.g, defaultTextColor.b);
-        };
-
-        const drawVerticalDateLabel = (text, centreX, centreY, highlights) => {
-          const highlightSet = highlights instanceof Set ? highlights : new Set();
-          const styled = highlightSet.size > 0 ? applyHighlightTextStyle(highlightSet) : false;
-          const supportsRotation = typeof doc.saveGraphicsState === 'function' && typeof doc.rotate === 'function';
-          if (supportsRotation) {
-            doc.saveGraphicsState();
-            doc.rotate(90, { origin: [centreX, centreY] });
-            doc.text(text, centreX, centreY, { align: 'center', baseline: 'middle' });
-            doc.restoreGraphicsState();
-          } else {
-            doc.text(text, centreX, centreY, { align: 'center', angle: 90, baseline: 'middle' });
-          }
-          if (styled) resetHighlightTextStyle();
-        };
-
-        const drawLegend = (topY, startX = margin) => {
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(9);
-          doc.setTextColor(defaultTextColor.r, defaultTextColor.g, defaultTextColor.b);
-          if (!legendItems.length) {
-            doc.text('Legend: not configured', margin, topY + 4);
-            return topY + 8;
-          }
-          const swatchSize = 4;
-          const lineHeight = swatchSize + 2.5;
-          let x = startX;
-          let y = topY;
-          const maxX = margin + contentWidth;
-          legendItems.forEach(([label, color]) => {
-            const textWidth = doc.getTextWidth(label);
-            const requiredWidth = swatchSize + 2 + textWidth + 6;
-            if (x + requiredWidth > maxX) {
-              x = startX;
-              y += lineHeight;
-            }
-            const rgb = parseColorToRgb(color);
-            doc.setFillColor(rgb.r, rgb.g, rgb.b);
-            doc.rect(x, y, swatchSize, swatchSize, 'F');
-            doc.setDrawColor(160, 167, 187);
-            doc.rect(x, y, swatchSize, swatchSize);
-            doc.setTextColor(defaultTextColor.r, defaultTextColor.g, defaultTextColor.b);
-            doc.text(label, x + swatchSize + 2, y + swatchSize - 0.6);
-            x += requiredWidth;
-          });
-          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
-          return y + lineHeight;
-        };
-
-        const drawDocumentHeader = (topY) => {
-          let textStartX = margin;
-          let legendStartY = topY;
-          if (logoImage && logoImage.dataUrl) {
-            const aspect = logoImage.width && logoImage.height ? logoImage.width / logoImage.height : 1;
-            const logoHeight = 16;
-            const logoWidth = logoHeight * (Number.isFinite(aspect) && aspect > 0 ? aspect : 1);
-            try {
-              doc.addImage(logoImage.dataUrl, 'PNG', margin, topY, logoWidth, logoHeight);
-              textStartX = margin + logoWidth + 4;
-              legendStartY = topY + logoHeight + 2;
-            } catch (error) {
-              console.warn('Unable to add logo to PDF header.', error);
-            }
-          }
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(18);
-          doc.setTextColor(defaultTextColor.r, defaultTextColor.g, defaultTextColor.b);
-          const titleBaseline = topY + 7;
-          doc.text('BB: Project Programme', textStartX, titleBaseline);
-          const legendTop = Math.max(titleBaseline + 2.5, legendStartY);
-          const legendBottom = drawLegend(legendTop, margin);
-          return legendBottom + 2;
-        };
-
-        const drawTimelineGridLines = (topY, height, options = {}) => {
-          if (!dayCount) return;
-          const {
-            highlightsOnly = false,
-            dayHighlights = pdfDayHighlightsShifted
-          } = options;
-          const originalLineWidth = doc.getLineWidth();
-          for (let index = 0; index <= dayCount; index += 1) {
-            const x = timelineStartX + (index * dayWidth);
-            const boundaryType = boundaryTypes[index];
-            const isWeekStart = index % 5 === 0;
-            const leftStanddown = index > 0 && dayHighlights[index - 1]?.has('standdown');
-            const rightStanddown = index < dayCount && dayHighlights[index]?.has('standdown');
-            if (!highlightsOnly && leftStanddown && rightStanddown) continue;
-            if (boundaryType === 'standdown') continue;
-            if (boundaryType) {
-              if (highlightsOnly && boundaryType !== 'today' && boundaryType !== 'deadline') continue;
-              const palette = highlightPalette[boundaryType];
-              doc.setDrawColor(palette.border.r, palette.border.g, palette.border.b);
-              doc.setLineWidth(boundaryType === 'today' ? 0.45 : 0.3);
-            } else {
-              if (highlightsOnly) continue;
-              if (isWeekStart) {
-                doc.setDrawColor(190, 195, 205);
-                doc.setLineWidth(0.1);
-              } else {
-                doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
-                doc.setLineWidth(0.1);
-              }
-            }
-            doc.line(x, topY, x, topY + height);
-          }
-          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
-          doc.setLineWidth(originalLineWidth);
-        };
-
-        const drawStanddownHatch = (startX, topY, width, height) => {
-          if (width <= 0 || height <= 0) return;
-          const originalLineWidth = doc.getLineWidth();
-          doc.setFillColor(standdownFillColor.r, standdownFillColor.g, standdownFillColor.b);
-          doc.rect(startX, topY, width, height, 'F');
-          doc.setDrawColor(standdownBorderColor.r, standdownBorderColor.g, standdownBorderColor.b);
-          doc.setLineWidth(standdownBoundaryLineWidth);
-          doc.line(startX, topY, startX, topY + height);
-          doc.line(startX + width, topY, startX + width, topY + height);
-          doc.setLineWidth(originalLineWidth);
-          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
-          doc.setFillColor(255, 255, 255);
-        };
-
-        const drawStanddownBands = (topY, height) => {
-          if (!standdownSegmentsPdf.length) return;
-          standdownSegmentsPdf.forEach((segment) => {
-            const startX = timelineStartX + (segment.startIndex * dayWidth);
-            const width = (segment.endIndex - segment.startIndex + 1) * dayWidth;
-            drawStanddownHatch(startX, topY, width, height);
-          });
-        };
-
-        const drawTimelineHeader = (topY) => {
-          doc.setFillColor(244, 246, 252);
-          doc.rect(timelineStartX, topY, rightColumnWidth, timelineHeaderHeight, 'F');
-          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
-          doc.rect(timelineStartX, topY, rightColumnWidth, timelineHeaderHeight);
-
-          segmentsForDrawing.forEach((segment) => {
-            const palette = highlightPalette[segment.type];
-            const startX = timelineStartX + (segment.startIndex * dayWidth);
-            const width = (segment.endIndex - segment.startIndex + 1) * dayWidth;
-            if (segment.type === 'standdown') {
-              drawStanddownHatch(startX, topY, width, timelineHeaderHeight);
-              return;
-            }
-            if (!palette?.fill) return;
-            doc.setFillColor(palette.fill.r, palette.fill.g, palette.fill.b);
-            doc.rect(startX, topY, width, timelineHeaderHeight, 'F');
-          });
-
-          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
-          doc.rect(timelineStartX, topY, rightColumnWidth, timelineHeaderHeight);
-
-          const yearBaseline = topY + timelineRowHeight - 1;
-          const dateCenterY = topY + timelineRowHeight + (timelineRowHeight / 2);
-
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(8);
-          const yearGroups = groupTimelineDaysByYear(timelineDays);
-          yearGroups.forEach((group) => {
-            const startX = timelineStartX + (group.startIndex * dayWidth);
-            const centreX = startX + ((group.length * dayWidth) / 2);
-            doc.text(String(group.year), centreX, yearBaseline, { align: 'center' });
-          });
-
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(timelineDateFontSize);
-          if (timelineViewMode === 'weeks') {
-            const weekGroups = groupTimelineDaysByWeek(timelineDays);
-            weekGroups.forEach((group) => {
-              const startX = timelineStartX + (group.startIndex * dayWidth);
-              const centreX = startX + ((Math.max(1, group.length) * dayWidth) / 2);
-              const combinedHighlights = new Set();
-              const span = Math.max(1, group.length);
-              for (let offset = 0; offset < span; offset += 1) {
-                const dayIndex = group.startIndex + offset;
-                pdfDayHighlights[dayIndex]?.forEach((type) => combinedHighlights.add(type));
-                pdfDayHighlightsShifted[dayIndex]?.forEach((type) => combinedHighlights.add(type));
-              }
-              const weekLabel = formatShortDate(group.start);
-              drawVerticalDateLabel(weekLabel, centreX, dateCenterY, combinedHighlights);
-            });
-          } else {
-            timelineDays.forEach((day, index) => {
-              const centreX = timelineStartX + ((index + 0.5) * dayWidth);
-              const combinedHighlights = new Set();
-              pdfDayHighlights[index]?.forEach((type) => combinedHighlights.add(type));
-              pdfDayHighlightsShifted[index]?.forEach((type) => combinedHighlights.add(type));
-              const dateLabel = formatShortDate(day);
-              drawVerticalDateLabel(dateLabel, centreX, dateCenterY, combinedHighlights);
-            });
-          }
-
-          drawTimelineGridLines(topY, timelineHeaderHeight);
-        };
-
-        const drawTaskRow = (task, topY, rowIndex, layout) => {
-          const {
-            rowHeight,
-            columnLines,
-            lineCounts,
-            progressValue
-          } = layout;
-          const isStageRow = task.entryType === 'stage';
-          if (isStageRow) {
-            doc.setFillColor(stageFill.r, stageFill.g, stageFill.b);
-            doc.rect(margin, topY, contentWidth, rowHeight, 'F');
-          } else if (rowIndex % 2 === 0) {
-            doc.setFillColor(zebraFill.r, zebraFill.g, zebraFill.b);
-            doc.rect(margin, topY, contentWidth, rowHeight, 'F');
-          }
-
-          if (segmentsForDrawing.length && dayWidth > 0) {
-            segmentsForDrawing.forEach((segment) => {
-              const palette = highlightPalette[segment.type];
-              if (!palette) return;
-              const segmentX = timelineStartX + (segment.startIndex * dayWidth);
-              const width = (segment.endIndex - segment.startIndex + 1) * dayWidth;
-              doc.setFillColor(palette.fill.r, palette.fill.g, palette.fill.b);
-              doc.rect(segmentX, topY, width, rowHeight, 'F');
-            });
-          }
-
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(9);
-          let cellX = margin;
-          const originalLineWidth = doc.getLineWidth();
-          doc.setLineWidth(0.1);
-
-          columnLines.forEach((lines, index) => {
-            const width = columnWidths[index];
-            const effectiveLines = Math.max(1, lineCounts[index]);
-            const contentHeight = effectiveLines * lineHeight;
-            const textTop = topY + Math.max(verticalPadding, (rowHeight - contentHeight) / 2);
-            const cleanedLines = lines.length ? lines.map((line) => (line === '' ? ' ' : line)) : [' '];
-            if (index === 0) {
-              const originalFontSize = doc.getFontSize();
-              doc.setFont('helvetica', 'normal');
-              doc.setFontSize(7);
-              doc.text(cleanedLines, cellX + textPadding, textTop, { baseline: 'top' });
-              doc.setFontSize(originalFontSize);
-            } else if (index === 1) {
-              doc.text(cleanedLines, cellX + textPadding, textTop, { baseline: 'top' });
-            } else {
-              const centreX = cellX + (width / 2);
-              doc.text(cleanedLines, centreX, textTop, { baseline: 'top', align: 'center' });
-            }
-            cellX += width;
-            if (index < columnLines.length - 1) {
-              doc.line(cellX, topY, cellX, topY + rowHeight);
-            }
-          });
-
-          doc.setLineWidth(originalLineWidth);
-
-          drawTimelineGridLines(topY, rowHeight);
-
-          const startDate = parseDate(task.startDate);
-          const endDate = parseDate(task.endDate);
-          if (!startDate || !endDate || !dayCount) return;
-
-          let startIndex = getPdfDayIndex(startDate);
-          let endIndex = getPdfDayIndex(endDate);
-          if (startIndex === -1 || endIndex === -1) return;
-          const offset = timelineViewMode === 'days'
-            ? -1
-            : (timelineViewMode === 'weeks' ? 1 : 0);
-          if (offset !== 0) {
-            startIndex += offset;
-            endIndex += offset;
-          }
-          startIndex = Math.max(0, Math.min(dayCount - 1, startIndex));
-          endIndex = Math.max(startIndex, Math.min(dayCount - 1, endIndex));
-          if (typeof startIndex !== 'number' || typeof endIndex !== 'number' || startIndex > endIndex) return;
-
-          const rawBarX = timelineStartX + (startIndex * dayWidth);
-          const rawBarWidth = (endIndex - startIndex + 1) * dayWidth;
-          const barX = Math.round(rawBarX * 1000) / 1000;
-          const barWidth = Math.max(dayWidth, Math.round(rawBarWidth * 1000) / 1000);
-          const barHeight = rowHeight * 0.6;
-          const barY = topY + ((rowHeight - barHeight) / 2);
-
-          if (barWidth <= 0) return;
-
-          const workingIndices = [];
-          for (let index = startIndex; index <= endIndex; index += 1) {
-            const day = timelineDays[index];
-            if (!isStanddownDay(day)) workingIndices.push(index);
-          }
-
-          const segments = buildMiniSegments(task);
-          const paintSegments = segments.length ? segments : [{ name: null, duration: workingIndices.length }];
-          const paintedRects = [];
-          let workingPointer = 0;
-          paintSegments.forEach((segment) => {
-            const duration = Math.max(0, segment.duration || 0);
-            if (duration <= 0) return;
-            const startWorkingIndex = workingIndices[workingPointer];
-            if (startWorkingIndex == null) return;
-            const endWorkingIndex = workingIndices[Math.min(
-              workingPointer + duration - 1,
-              workingIndices.length - 1
-            )];
-            if (endWorkingIndex == null || endWorkingIndex < startWorkingIndex) return;
-            const left = (startWorkingIndex - startIndex) * dayWidth;
-            const width = (endWorkingIndex - startWorkingIndex + 1) * dayWidth;
-            const color = segment.name ? parseColorToRgb(getMiniColor(segment.name)) : parseColorToRgb(DEFAULT_SEGMENT_COLOR);
-            doc.setFillColor(color.r, color.g, color.b);
-            doc.rect(barX + left, barY, width, barHeight, 'F');
-            paintedRects.push({ left, width });
-            workingPointer += duration;
-          });
-
-          if (!paintedRects.length && workingIndices.length && !isStageRow) {
-            const left = 0;
-            const width = (workingIndices[workingIndices.length - 1] - startIndex + 1) * dayWidth;
-            const fallback = parseColorToRgb(DEFAULT_SEGMENT_COLOR);
-            doc.setFillColor(fallback.r, fallback.g, fallback.b);
-            doc.rect(barX + left, barY, width, barHeight, 'F');
-            paintedRects.push({ left, width });
-          }
-
-          if (!isStageRow && progressValue > 0 && workingIndices.length) {
-            let remaining = (progressValue / 100) * workingIndices.length;
-            let prevIndex = null;
-            let currentSegment = null;
-            const overlaySegments = [];
-            for (let i = 0; i < workingIndices.length && remaining > 1e-6; i += 1) {
-              const idx = workingIndices[i];
-              const left = (idx - startIndex) * dayWidth;
-              const portion = Math.min(1, remaining);
-              const contiguous = currentSegment && prevIndex != null && idx === prevIndex + 1 && !currentSegment.partial;
-              if (!contiguous) {
-                currentSegment = { left, width: portion * dayWidth, partial: portion < 1 };
-                overlaySegments.push(currentSegment);
-              } else {
-                currentSegment.width += portion * dayWidth;
-                currentSegment.partial = portion < 1;
-              }
-              remaining -= portion;
-              prevIndex = idx;
-              if (portion < 1) break;
-            }
-
-            overlaySegments.forEach((segment) => {
-              const overlayX = barX + segment.left;
-              const overlayWidth = Math.min(segment.width, barWidth);
-              if (overlayWidth <= 0) return;
-              if (progressOverlayState && resetOpacityState) {
-                doc.setGState(progressOverlayState);
-                doc.setFillColor(255, 255, 255);
-                doc.rect(overlayX, barY, overlayWidth, barHeight, 'F');
-                doc.setGState(resetOpacityState);
-              }
-              doc.setFillColor(255, 255, 255);
-              const stripeWidth = 0.45;
-              const stripeSpacing = 2;
-              const stripeRight = overlayX + overlayWidth;
-              for (let stripeX = overlayX; stripeX < stripeRight; stripeX += stripeSpacing) {
-                const width = Math.min(stripeWidth, stripeRight - stripeX);
-                if (width <= 0) continue;
-                doc.rect(stripeX, barY, width, barHeight, 'F');
-              }
-            });
-          }
-
-          doc.setDrawColor(80, 94, 120);
-          if (isStageRow) {
-            doc.setFillColor(stageFill.r, stageFill.g, stageFill.b);
-            doc.rect(barX, barY, barWidth, barHeight, 'F');
-            doc.setDrawColor(212, 163, 18);
-            doc.setLineWidth(0.3);
-            doc.rect(barX, barY, barWidth, barHeight);
-            doc.setLineWidth(originalLineWidth);
-            doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
-          } else {
-            doc.setDrawColor(80, 94, 120);
-            paintedRects.forEach((rect) => {
-              doc.rect(barX + rect.left, barY, rect.width, barHeight);
-            });
-            doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
-          }
-
-          const labelMaxWidth = Math.max(barWidth - 4, 0);
-          if (labelMaxWidth > 0) {
-            const label = truncateText(task.name, labelMaxWidth);
-            if (label) {
-              doc.setFont('helvetica', 'bold');
-              doc.setFontSize(7);
-              doc.setTextColor(33, 45, 67);
-              doc.text(label, barX + 2, barY + (barHeight / 2) + 0.2, { baseline: 'middle' });
-              doc.setFont('helvetica', 'normal');
-              doc.setFontSize(9);
-              doc.setTextColor(defaultTextColor.r, defaultTextColor.g, defaultTextColor.b);
-            }
-          }
-
-          drawStanddownBands(topY, rowHeight);
-
-          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
-          doc.setLineWidth(0.1);
-          doc.line(margin, topY, margin + contentWidth, topY);
-          doc.line(margin, topY + rowHeight, margin + contentWidth, topY + rowHeight);
-          doc.line(timelineStartX, topY, timelineStartX, topY + rowHeight);
-          doc.setLineWidth(originalLineWidth);
-
-          drawTimelineGridLines(topY, rowHeight, { highlightsOnly: true });
-        };
-
-        const startNewPage = (isFirstPage) => {
-          if (!isFirstPage) {
-            doc.addPage();
-          }
-          doc.setTextColor(defaultTextColor.r, defaultTextColor.g, defaultTextColor.b);
-          doc.setDrawColor(defaultDrawColor.r, defaultDrawColor.g, defaultDrawColor.b);
-          doc.setLineWidth(0.2);
-          let cursorY = drawDocumentHeader(margin);
-
-          doc.setFillColor(headerFill.r, headerFill.g, headerFill.b);
-          doc.rect(margin, cursorY, leftColumnWidth, timelineHeaderHeight, 'F');
-          doc.rect(margin, cursorY, leftColumnWidth, timelineHeaderHeight);
-
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(9);
-          let headerX = margin;
-          const headerBaseline = cursorY + 4;
-          columnLabels.forEach((label, index) => {
-            doc.text(label, headerX + textPadding, headerBaseline);
-            headerX += columnWidths[index];
-          });
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(8);
-          drawTimelineHeader(cursorY);
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(9);
-          return cursorY + timelineHeaderHeight;
-        };
-
-        const ensurePageCapacity = (requiredHeight) => {
-          if (currentY + requiredHeight > pageBottom) {
-            currentY = startNewPage(false);
-          }
-        };
-
-        let currentY = startNewPage(true);
-        tasksSnapshot.forEach((task, index) => {
-          const layout = computeRowLayout(task);
-          ensurePageCapacity(layout.rowHeight);
-          drawTaskRow(task, currentY, index, layout);
-          currentY += layout.rowHeight;
-        });
-
-        doc.save('project-programme.pdf');
-      }
-
-      function updateTaskStartDate(task, newStartDate) {
-        if (task?.singleEvent) {
-          const start = ensureWeekday(newStartDate, 1);
-          const normalized = formatDate(start);
-          task.startDate = normalized;
-          task.endDate = normalized;
-          return;
-        }
-        const currentEnd = parseDate(task.endDate) || newStartDate;
-        let duration = diffInWeekdays(newStartDate, currentEnd);
-        const minDuration = minimumTaskDuration(task);
-        if (duration < minDuration) {
-          const adjustedEnd = shiftWeekdays(newStartDate, minDuration - 1);
-          task.endDate = formatDate(adjustedEnd);
-          duration = diffInWeekdays(newStartDate, adjustedEnd);
-        }
-        reconcileMiniDurationsForTask(task, Math.max(1, duration), {
-          anchor: 'start',
-          referenceStart: newStartDate
-        });
-      }
-
-      function updateTaskEndDate(task, newEndDate) {
-        if (task?.singleEvent) {
-          const normalizedStart = formatDate(ensureWeekday(parseDate(task.startDate) || newEndDate, 1));
-          task.startDate = normalizedStart;
-          task.endDate = normalizedStart;
-          return;
-        }
-        const currentStart = parseDate(task.startDate) || newEndDate;
-        let duration = diffInWeekdays(currentStart, newEndDate);
-        const minDuration = minimumTaskDuration(task);
-        if (duration < minDuration) {
-          newEndDate = shiftWeekdays(currentStart, minDuration - 1);
-          duration = diffInWeekdays(currentStart, newEndDate);
-        }
-        reconcileMiniDurationsForTask(task, Math.max(1, duration), {
-          anchor: 'end',
-          referenceEnd: newEndDate
-        });
-      }
-
-      function applyNewStartDate(task, newStartDate, fixedEndDate) {
-        if (task?.singleEvent) {
-          const normalized = formatDate(ensureWeekday(newStartDate, 1));
-          task.startDate = normalized;
-          task.endDate = normalized;
-          return;
-        }
-        let start = ensureWeekday(newStartDate, 1);
-        let end = ensureWeekday(fixedEndDate, -1);
-        if (compareDates(end, start) < 0) {
-          end = shiftWeekdays(start, minimumTaskDuration(task) - 1);
-        }
-        const duration = Math.max(minimumTaskDuration(task), diffInWeekdays(start, end));
-        end = shiftWeekdays(start, duration - 1);
-        reconcileMiniDurationsForTask(task, duration, {
-          anchor: 'start',
-          referenceStart: start
-        });
-      }
-
-      function applyNewEndDate(task, fixedStartDate, newEndDate) {
-        if (task?.singleEvent) {
-          const normalized = formatDate(ensureWeekday(parseDate(task.startDate) || fixedStartDate, 1));
-          task.startDate = normalized;
-          task.endDate = normalized;
-          return;
-        }
-        let start = ensureWeekday(fixedStartDate, 1);
-        let end = ensureWeekday(newEndDate, -1);
-        if (compareDates(end, start) < 0) {
-          end = shiftWeekdays(start, minimumTaskDuration(task) - 1);
-        }
-        const duration = Math.max(minimumTaskDuration(task), diffInWeekdays(start, end));
-        end = shiftWeekdays(start, duration - 1);
-        reconcileMiniDurationsForTask(task, duration, {
-          anchor: 'end',
-          referenceEnd: end
-        });
-      }
-
       function selectTask(taskId) {
         selectedTaskId = taskId;
         renderAll();
@@ -4797,65 +2731,6 @@ ${formatDisplayDate(startDate)} (Single event)`;
         renderAll();
       }
 
-      function computeDefaultMiniTaskDurations(totalDuration) {
-        const normalizedTotal = Math.max(
-          DEFAULT_SEQUENCE_MINIMUM_TOTAL,
-          Math.max(1, Math.round(Number(totalDuration) || 0))
-        );
-        const stepData = DEFAULT_SEQUENCE_STEPS.map((step, index) => ({
-          index,
-          weight: Number(step.weight) || 0,
-          duration: Math.max(1, Math.round(((Number(step.weight) || 0) / 100) * normalizedTotal))
-        }));
-        const weightOrder = stepData
-          .slice()
-          .sort((a, b) => b.weight - a.weight);
-        let diff = normalizedTotal - stepData.reduce((sum, item) => sum + item.duration, 0);
-        if (diff !== 0) {
-          const maxGuard = 100;
-          let guard = 0;
-          while (diff !== 0 && guard < maxGuard) {
-            let adjusted = false;
-            for (let idx = 0; idx < weightOrder.length && diff !== 0; idx += 1) {
-              const entry = weightOrder[idx];
-              if (diff > 0) {
-                entry.duration += 1;
-                diff -= 1;
-                adjusted = true;
-              } else if (entry.duration > 1) {
-                entry.duration -= 1;
-                diff += 1;
-                adjusted = true;
-              }
-            }
-            if (!adjusted) break;
-            guard += 1;
-          }
-        }
-        const durations = stepData
-          .slice()
-          .sort((a, b) => a.index - b.index)
-          .map((item) => Math.max(1, Math.round(item.duration)));
-        const finalSum = durations.reduce((sum, value) => sum + value, 0);
-        if (finalSum !== normalizedTotal) {
-          const delta = normalizedTotal - finalSum;
-          const targetIndex = (weightOrder[0] && weightOrder[0].index) || 0;
-          durations[targetIndex] = Math.max(1, durations[targetIndex] + delta);
-        }
-        return durations;
-      }
-
-      function createDefaultSequencedMiniTasks(taskId, totalDuration) {
-        const durations = computeDefaultMiniTaskDurations(totalDuration);
-        return DEFAULT_SEQUENCE_STEPS.map((step, index) => ({
-          id: `${taskId}-mini-${index + 1}`,
-          enabled: true,
-          name: step.name,
-          duration: durations[index] || 1,
-          locked: false
-        }));
-      }
-
       function renderLegend() {
         if (!legendContainer) return;
         legendContainer.innerHTML = '';
@@ -4883,11 +2758,14 @@ ${formatDisplayDate(startDate)} (Single event)`;
           buildingTypeSelect.appendChild(option);
           return;
         }
+        const preferredType = uniqueTypes.includes(DEFAULT_BUILDING_TYPE) ? DEFAULT_BUILDING_TYPE : null;
         uniqueTypes.forEach((type, index) => {
           const option = document.createElement('option');
           option.value = type;
           option.textContent = type;
-          if (index === 0) option.selected = true;
+          if ((preferredType && type === preferredType) || (!preferredType && index === 0)) {
+            option.selected = true;
+          }
           buildingTypeSelect.appendChild(option);
         });
       }
@@ -4895,18 +2773,18 @@ ${formatDisplayDate(startDate)} (Single event)`;
       async function loadDatabase() {
         databaseRecords = [];
         try {
-          const response = await fetch(`database.json?cache-bust=${Date.now()}`, { cache: 'no-store' });
+          const response = await fetch(`./modules/database.json?cache-bust=${Date.now()}`, { cache: 'no-store' });
           if (!response.ok) throw new Error(`Request failed: ${response.status}`);
           const data = await response.json();
           if (Array.isArray(data) && data.length) {
             databaseRecords = data;
           }
         } catch (error) {
-          console.warn('Unable to load database.json, falling back to embedded data', error);
+          console.warn('Unable to load ./modules/database.json, falling back to embedded data', error);
         }
         if (!databaseRecords.length && window.location.protocol === 'file:') {
           try {
-            const module = await import(`./database.json?cache-bust=${Date.now()}`, { assert: { type: 'json' } });
+            const module = await import(`./modules/database.json?cache-bust=${Date.now()}`, { assert: { type: 'json' } });
             if (module && Array.isArray(module.default) && module.default.length) {
               databaseRecords = module.default;
             }
@@ -5092,303 +2970,8 @@ ${formatDisplayDate(startDate)} (Single event)`;
         renderAll();
       }
 
-      function renderMiniTaskInputs() {
-        if (!miniTaskList) return;
-        miniTaskList.innerHTML = '';
-        miniTaskDrafts.forEach((mini, index) => {
-          const item = document.createElement('div');
-          item.className = 'mini-task-item';
-          item.dataset.index = String(index);
-          if (!mini.enabled) item.classList.add('disabled');
-          if (mini.locked) item.classList.add('locked');
-
-          const toggleLabel = document.createElement('label');
-          const checkbox = document.createElement('input');
-          checkbox.type = 'checkbox';
-          checkbox.checked = Boolean(mini.enabled);
-          checkbox.addEventListener('change', () => {
-            setMiniTaskEnabled(index, checkbox.checked);
-          });
-          const labelText = document.createElement('span');
-          labelText.textContent = String(index + 1);
-          toggleLabel.appendChild(checkbox);
-          toggleLabel.appendChild(labelText);
-
-          const nameSelect = document.createElement('select');
-          nameSelect.disabled = !mini.enabled;
-          const placeholderOption = document.createElement('option');
-          placeholderOption.value = '';
-          placeholderOption.textContent = 'Select description';
-          nameSelect.appendChild(placeholderOption);
-          MINI_TASK_OPTIONS.forEach((option) => {
-            const optionEl = document.createElement('option');
-            optionEl.value = option;
-            optionEl.textContent = option;
-            nameSelect.appendChild(optionEl);
-          });
-          nameSelect.value = MINI_TASK_OPTIONS.includes(mini.name) ? mini.name : '';
-          nameSelect.addEventListener('change', () => {
-            setMiniTaskName(index, nameSelect.value);
-          });
-
-          const isDelay = mini.enabled && mini.name === 'Delays';
-          item.classList.toggle('delay-active', isDelay);
-
-          const durationWrapper = document.createElement('div');
-          durationWrapper.className = 'mini-task-duration';
-          const durationInput = document.createElement('input');
-          durationInput.type = 'number';
-          durationInput.min = miniTaskUnit === 'weeks' ? '0.2' : '1';
-          durationInput.step = miniTaskUnit === 'weeks' ? '0.5' : '1';
-          durationInput.value = String(getDraftDurationInCurrentUnit(mini.duration));
-          durationInput.disabled = !mini.enabled;
-          const handleDurationChange = () => {
-            setMiniTaskDuration(index, parseFloat(durationInput.value));
-          };
-          durationInput.addEventListener('change', handleDurationChange);
-          durationInput.addEventListener('blur', () => {
-            handleDurationChange();
-            const wrapper = durationInput.closest('.mini-task-item');
-            if (wrapper) wrapper.classList.remove('duration-focused');
-          });
-          durationInput.addEventListener('focus', () => {
-            const wrapper = durationInput.closest('.mini-task-item');
-            if (wrapper) wrapper.classList.add('duration-focused');
-          });
-          const durationSuffix = document.createElement('span');
-          durationSuffix.textContent = miniTaskUnit === 'weeks' ? 'weeks' : 'days';
-          durationWrapper.appendChild(durationInput);
-          durationWrapper.appendChild(durationSuffix);
-
-          const delayExtras = document.createElement('div');
-          delayExtras.className = 'mini-delay-extras';
-          const descriptionInput = document.createElement('textarea');
-          descriptionInput.placeholder = 'Delay description';
-          descriptionInput.value = mini.delayDescription || '';
-          descriptionInput.disabled = !isDelay;
-          descriptionInput.addEventListener('input', () => {
-            setMiniTaskDelayDescription(index, descriptionInput.value);
-            autoResizeTextarea(descriptionInput);
-          });
-          autoResizeTextarea(descriptionInput);
-          const controls = document.createElement('div');
-          controls.className = 'mini-task-controls';
-          const upButton = document.createElement('button');
-          upButton.type = 'button';
-          upButton.className = 'mini-move mini-move-up';
-          upButton.textContent = '↑';
-          upButton.title = 'Move step up';
-          upButton.setAttribute('aria-label', `Move step ${index + 1} up`);
-          upButton.disabled = index === 0;
-          upButton.addEventListener('click', () => moveMiniTaskDraft(index, -1));
-
-          const downButton = document.createElement('button');
-          downButton.type = 'button';
-          downButton.className = 'mini-move mini-move-down';
-          downButton.textContent = '↓';
-          downButton.title = 'Move step down';
-          downButton.setAttribute('aria-label', `Move step ${index + 1} down`);
-          downButton.disabled = index === miniTaskDrafts.length - 1;
-          downButton.addEventListener('click', () => moveMiniTaskDraft(index, 1));
-
-          controls.appendChild(upButton);
-          controls.appendChild(downButton);
-
-          const chargeLabel = document.createElement('label');
-          chargeLabel.className = 'mini-delay-charge';
-          const chargeCheckbox = document.createElement('input');
-          chargeCheckbox.type = 'checkbox';
-          chargeCheckbox.checked = isDelay ? Boolean(mini.chargeToClient) : false;
-          chargeCheckbox.disabled = !isDelay;
-          chargeCheckbox.addEventListener('change', () => {
-            setMiniTaskCharge(index, chargeCheckbox.checked);
-          });
-          const chargeText = document.createElement('span');
-          chargeText.textContent = 'Charge to client';
-          chargeLabel.appendChild(chargeCheckbox);
-          chargeLabel.appendChild(chargeText);
-          delayExtras.appendChild(descriptionInput);
-          delayExtras.appendChild(chargeLabel);
-
-          item.appendChild(toggleLabel);
-          item.appendChild(nameSelect);
-          item.appendChild(durationWrapper);
-          item.appendChild(controls);
-          item.appendChild(delayExtras);
-          miniTaskList.appendChild(item);
-        });
-        updateMiniTaskToolbar();
-      }
-
-      function createMiniTaskDraft(overrides = {}) {
-        return sanitizeMiniTaskDraft({
-          enabled: false,
-          name: '',
-          duration: 1,
-          locked: false,
-          delayDescription: '',
-          chargeToClient: false,
-          ...overrides
-        });
-      }
-
-      function sanitizeMiniTaskDraft(draft) {
-        const result = {
-          enabled: Boolean(draft?.enabled),
-          name: typeof draft?.name === 'string' ? draft.name : '',
-          duration: Math.max(1, Math.round(Number.isFinite(draft?.duration) ? draft.duration : 1)),
-          locked: Boolean(draft?.locked),
-          delayDescription: typeof draft?.delayDescription === 'string' ? draft.delayDescription : '',
-          chargeToClient: Boolean(draft?.chargeToClient)
-        };
-        if (result.name !== 'Delays') {
-          result.delayDescription = '';
-          result.chargeToClient = false;
-        }
-        return result;
-      }
-
-      function getDraftDurationInCurrentUnit(durationDays) {
-        const safeDays = Math.max(1, Math.round(Number.isFinite(durationDays) ? durationDays : 1));
-        if (miniTaskUnit === 'weeks') {
-          return Number((safeDays / WORKING_DAYS_PER_WEEK).toFixed(2));
-        }
-        return safeDays;
-      }
-
-      function setMiniTaskUnit(unit) {
-        if (currentEntryType !== 'task') return;
-        if (unit !== 'days' && unit !== 'weeks') return;
-        if (miniTaskUnit === unit) return;
-        miniTaskUnit = unit;
-        updateMiniTaskToolbar();
-        renderMiniTaskInputs();
-        updateDurationPreview();
-      }
-
-      function updateMiniTaskToolbar() {
-        if (!addMiniTaskBtn || !removeMiniTaskBtn) return;
-        const disabled = currentEntryType !== 'task';
-        addMiniTaskBtn.disabled = disabled;
-        removeMiniTaskBtn.disabled = disabled || miniTaskDrafts.length === 0;
-        miniUnitButtons.forEach((button) => {
-          const isActive = button.dataset.unit === miniTaskUnit;
-          button.classList.toggle('active', isActive);
-          button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-          button.disabled = disabled;
-          button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
-          if (disabled) {
-            button.setAttribute('tabindex', '-1');
-          } else {
-            button.removeAttribute('tabindex');
-          }
-        });
-      }
-
-      function setMiniTaskEnabled(index, enabled) {
-        if (!miniTaskDrafts[index]) return;
-        if (enabled) {
-          miniTaskDrafts[index] = sanitizeMiniTaskDraft({ ...miniTaskDrafts[index], enabled: true });
-        } else {
-          miniTaskDrafts[index] = sanitizeMiniTaskDraft({ enabled: false, name: '', duration: 1, locked: false, delayDescription: '', chargeToClient: false });
-        }
-        renderMiniTaskInputs();
-        updateDurationPreview();
-        if (enabled) focusMiniTask(index, 'name');
-      }
-
-      function setMiniTaskName(index, name) {
-        if (!miniTaskDrafts[index]) return;
-        const isDelay = name === 'Delays';
-        miniTaskDrafts[index] = sanitizeMiniTaskDraft({
-          ...miniTaskDrafts[index],
-          name,
-          delayDescription: isDelay ? miniTaskDrafts[index].delayDescription : '',
-          chargeToClient: isDelay ? miniTaskDrafts[index].chargeToClient : false
-        });
-        renderMiniTaskInputs();
-        updateDurationPreview();
-        focusMiniTask(index, isDelay ? 'delayDescription' : 'name');
-      }
-
-      function setMiniTaskDuration(index, value) {
-        if (!miniTaskDrafts[index]) return;
-        let durationValue = Number(value);
-        if (!Number.isFinite(durationValue) || durationValue < 1) durationValue = 1;
-        const durationInDays = miniTaskUnit === 'weeks'
-          ? durationValue * WORKING_DAYS_PER_WEEK
-          : durationValue;
-        miniTaskDrafts[index] = sanitizeMiniTaskDraft({ ...miniTaskDrafts[index], duration: durationInDays });
-        renderMiniTaskInputs();
-        updateDurationPreview();
-      }
-
-      function moveMiniTaskDraft(index, direction) {
-        const targetIndex = index + direction;
-        if (targetIndex < 0 || targetIndex >= miniTaskDrafts.length) return;
-        const nextDrafts = [...miniTaskDrafts];
-        const [moved] = nextDrafts.splice(index, 1);
-        nextDrafts.splice(targetIndex, 0, moved);
-        miniTaskDrafts = nextDrafts.map(sanitizeMiniTaskDraft);
-        renderMiniTaskInputs();
-        updateDurationPreview();
-        focusMiniTask(targetIndex, 'name');
-      }
-
-      function setMiniTaskDelayDescription(index, value) {
-        if (!miniTaskDrafts[index]) return;
-        if (miniTaskDrafts[index].name !== 'Delays') {
-          miniTaskDrafts[index].delayDescription = '';
-          return;
-        }
-        miniTaskDrafts[index].delayDescription = value;
-      }
-
-      function setMiniTaskCharge(index, checked) {
-        if (!miniTaskDrafts[index]) return;
-        if (miniTaskDrafts[index].name !== 'Delays') {
-          miniTaskDrafts[index].chargeToClient = false;
-          return;
-        }
-        miniTaskDrafts[index].chargeToClient = Boolean(checked);
-      }
-
-      function focusMiniTask(index, field = 'name') {
-        if (!miniTaskList) return;
-        requestAnimationFrame(() => {
-          let selector = 'select';
-          if (field === 'duration') selector = '.mini-task-duration input';
-          if (field === 'delayDescription') selector = '.mini-delay-extras textarea';
-          const target = miniTaskList.querySelector(`.mini-task-item[data-index="${index}"] ${selector}`);
-          if (target) target.focus();
-        });
-      }
-
-      function addMiniTaskRow(prefill = {}) {
-        if (currentEntryType !== 'task') return;
-        const prefilled = { ...prefill };
-        if (prefilled.duration != null) {
-          const raw = Number(prefilled.duration);
-          prefilled.duration = Math.max(1, Math.round(raw));
-        } else {
-          prefilled.duration = miniTaskUnit === 'weeks' ? WORKING_DAYS_PER_WEEK : 1;
-        }
-        const draft = sanitizeMiniTaskDraft({ enabled: true, ...prefilled });
-        miniTaskDrafts = [...miniTaskDrafts, draft];
-        renderMiniTaskInputs();
-        updateDurationPreview();
-        focusMiniTask(miniTaskDrafts.length - 1, 'name');
-      }
-
-      function removeMiniTaskRow() {
-        if (currentEntryType !== 'task') return;
-        if (!miniTaskDrafts.length) return;
-        miniTaskDrafts = miniTaskDrafts.slice(0, miniTaskDrafts.length - 1);
-        renderMiniTaskInputs();
-        updateDurationPreview();
-      }
-
       function updateDurationPreview() {
+        if (!durationPreview) return;
         if (currentEntryType === 'stage') {
           durationPreview.textContent = 'Stage timeline updates automatically when tasks are added.';
           return;
@@ -5411,7 +2994,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
         let baseDuration = Math.max(1, diffInWeekdays(start, end));
         let miniTotal = 0;
         let enabledCount = 0;
-        miniTaskDrafts.forEach((mini) => {
+        getMiniTaskDrafts().forEach((mini) => {
           if (!mini?.enabled) return;
           enabledCount += 1;
           miniTotal += Math.max(1, Math.round(mini.duration || 1));
@@ -5459,8 +3042,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
         modalEl.classList.add('hidden');
         editingTaskId = null;
         currentMode = 'create';
-        miniTaskDrafts = [];
-        miniTaskUnit = 'days';
+        resetMiniTaskState({ silent: true });
         setEntryType('task', { skipPreview: true });
         if (modalTaskName) modalTaskName.value = '';
         if (modalTaskDescription) modalTaskDescription.value = '';
@@ -5471,7 +3053,6 @@ ${formatDisplayDate(startDate)} (Single event)`;
 
       function populateModal(task = null) {
         const defaultStart = ensureWeekday(new Date(), 1);
-        miniTaskUnit = 'days';
         let entryType = 'task';
         if (task) {
           if (task.entryType === 'stage') entryType = 'stage';
@@ -5483,13 +3064,15 @@ ${formatDisplayDate(startDate)} (Single event)`;
         setEntryType(entryType, { skipPreview: true });
 
         if (entryType === 'task') {
+          setMiniTaskUnit('days', { silent: true });
+          let drafts = [];
           if (task) {
             const baseMini = Array.isArray(task.miniTasks) ? task.miniTasks : [];
-            miniTaskDrafts = baseMini.map((mini) => sanitizeMiniTaskDraft(mini));
+            drafts = baseMini.map((mini) => sanitizeMiniTaskDraft(mini));
             const pendingUndefinedDuration = Math.max(0, Math.round(task.undefinedDuration || 0));
-            const hasExplicitUndefined = miniTaskDrafts.some((mini) => mini.enabled && mini.name === 'Undefined');
+            const hasExplicitUndefined = drafts.some((mini) => mini.enabled && mini.name === 'Undefined');
             if (pendingUndefinedDuration > 0 && !hasExplicitUndefined) {
-              miniTaskDrafts.push(sanitizeMiniTaskDraft({
+              drafts.push(sanitizeMiniTaskDraft({
                 enabled: true,
                 name: 'Undefined',
                 duration: pendingUndefinedDuration,
@@ -5513,23 +3096,24 @@ ${formatDisplayDate(startDate)} (Single event)`;
               }
             }
             const defaultDurations = computeDefaultMiniTaskDurations(parentTaskDuration);
-            miniTaskDrafts = DEFAULT_SEQUENCE_STEPS.map((step, index) => sanitizeMiniTaskDraft({
+            drafts = DEFAULT_SEQUENCE_STEPS.map((step, index) => sanitizeMiniTaskDraft({
               enabled: true,
               name: step.name,
               duration: defaultDurations[index] || 1,
               locked: false
             }));
           }
-          if (!miniTaskDrafts.length) {
-            miniTaskDrafts = [sanitizeMiniTaskDraft(createMiniTaskDraft({ enabled: true }))];
+          if (!drafts.length) {
+            drafts = [sanitizeMiniTaskDraft(createMiniTaskDraft({ enabled: true }))];
           }
+          setMiniTaskDrafts(drafts, { silent: true });
           modalTaskName.value = task ? task.name || '' : '';
           modalTaskDescription.value = task ? task.description || '' : '';
           modalProgress.value = task ? Math.min(100, Math.max(0, Number(task.progress) || 0)) : 0;
           modalStartDate.value = task ? task.startDate || formatDate(defaultStart) : formatDate(defaultStart);
           modalEndDate.value = task ? task.endDate || formatDate(defaultStart) : formatDate(defaultStart);
         } else if (entryType === 'single') {
-          miniTaskDrafts = [];
+          setMiniTaskDrafts([], { silent: true });
           modalTaskName.value = task ? task.name || '' : '';
           modalTaskDescription.value = task ? task.description || '' : '';
           const singleDate = task ? task.startDate || formatDate(defaultStart) : formatDate(defaultStart);
@@ -5537,8 +3121,7 @@ ${formatDisplayDate(startDate)} (Single event)`;
           if (modalEndDate) modalEndDate.value = singleDate;
           modalProgress.value = task ? Math.min(100, Math.max(0, Number(task.progress) || 0)) : 0;
         } else {
-          // stage
-          miniTaskDrafts = [];
+          setMiniTaskDrafts([], { silent: true });
           modalTaskName.value = '';
           modalTaskDescription.value = '';
           const stageMeta = task ? normalizeStageMetadata(task) : normalizeStageMetadata();
@@ -5559,22 +3142,8 @@ ${formatDisplayDate(startDate)} (Single event)`;
           setEntryType('stage', { skipPreview: true });
         }
 
-        renderMiniTaskInputs();
         updateMiniTaskToolbar();
         updateDurationPreview();
-      }
-
-      function collectMiniTasks(taskId) {
-        if (currentEntryType !== 'task') return [];
-        return miniTaskDrafts.map((mini, index) => ({
-          id: `${taskId || 'new'}-mini-${index + 1}`,
-          enabled: Boolean(mini.enabled),
-          name: typeof mini.name === 'string' ? mini.name : '',
-          duration: Math.max(1, Math.round(mini.duration || 1)),
-          locked: Boolean(mini.locked && mini.enabled),
-          delayDescription: (mini.delayDescription || '').trim(),
-          chargeToClient: Boolean(mini.chargeToClient)
-        }));
       }
 
       function gatherDelayRows() {
@@ -5817,53 +3386,6 @@ ${formatDisplayDate(startDate)} (Single event)`;
         renderAll();
       }
 
-      function updateStickyMetrics() {
-        const topOffset = topBarEl ? topBarEl.getBoundingClientRect().height : 0;
-        document.documentElement.style.setProperty('--top-offset', `${topOffset}px`);
-        updateHeaderOffset();
-
-        const sidebarHeaderEl = document.querySelector('.sidebar-header');
-        const sidebarHeaderHeight = sidebarHeaderEl ? sidebarHeaderEl.getBoundingClientRect().height : 0;
-        document.documentElement.style.setProperty('--sidebar-header-height', `${sidebarHeaderHeight}px`);
-
-        const ganttHeaderEl = document.querySelector('.gantt-header');
-        const ganttHeaderHeight = ganttHeaderEl ? ganttHeaderEl.getBoundingClientRect().height : 0;
-        document.documentElement.style.setProperty('--gantt-header-height', `${ganttHeaderHeight}px`);
-
-        const rootStyles = getComputedStyle(document.documentElement);
-        const rootFontSize = parseFloat(rootStyles.fontSize) || 16;
-        const toPixels = (raw) => {
-          if (!raw) return 0;
-          const trimmed = raw.trim();
-          if (trimmed.endsWith('rem')) return parseFloat(trimmed) * rootFontSize;
-          if (trimmed.endsWith('px')) return parseFloat(trimmed);
-          return parseFloat(trimmed) || 0;
-        };
-
-        const taskHeaderHeightPx = toPixels(rootStyles.getPropertyValue('--task-header-height'));
-        const timelineHeaderHeightPx = toPixels(rootStyles.getPropertyValue('--timeline-header-height'));
-        const contentOffsetPx = toPixels(rootStyles.getPropertyValue('--content-offset'));
-        const verticalheaderoffset = toPixels(rootStyles.getPropertyValue('--vertical-header-offset'));
-        const bodyoffset = toPixels(rootStyles.getPropertyValue('--body-offset'));
-
-        const taskHeaderTopPx = Math.max(0, topOffset + contentOffsetPx - verticalheaderoffset);
-        const timelineHeaderTopPx = Math.max(0, topOffset + contentOffsetPx - verticalheaderoffset);
-        const rowHeight = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--row-height')) || 54;
-
-        document.documentElement.style.setProperty('--task-header-top', `${taskHeaderTopPx}px`);
-        document.documentElement.style.setProperty('--timeline-header-top', `${timelineHeaderTopPx}px`);
-
-        const taskScrollStartPx = taskHeaderTopPx + taskHeaderHeightPx + bodyoffset;
-        const ganttScrollStartPx = timelineHeaderTopPx + timelineHeaderHeightPx + bodyoffset;
-
-        const availableTaskHeight = Math.max(120, window.innerHeight - (ganttScrollStartPx + ganttHeaderHeight));
-        const availableGanttHeight = Math.max(120, window.innerHeight - (ganttScrollStartPx + ganttHeaderHeight));
-        const unifiedScrollHeight = Math.floor(Math.max(availableTaskHeight, availableGanttHeight) - rowHeight - rowHeight - rowHeight);
-
-        document.documentElement.style.setProperty('--task-scroll-height', `${unifiedScrollHeight}px`);
-        document.documentElement.style.setProperty('--gantt-scroll-height', `${unifiedScrollHeight}px`);
-
-      }
       window.addEventListener('resize', () => {
         updateStickyMetrics();
       }, { passive: true });
@@ -5893,38 +3415,6 @@ ${formatDisplayDate(startDate)} (Single event)`;
         if (renderFrameHandle !== null) return;
         renderFrameHandle = requestAnimationFrame(performRenderCycle);
       }
-
-      function syncScrollPositions(source, target) {
-        if (!source || !target) return;
-        if (isSyncingScroll) return;
-        isSyncingScroll = true;
-        target.scrollTop = source.scrollTop;
-        requestAnimationFrame(() => {
-          isSyncingScroll = false;
-        });
-      }
-
-      let timelineHorizontalSyncFrame = null;
-
-      function updateTimelineHorizontalOffset() {
-        if (!timelineHeaderEl) return;
-        const offset = ganttBodyScrollEl ? Number(ganttBodyScrollEl.scrollLeft) || 0 : 0;
-        // Mirror the gantt body horizontal scroll so the header stays aligned.
-        if (Math.abs(offset) < 0.5) {
-          timelineHeaderEl.style.transform = '';
-        } else {
-          timelineHeaderEl.style.transform = `translateX(${-offset}px)`;
-        }
-      }
-
-      function scheduleTimelineHorizontalSync() {
-        if (timelineHorizontalSyncFrame !== null) return;
-        timelineHorizontalSyncFrame = requestAnimationFrame(() => {
-          timelineHorizontalSyncFrame = null;
-          updateTimelineHorizontalOffset();
-        });
-      }
-
       function attachEventListeners() {
         miniUnitButtons.forEach((button) => {
           button.addEventListener('click', () => {
@@ -6117,9 +3607,12 @@ ${formatDisplayDate(startDate)} (Single event)`;
         recomputeStanddownSet();
         renderAllImmediate();
         loadDatabase().then(() => {
-          const firstEnabled = Array.from(buildingTypeSelect.options || []).find((option) => !option.disabled);
-          if (firstEnabled) {
-            buildingTypeSelect.value = firstEnabled.value;
+          const enabledOptions = Array.from(buildingTypeSelect.options || []).filter((option) => !option.disabled && option.value);
+          const preferredOption = enabledOptions.find((option) => option.value === DEFAULT_BUILDING_TYPE);
+          const fallbackOption = enabledOptions[0];
+          const selectedOption = preferredOption || fallbackOption || null;
+          if (selectedOption) {
+            buildingTypeSelect.value = selectedOption.value;
             generateScheduleFromConfig();
           } else {
             tasks = [];
