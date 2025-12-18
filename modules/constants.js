@@ -1,16 +1,16 @@
 const TASK_COLOR_MAP = {
-  'Bond Bryan Design': '#00ccde',
-  'Bond Bryan review': '#ff8fad',
-  'CDP': '#ff8200',
-  'Client Comments': '#fff229',
-  'Delays': '#5cba45',
-  'Undefined': '#d1c9ba'
+  'Bond Bryan Design': '#ccf5f2',
+  'Bond Bryan review': '#00ccde',
+  'CDP': '#2b7a91',
+  'Client Comments': '#d1c9ba',
+  'Delays': '#b4b4b4ff',
+  'Undefined': '#8c8280'
 };
 
-const DEFAULT_SEGMENT_COLOR = '#00ccde';
-const STAGE_COLOR = '#d1c9ba';
-const SINGLE_EVENT_COLOR = '#5cba45';
-const SINGLE_EVENT_SELECTED_COLOR = '#ff8fad';
+const DEFAULT_SEGMENT_COLOR = '#ccf5f2';
+const STAGE_COLOR = '#ffd6d6';
+const SINGLE_EVENT_COLOR = '#41b74bff';
+const SINGLE_EVENT_SELECTED_COLOR = '#41b74bff';
 
 const colorConstants = Object.freeze({
   TASK_COLOR_MAP: Object.freeze({ ...TASK_COLOR_MAP }),
