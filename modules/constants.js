@@ -1,22 +1,22 @@
 const BASE_COLORS = Object.freeze({
-  accentPrimary: '#ffe5cc',
-  accentGreen: '#5cba45',
+  accentPrimary: '#000000ff',
+  accentGreen: '#ffffffff',
   accentPink: '#ff8fad',
   stageFill: '#ffd6d6',
-  bodyBackground: '#d1c9ba',
-  surfaceBase: '#fefffc',
-  surfaceAlt: '#d1c9ba',
-  borderDefault: '#d6dbe7',
-  textPrimary: '#1f2937',
-  textMuted: '#4b5563',
-  stageIdentifier: '#7c6c1f',
-  deadlineText: '#b45309',
-  deadlineBorder: '#d97706',
-  dangerText: '#dc2626',
+  bodyBackground: '#ffffffff',
+  surfaceBase: '#ffffffff',
+  surfaceAlt: '#ffffffff',
+  borderDefault: '#8c8280',
+  textPrimary: '#000000',
+  textMuted: '#8c8280',
+  stageIdentifier: '#ffd6d6',
+  deadlineText: '#c44f29',
+  deadlineBorder: '#c44f29',
+  dangerText: '#c44f29',
   white: '#ffffff',
   solidBlack: '#000000',
-  disabledSurface: '#f9fafb',
-  standdownText: '#334155'
+  disabledSurface: '#ffffffff',
+  standdownText: '#8c8280'
 });
 
 const TRANSPARENT_COLORS = Object.freeze({
