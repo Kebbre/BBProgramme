@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Architecture Project Planner</title>
   <link rel="stylesheet" href="styles/app.css">
+  <script type="module">
+    import { applyColorTheme } from './modules/constants.js';
+    applyColorTheme();
+  </script>
 </head>
 <body>
   <header class="top-bar">
@@ -246,7 +250,14 @@
     import { createPdfExporter } from "./export/pdf.js";
     import { createGanttController } from "./modules/gantt.js";
     import { createMiniTaskManager } from "./modules/miniTasks.js";
-    import colorConstants from "./modules/constants.js";
+    import colorConstants, {
+      TASK_COLOR_MAP as TASK_COLOR_MAP_FALLBACK,
+      DEFAULT_SEGMENT_COLOR as DEFAULT_SEGMENT_COLOR_FALLBACK,
+      STAGE_COLOR as STAGE_COLOR_FALLBACK,
+      SINGLE_EVENT_COLOR as SINGLE_EVENT_COLOR_FALLBACK,
+      SINGLE_EVENT_SELECTED_COLOR as SINGLE_EVENT_SELECTED_COLOR_FALLBACK,
+      applyColorTheme
+    } from "./modules/constants.js";
     import {
       createNestablePublicClientApplication,
       InteractionRequiredAuthError
@@ -254,17 +265,12 @@
 
     (async function () {
       const {
-        TASK_COLOR_MAP = {},
-        DEFAULT_SEGMENT_COLOR = '#ccf5f2',
-        STAGE_COLOR = '#ffd6d6',
-        SINGLE_EVENT_COLOR = '#41b74bff',
-        SINGLE_EVENT_SELECTED_COLOR = '#41b74bff'
+        TASK_COLOR_MAP = TASK_COLOR_MAP_FALLBACK,
+        DEFAULT_SEGMENT_COLOR = DEFAULT_SEGMENT_COLOR_FALLBACK,
+        STAGE_COLOR = STAGE_COLOR_FALLBACK,
+        SINGLE_EVENT_COLOR = SINGLE_EVENT_COLOR_FALLBACK,
+        SINGLE_EVENT_SELECTED_COLOR = SINGLE_EVENT_SELECTED_COLOR_FALLBACK
       } = colorConstants || {};
-      applyVisualThemeColors({
-        stage: STAGE_COLOR,
-        singleEvent: SINGLE_EVENT_COLOR,
-        singleEventSelected: SINGLE_EVENT_SELECTED_COLOR
-      });
       const MINI_TASK_OPTION_KEYS = Object.keys(TASK_COLOR_MAP || {});
       const MINI_TASK_OPTIONS = MINI_TASK_OPTION_KEYS.length
         ? MINI_TASK_OPTION_KEYS
@@ -323,20 +329,6 @@
           storeAuthStateInCookie: false
         }
       };
-      function applyVisualThemeColors(colors = {}) {
-        const root = document.documentElement;
-        if (!root) return;
-        const { stage, singleEvent, singleEventSelected } = colors;
-        if (typeof stage === 'string' && stage) {
-          root.style.setProperty('--stage-fill-color', stage);
-        }
-        if (typeof singleEvent === 'string' && singleEvent) {
-          root.style.setProperty('--single-event-marker-color', singleEvent);
-        }
-        if (typeof singleEventSelected === 'string' && singleEventSelected) {
-          root.style.setProperty('--single-event-marker-selected-color', singleEventSelected);
-        }
-      }
       let teamsChannelAutoLoadRequested = false;
       let hasAttemptedInitialTeamsAutoLoad = false;
       function sanitizeFilenameSegment(raw) {

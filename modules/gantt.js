@@ -1,7 +1,10 @@
-import colorConstants from './constants.js';
+import colorConstants, {
+  DEFAULT_SEGMENT_COLOR as DEFAULT_SEGMENT_COLOR_FALLBACK,
+  TASK_COLOR_MAP as TASK_COLOR_MAP_FALLBACK
+} from './constants.js';
 
-const TASK_COLOR_MAP = colorConstants?.TASK_COLOR_MAP || {};
-const DEFAULT_SEGMENT_COLOR = colorConstants?.DEFAULT_SEGMENT_COLOR || '#ccf5f2';
+const TASK_COLOR_MAP = colorConstants?.TASK_COLOR_MAP || TASK_COLOR_MAP_FALLBACK || {};
+const DEFAULT_SEGMENT_COLOR = colorConstants?.DEFAULT_SEGMENT_COLOR || DEFAULT_SEGMENT_COLOR_FALLBACK;
 const TASK_COLOR_LOOKUP = new Map(
   Object.entries(TASK_COLOR_MAP).map(([label, color]) => [String(label).trim().toLowerCase(), color])
 );
