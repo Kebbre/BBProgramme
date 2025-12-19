@@ -26,6 +26,7 @@ const TRANSPARENT_COLORS = Object.freeze({
   blackAlpha08: 'rgba(0,0,0,.08)',
   blackAlpha90: 'rgba(0,0,0,.9)',
   inkAlpha05: 'rgba(15,23,42,.05)',
+  shadowAlphaLight: 'rgba(15,23,42,.12)',
   stageShadow: 'rgba(212,163,18,.25)',
   dangerAlpha12: 'rgba(220,38,38,.12)',
   deadlineFill: 'rgba(253,224,140,.28)',
