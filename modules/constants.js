@@ -40,7 +40,7 @@ const TRANSPARENT_COLORS = Object.freeze({
 const SPECIAL_SURFACES = Object.freeze({
   neutral245: 'rgb(245,245,245)',
   standdownBackground: 'rgba(230,232,235,0.9)',
-  gridDayBackground: 'rgba(255, 255, 255, 0.95)',
+  gridDayBackground: 'rgba(255, 255, 255, 0.82)',
   surfaceOverlay: 'rgba(248,250,255,.9)',
   tableRowAlternate: 'rgba(248,250,255,.7)'
 });

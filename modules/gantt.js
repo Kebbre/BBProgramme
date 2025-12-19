@@ -1088,10 +1088,11 @@ export function createGanttController({
       const grid = document.createElement('div');
       grid.className = 'gantt-grid';
       grid.style.gridTemplateColumns = `repeat(${state.timelineDays.length}, ${dayWidth}px)`;
-      state.timelineDays.forEach((_, index) => {
+      state.timelineDays.forEach((day, index) => {
         const cell = document.createElement('div');
         cell.className = 'day-cell';
         if (index % 5 === 0) cell.classList.add('week-start');
+        if (day.getUTCDay() === 1) cell.classList.add('is-monday');
         const highlightSet = dayHighlightMap[index] || new Set();
         if (highlightSet.has('today')) cell.classList.add('today');
         if (highlightSet.has('deadline')) cell.classList.add('milestone-deadline');
