@@ -107,7 +107,7 @@ textarea{resize:vertical;min-height:96px;}
 .timeline-header .timeline-month{font-weight:var(--text-general-font-weight,600);font-size:var(--text-general-font-size,.8rem);color:var(--text-general-color,var(--color-text-primary));background:var(--color-accent-blue);}
 .timeline-header .timeline-week{background:var(--color-white);color:var(--color-solid-black);}
 .timeline-header .timeline-day-name,
-.timeline-header .timeline-day-number{display:flex;align-items:center;justify-content:center;padding:.35rem .25rem;border-left:1px solid var(--color-ink-alpha05);background:var(--color-accent-blue);}
+.timeline-header .timeline-day-number{display:flex;align-items:center;justify-content:center;padding:.35rem .25rem;border-left:1px solid var(--color-ink-alpha05);background:transparent;}
 .timeline-header > *{position:relative;z-index:2;}
 .timeline-header .timeline-year,
 .timeline-header .timeline-month,
