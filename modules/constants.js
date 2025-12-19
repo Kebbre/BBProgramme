@@ -8,15 +8,14 @@ const BASE_COLORS = Object.freeze({
   surfaceAlt: '#ffffffff',
   borderDefault: '#8c8280',
   textPrimary: '#000000',
-  textMuted: '#8c8280',
+  textMuted: '#000000',
   stageIdentifier: '#ffd6d6',
-  deadlineText: '#c44f29',
-  deadlineBorder: '#c44f29',
+  deadlineColor: '#c44f29',
   dangerText: '#c44f29',
   white: '#ffffff',
   solidBlack: '#000000',
   disabledSurface: '#ffffffff',
-  standdownText: '#8c8280'
+  standdownText: '#000000'
 });
 
 const TRANSPARENT_COLORS = Object.freeze({

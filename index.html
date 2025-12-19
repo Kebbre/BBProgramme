@@ -17,27 +17,31 @@
         <h1>Project ABCDE</h1>
       </div>
     </div>
-    <div class="top-bar-row primary-actions-row">
-      <div class="button-row">
+    <div class="top-bar-row action-row row-one">
+      <div class="action-group">
         <button type="button" id="generateScheduleBtn">Generate Schedule</button>
-        <button type="button" id="scheduleSettingsBtn" class="secondary">Schedule Settings</button>
-        <button type="button" id="delayScheduleBtn" class="secondary">Delays Schedule</button>
-        <button type="button" id="graphAuthBtn" class="secondary">Sign in to OneDrive</button>
-        <button type="button" id="saveProgrammeBtn" class="secondary">Save Programme</button>
-        <button type="button" id="loadProgrammeBtn" class="secondary">Load Programme</button>
+        <button type="button" id="graphAuthBtn">Sign in to OneDrive</button>
         <button type="button" id="savePdfBtn">Save PDF</button>
       </div>
+      <div class="legend-wrapper">
+        <div class="legend" id="taskLegend"></div>
+      </div>
     </div>
-    <div class="top-bar-row legend-row">
-      <div class="legend" id="taskLegend"></div>
+    <div class="top-bar-row action-row row-two">
+      <div class="action-group">
+        <button type="button" id="saveProgrammeBtn">Save Programme</button>
+        <button type="button" id="loadProgrammeBtn">Load Programme</button>
+        <button type="button" id="scheduleSettingsBtn">Schedule Settings</button>
+        <button type="button" id="delayScheduleBtn">Delays Schedule</button>
+      </div>
     </div>
-    <div class="top-bar-row secondary-actions-row">
+    <div class="top-bar-row action-row row-three">
       <div class="sidebar-actions top-bar-sidebar-actions">
         <button id="addTaskBtn" type="button">＋ New</button>
-        <button id="removeTaskBtn" class="secondary" type="button" disabled>- Remove</button>
-        <button id="editTaskBtn" class="secondary" type="button" disabled>Edit</button>
-        <button id="moveUpBtn" class="secondary icon-btn" type="button" disabled title="Move task up" aria-label="Move task up">↑</button>
-        <button id="moveDownBtn" class="secondary icon-btn" type="button" disabled title="Move task down" aria-label="Move task down">↓</button>
+        <button id="removeTaskBtn" type="button" disabled>- Remove</button>
+        <button id="editTaskBtn" type="button" disabled>Edit</button>
+        <button id="moveUpBtn" class="icon-btn" type="button" disabled title="Move task up" aria-label="Move task up">↑</button>
+        <button id="moveDownBtn" class="icon-btn" type="button" disabled title="Move task down" aria-label="Move task down">↓</button>
       </div>
       <div class="timeline-controls">
         <div class="view-mode-toggle" role="group" aria-label="Timeline view mode">
