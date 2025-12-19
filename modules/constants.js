@@ -8,7 +8,7 @@ const BASE_COLORS = Object.freeze({
   surfaceAlt: '#ffffffff',
   borderDefault: '#8c8280',
   textPrimary: '#000000',
-  textMuted: '#000000',
+  textMuted: '#555555ff',
   stageIdentifier: '#ffd6d6',
   deadlineColor: '#c44f29',
   dangerText: '#c44f29',
@@ -50,6 +50,29 @@ const MINI_SEGMENT_COLORS = Object.freeze({
   miniPurple: 'rgba(137,87,229,.85)',
   miniAqua: 'rgba(64,193,213,.85)',
   miniOrange: 'rgba(231,120,67,.85)'
+});
+
+const TEXT_STYLES = Object.freeze({
+  textTitle: {
+    fontSize: '1.2rem',
+    fontWeight: 700,
+    color: BASE_COLORS.textPrimary
+  },
+  textButton: {
+    fontSize: '.95rem',
+    fontWeight: 600,
+    color: BASE_COLORS.textPrimary
+  },
+  textSmall: {
+    fontSize: '.65rem',
+    fontWeight: 450,
+    color: BASE_COLORS.textMuted
+  },
+  textGeneral: {
+    fontSize: '.8rem',
+    fontWeight: 550,
+    color: BASE_COLORS.textPrimary
+  }
 });
 
 const TASK_COLOR_MAP = Object.freeze({
@@ -117,6 +140,7 @@ const colorConstants = Object.freeze({
   TRANSPARENT_COLORS,
   SPECIAL_SURFACES,
   MINI_SEGMENT_COLORS,
+  TEXT_STYLES,
   CSS_VARIABLE_MAP,
   applyColorTheme
 });
@@ -132,6 +156,7 @@ export {
   TRANSPARENT_COLORS,
   SPECIAL_SURFACES,
   MINI_SEGMENT_COLORS,
+  TEXT_STYLES,
   CSS_VARIABLE_MAP,
   applyColorTheme
 };
