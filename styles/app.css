@@ -80,7 +80,7 @@ textarea{resize:vertical;min-height:96px;}
 .task-name{display:flex;align-items:center;font-size:inherit;font-weight:var(--text-general-font-weight,600);color:var(--text-general-color,var(--color-text-primary));}
 .task-duration{font-size:var(--text-text-small-font-size,.65rem);font-weight:var(--text-text-small-font-weight,450);text-align:center;padding:.3rem .5rem;border-radius:0px;;color:var(--text-text-small-color,var(--color-text-muted));height:30px;display:inline-flex;align-items:center;justify-content:center;line-height:1;}
 .task-progress{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:.2rem;height:100%;}
-.task-row input[type="date"],.task-row input[type="number"]{font-size:var(--text-general-font-size,.8rem);padding:.25rem .4rem;height:30px;line-height:30px;}
+.task-row input[type="date"],.task-row input[type="number"]{font-size:var(--text-text-small-font-size,.65rem);padding:.25rem .4rem;height:30px;line-height:30px;}
 .task-row input[type="date"]{width:100%;}
 .task-progress input{text-align:right;width:68px;min-width:unset;padding-right:1.3rem;}
 .task-progress span{position:relative;right:.35rem;transform:none;font-size:var(--text-general-font-size,.8rem);color:var(--text-general-color,var(--color-text-primary));}
