@@ -16,7 +16,7 @@ textarea{resize:vertical;min-height:96px;}
 .project-heading{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;justify-content:flex-start;}
 .project-heading h1{font-size:.95rem;font-weight:var(--text-general-font-weight,600);}
 .action-group{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;}
-.app-logo{height:3.5rem;width:auto;display:block;}
+.app-logo{height:3rem;width:auto;display:block;}
 .hamburger-btn{border:1px solid var(--border);background:var(--color-white);color:var(--color-solid-black);border-radius:0px;width:2.5rem;height:2.5rem;display:inline-flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;transition:transform .15s ease,border-color .15s ease;}
 .hamburger-btn:hover{transform:translateY(-1px);border-color:var(--color-slate-alpha01);}
 .menu-row{position:absolute;top:100%;left:0;padding:.6rem;background:var(--color-white);border:1px solid var(--border);box-shadow:0 10px 24px var(--color-shadow-alpha-light);border-radius:0px;min-width:15rem;width:15rem;z-index:100;display:block;margin-top:.4rem;}
