@@ -89,7 +89,7 @@ textarea{resize:vertical;min-height:96px;}
 .timeline-header{position:sticky;top:var(--timeline-header-top, calc(var(--top-offset) + var(--content-offset)));z-index:5;display:grid;background:var(--color-white);border-bottom:1px solid var(--border);box-shadow:0 4px 12px var(--color-shadow-alpha-light);grid-auto-flow:column;height:var(--timeline-header-height);min-height:var(--timeline-header-height);align-content:stretch;}
 .timeline-header .timeline-year,
 .timeline-header .timeline-month,
-.timeline-header .timeline-week{display:flex;align-items:center;justify-content:center;padding:.4rem .6rem;font-weight:var(--text-general-font-weight,600);font-size:var(--text-general-font-size,.8rem);color:var(--text-general-color,var(--color-text-primary));border-left:1px solid var(--color-ink-alpha05);background:var(--color-shadow-alpha-light);}
+.timeline-header .timeline-week{display:flex;align-items:center;justify-content:center;padding:.4rem .6rem;font-weight:var(--text-general-font-weight,600);font-size:var(--text-general-font-size,.8rem);color:var(--text-general-color,var(--color-text-primary));border-left:1px solid var(--color-ink-alpha05);background:var(--color-accent-bluet);}
 .timeline-header .timeline-month{font-weight:var(--text-general-font-weight,600);font-size:var(--text-general-font-size,.8rem);color:var(--text-general-color,var(--color-text-primary));background:var(--color-accent-blue);}
 .timeline-header .timeline-week{background:var(--color-white);color:var(--color-solid-black);}
 .timeline-header .timeline-day-name,
