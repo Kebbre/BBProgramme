@@ -111,7 +111,7 @@ textarea{resize:vertical;min-height:96px;}
 .timeline-highlight{background:var(--color-danger-alpha12);border-left:2px solid transparent;border-right:2px solid transparent;border-radius:0px;pointer-events:none;position:absolute;z-index:1;}
 .timeline-highlight--today{background:var(--color-danger-alpha12);border-color:var(--color-danger-text);}
 .timeline-highlight--deadline{background:var(--color-deadline-fill);border-color:var(--color-deadline-color);}
-.timeline-highlight--standdown{background:repeating-linear-gradient(135deg,var(--color-white)0,var(--color-slate-alpha01)8px,var(--color-white)8px,var(--color-slate-alpha01)16px);background-attachment:fixed; background-position: 0 0 ;border:none;box-shadow:inset 0 0 0 1px var(--color-slate-alpha01);z-index:2;}
+.timeline-highlight--standdown{background-color:var(--color-shadow-alpha-light);background-image:repeating-linear-gradient(135deg,var(--color-white)0,var(--color-white)3px,transparent 3px,transparent 16px);background-attachment:fixed; background-position: 0 0 ;border:none;box-shadow:inset 0 0 0 1px var(--color-slate-alpha01);z-index:2;}
 .timeline-header.week-view .timeline-highlight{border-radius:0px;}
 .timeline-header .timeline-header-label{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none;}
 .timeline-header .timeline-day-name.today,
@@ -164,7 +164,7 @@ textarea{resize:vertical;min-height:96px;}
 .gantt-grid .day-cell::before{background:transparent;opacity:0;}
 .gantt-grid .day-cell.milestone-deadline::before{background:var(--color-deadline-fill);border-left:2px solid var(--color-deadline-color);border-right:2px solid var(--color-deadline-color);opacity:1;}
 .gantt-grid .day-cell.milestone-standdown{border-left-color:transparent;}
-.gantt-grid .day-cell.milestone-standdown::before{background-color:var(--color-standdown-background);background-image:repeating-linear-gradient(135deg,var(--color-slate-alpha01)0,var(--color-slate-alpha01)3px,var(--color-slate-alpha01)3px,var(--color-slate-alpha01)16px);background-attachment:fixed;background-position:0 0;opacity:1;border-left:0;border-right:0;z-index:1;left:-1px;right:-1px;}
+.gantt-grid .day-cell.milestone-standdown::before{background-color:var(--color-shadow-alpha-light);background-image:repeating-linear-gradient(135deg,var(--color-white)0,var(--color-white)3px,transparent 3px,transparent 16px);background-attachment:fixed;background-position:0 0;opacity:1;border-left:0;border-right:0;z-index:1;left:-1px;right:-1px;}
 .gantt-grid .day-cell.milestone-standdown-start::before{border-left:1px solid var(--color-slate-alpha01);}
 .gantt-grid .day-cell.milestone-standdown-end::before{border-right:1px solid var(--color-slate-alpha01);}
 .gantt-grid .day-cell.milestone-standdown-start.milestone-standdown-end::before{border-left:1px solid var(--color-slate-alpha01);border-right:1px solid var(--color-slate-alpha01);}
@@ -200,7 +200,7 @@ textarea{resize:vertical;min-height:96px;}
 .mini-segment.locked .mini-handle{cursor:not-allowed;background:transparent;opacity:.2;}
 .mini-segment.locked .mini-handle:hover{background:transparent;}
 .standdown-layer{position:absolute;inset:0;pointer-events:none;z-index:5;}
-.standdown-gap{position:absolute;top:-2px;bottom:-2px;background-color:var(--color-standdown-background);background-image:repeating-linear-gradient(135deg,var(--color-slate-alpha01)0,var(--color-slate-alpha01)3px,var(--color-slate-alpha01)3px,var(--color-slate-alpha01)16px);background-attachment:fixed;background-position:0 0;border:none;box-shadow:inset 0 0 0 1px var(--color-slate-alpha01);border-radius:0px;}
+.standdown-gap{position:absolute;top:-2px;bottom:-2px;background-color:var(--color-shadow-alpha-light);background-image:repeating-linear-gradient(135deg,var(--color-white)0,var(--color-white)3px,transparent 3px,transparent 16px);background-attachment:fixed;background-position:0 0;border:none;box-shadow:inset 0 0 0 1px var(--color-slate-alpha01);border-radius:0px;}
 .standdown-gap.standdown-gap-start{border-top-left-radius:0px;border-bottom-left-radius:0px;box-shadow:inset 1px 0 0 var(--color-slate-alpha01), inset 0 0 0 1px var(--color-slate-alpha01);}
 .standdown-gap.standdown-gap-end{border-top-right-radius:0px;border-bottom-right-radius:0px;box-shadow:inset -1px 0 0 var(--color-slate-alpha01), inset 0 0 0 1px var(--color-slate-alpha01);}
 .standdown-gap.standdown-gap-start.standdown-gap-end{box-shadow:inset 1px 0 0 var(--color-slate-alpha01), inset -1px 0 0 var(--color-slate-alpha01), inset 0 0 0 1px var(--color-slate-alpha01);}
