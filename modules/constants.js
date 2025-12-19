@@ -89,11 +89,19 @@ const STAGE_COLOR = BASE_COLORS.stageFill;
 const SINGLE_EVENT_COLOR = BASE_COLORS.accentGreen;
 const SINGLE_EVENT_SELECTED_COLOR = BASE_COLORS.accentPink;
 
-function toCssVariableName(key = '') {
-  return `--color-${String(key)
+function toKebabCaseToken(key = '') {
+  return String(key)
     .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
     .replace(/_/g, '-')
-    .toLowerCase()}`;
+    .toLowerCase();
+}
+
+function toCssVariableName(key = '') {
+  return `--color-${toKebabCaseToken(key)}`;
+}
+
+function toTextCssVariableName(styleKey = '', propertyKey = '') {
+  return `--text-${toKebabCaseToken(styleKey)}-${toKebabCaseToken(propertyKey)}`;
 }
 
 const COLOR_GROUPS_FOR_CSS = [
@@ -103,19 +111,33 @@ const COLOR_GROUPS_FOR_CSS = [
   MINI_SEGMENT_COLORS
 ];
 
-const CSS_VARIABLE_MAP = Object.freeze(
-  COLOR_GROUPS_FOR_CSS.reduce((acc, group) => {
-    Object.entries(group).forEach(([token, value]) => {
-      acc[toCssVariableName(token)] = value;
+const COLOR_CSS_VARIABLE_MAP = COLOR_GROUPS_FOR_CSS.reduce((acc, group) => {
+  Object.entries(group).forEach(([token, value]) => {
+    acc[toCssVariableName(token)] = value;
+  });
+  return acc;
+}, {});
+
+const TYPOGRAPHY_VARIABLE_MAP = Object.entries(TEXT_STYLES).reduce(
+  (acc, [styleName, styleValues]) => {
+    Object.entries(styleValues).forEach(([property, value]) => {
+      const cssVarName = toTextCssVariableName(styleName, property);
+      acc[cssVarName] = value;
     });
     return acc;
-  }, {})
+  },
+  {}
 );
+
+const CSS_VARIABLE_MAP = Object.freeze({
+  ...COLOR_CSS_VARIABLE_MAP,
+  ...TYPOGRAPHY_VARIABLE_MAP
+});
 
 function normaliseOverrideMap(overrides = {}) {
   return Object.entries(overrides).reduce((acc, [key, value]) => {
     if (value == null) return acc;
-    const cssVarName = key.startsWith('--color-') ? key : toCssVariableName(key);
+    const cssVarName = key.startsWith('--') ? key : toCssVariableName(key);
     acc[cssVarName] = value;
     return acc;
   }, {});
