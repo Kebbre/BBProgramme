@@ -240,6 +240,25 @@
     </div>
   </div>
 
+  <script>
+    (function () {
+      const hamburgerBtn = document.querySelector('.hamburger-btn');
+      const primaryMenu = document.getElementById('primaryMenu');
+      if (!hamburgerBtn || !primaryMenu) return;
+      const toggleMenu = () => {
+        const isOpen = !primaryMenu.hasAttribute('hidden');
+        if (isOpen) {
+          primaryMenu.setAttribute('hidden', '');
+          hamburgerBtn.setAttribute('aria-expanded', 'false');
+        } else {
+          primaryMenu.removeAttribute('hidden');
+          hamburgerBtn.setAttribute('aria-expanded', 'true');
+        }
+      };
+      hamburgerBtn.addEventListener('click', toggleMenu);
+    })();
+  </script>
+
   <script src="https://res.cdn.office.net/teams-js/v2.17.0/js/MicrosoftTeams.min.js" crossorigin="anonymous"></script>
   <script type="importmap">
     {

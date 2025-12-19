@@ -19,8 +19,9 @@ textarea{resize:vertical;min-height:96px;}
 .hamburger-btn{border:1px solid var(--border);background:var(--color-white);color:var(--color-solid-black);border-radius:0px;width:2.5rem;height:2.5rem;display:inline-flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;transition:transform .15s ease,border-color .15s ease;}
 .hamburger-btn:hover{transform:translateY(-1px);border-color:var(--color-slate-alpha01);}
 .menu-row{padding-top:0;}
-.menu-actions{display:flex;flex-wrap:wrap;gap:.5rem;width:100%;}
-.menu-actions button{min-width:10rem;}
+.menu-row[hidden]{display:none!important;}
+.menu-actions{display:flex;flex-direction:column;align-items:flex-start;gap:.35rem;width:100%;}
+.menu-actions button{min-width:12rem;text-align:left;}
 .legend-wrapper{display:flex;align-items:center;justify-content:flex-end;flex:1 0 auto;margin-left:auto;}
 .row-three .timeline-controls{margin-left:auto;justify-content:flex-end;}
 .row-three{align-items:stretch;}
