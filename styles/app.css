@@ -162,7 +162,7 @@ textarea{resize:vertical;min-height:96px;}
 .gantt-row.stage-child .task-label{padding-left:1rem;}
 .gantt-grid{position:absolute;inset:0;display:grid;pointer-events:none;z-index:0;}
 .gantt-grid .day-cell{position:relative;border-left:1px solid var(--color-ink-alpha05);background:var(--color-grid-day-background);}
-.gantt-grid .day-cell:nth-child(5n+1){background:var(--color-white);}
+.gantt-grid .day-cell.is-monday{background:var(--color-white);}
 .gantt-grid .day-cell::before,
 .gantt-grid .day-cell::after{content:"";position:absolute;top:0;bottom:0;left:0;right:0;border-radius:0px;pointer-events:none;}
 .gantt-grid .day-cell::before{background:transparent;opacity:0;}
