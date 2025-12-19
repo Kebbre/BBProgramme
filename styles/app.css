@@ -9,7 +9,7 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 6px 12px var
 input,textarea{font:inherit;border-radius:0px;border:1px solid var(--border);padding:.35rem .5rem;width:100%;background:var(--color-white);color:inherit;}
 input:focus,textarea:focus{outline:2px solid var(--color-white);border-color:transparent;}
 textarea{resize:vertical;min-height:96px;}
-.top-bar{display:flex;flex-direction:column;gap:.9rem;padding:1rem 1.5rem;background:var(--color-white);border-bottom:1px solid var(--border);box-shadow:0 2px 8px var(--color-shadow-alpha-light);position:sticky;top:0;z-index:6;}
+.top-bar{display:flex;flex-direction:column;gap:.9rem;padding:1rem 1.5rem;background:var(--color-white);border-bottom:1px solid var(--border);box-shadow:0 2px 8px var(--color-shadow-alpha-light);position:sticky;top:0;z-index:50;}
 .top-bar-row{display:flex;align-items:flex-start;gap:1rem;flex-wrap:wrap;justify-content:space-between;width:100%;}
 .top-bar-row.heading-row{justify-content:flex-start;align-items:center;position:relative;}
 .top-bar-row.action-row{align-items:center;}
