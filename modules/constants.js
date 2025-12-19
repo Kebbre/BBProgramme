@@ -3,7 +3,7 @@ const BASE_COLORS = Object.freeze({
   accentGreen: '#ffffffff',
   accentPink: '#ff8fad',
   accentBlue: '#2B7A91',
-  stageFill: '#D1A67D',
+  stageFill: '#2B7A91',
   bodyBackground: '#ffffffff',
   surfaceBase: '#ffffffff',
   surfaceAlt: '#ffffffff',
@@ -25,7 +25,7 @@ const TRANSPARENT_COLORS = Object.freeze({
   accentLegacy: ACCENT_LEGACY_VALUE,
   blackAlpha08: 'rgba(0,0,0,.08)',
   blackAlpha90: 'rgba(0,0,0,.9)',
-  inkAlpha05: 'rgba(15,23,42,.05)',
+  inkAlpha05: 'rgba(114, 129, 164, 0.25)', // grid display
   shadowAlphaLight: 'rgba(15,23,42,.12)',
   stageShadow: 'rgba(212,163,18,.25)',
   dangerAlpha12: 'rgba(220,38,38,.12)',
@@ -40,7 +40,7 @@ const TRANSPARENT_COLORS = Object.freeze({
 const SPECIAL_SURFACES = Object.freeze({
   neutral245: 'rgb(245,245,245)',
   standdownBackground: 'rgba(230,232,235,0.9)',
-  gridDayBackground: 'rgba(240,243,248,.9)',
+  gridDayBackground: 'rgba(255, 255, 255, 0.95)',
   surfaceOverlay: 'rgba(248,250,255,.9)',
   tableRowAlternate: 'rgba(248,250,255,.7)'
 });
