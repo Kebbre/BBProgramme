@@ -245,17 +245,45 @@
       const hamburgerBtn = document.querySelector('.hamburger-btn');
       const primaryMenu = document.getElementById('primaryMenu');
       if (!hamburgerBtn || !primaryMenu) return;
+
+      const closeMenu = () => {
+        primaryMenu.setAttribute('hidden', '');
+        hamburgerBtn.setAttribute('aria-expanded', 'false');
+      };
+
+      const openMenu = () => {
+        primaryMenu.removeAttribute('hidden');
+        hamburgerBtn.setAttribute('aria-expanded', 'true');
+      };
+
       const toggleMenu = () => {
         const isOpen = !primaryMenu.hasAttribute('hidden');
         if (isOpen) {
-          primaryMenu.setAttribute('hidden', '');
-          hamburgerBtn.setAttribute('aria-expanded', 'false');
+          closeMenu();
         } else {
-          primaryMenu.removeAttribute('hidden');
-          hamburgerBtn.setAttribute('aria-expanded', 'true');
+          openMenu();
         }
       };
-      hamburgerBtn.addEventListener('click', toggleMenu);
+
+      hamburgerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleMenu();
+      });
+
+      document.addEventListener('click', (e) => {
+        if (primaryMenu.hasAttribute('hidden')) return;
+        if (primaryMenu.contains(e.target) || hamburgerBtn.contains(e.target)) return;
+        closeMenu();
+      });
+
+      primaryMenu.addEventListener('focusout', (e) => {
+        if (!primaryMenu.hasAttribute('hidden')) {
+          const next = e.relatedTarget;
+          if (!primaryMenu.contains(next) && !hamburgerBtn.contains(next)) {
+            closeMenu();
+          }
+        }
+      });
     })();
   </script>
 
