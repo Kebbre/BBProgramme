@@ -2,8 +2,8 @@ const BASE_COLORS = Object.freeze({
   accentPrimary: '#000000ff',
   accentGreen: '#ffffffff',
   accentPink: '#ff8fad',
-  accentBlue: '#00ccde',
-  stageFill: '#ffd6d6',
+  accentBlue: '#2B7A91',
+  stageFill: '#D1A67D',
   bodyBackground: '#ffffffff',
   surfaceBase: '#ffffffff',
   surfaceAlt: '#ffffffff',
@@ -79,11 +79,11 @@ const TEXT_STYLES = Object.freeze({
 
 const TASK_COLOR_MAP = Object.freeze({
   'Bond Bryan Design': '#ccf5f2',
-  'Bond Bryan review': '#00ccde',
-  'CDP': '#2b7a91',
-  'Client Comments': '#d1c9ba',
-  'Delays': '#b4b4b4ff',
-  'Undefined': '#8c8280'
+  'Bond Bryan review': '#e5f0cf',
+  'CDP': ' #ffd6d6',
+  'Client Comments': '#FFE5CC',
+  'Delays': '#fffade',
+  'Undefined': '#c0bdbdff'
 });
 
 const DEFAULT_SEGMENT_COLOR = '#ccf5f2';
