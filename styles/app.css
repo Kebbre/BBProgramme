@@ -94,7 +94,7 @@ textarea{resize:vertical;min-height:96px;}
 .view-mode-toggle button.active{border-color:var(--color-deadlineColor);box-shadow:0 0 0 1px var(--color-deadlineColor);}
 .view-mode-toggle button:focus-visible{outline:2px solid var(--color-deadlineColor);outline-offset:2px;}
 .zoom-controls{display:inline-flex;align-items:center;gap:.4rem;}
-.zoom-controls button{border:1px solid var(--border);background:var(--color-white);color:var(--color-solid-black);font-weight:var(--text-button-font-weight,700);padding:.28rem .6rem;border-radius:0px;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease;width:3rem;min-width:3rem;}
+.zoom-controls button{border:1px solid var(--border);background:var(--color-white);color:var(--color-solid-black);font-weight:var(--text-button-font-weight,700);padding:.28rem .6rem;border-radius:0px;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease;width:2rem;min-width:2rem;}
 .zoom-controls button:hover:not(:disabled){border-color:var(--color-slate-alpha01);}
 .zoom-controls button:disabled{cursor:not-allowed;opacity:.45;}
 .zoom-controls button:focus-visible{outline:2px solid var(--color-deadlineColor);outline-offset:2px;}
