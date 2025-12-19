@@ -37,7 +37,6 @@
           <div class="task-header-actions">
             <button id="addTaskBtn" type="button">＋</button>
             <button id="removeTaskBtn" type="button" disabled>-</button>
-            <button id="editTaskBtn" type="button" disabled>Edit</button>
             <button id="moveUpBtn" class="icon-btn" type="button" disabled title="Move task up" aria-label="Move task up">↑</button>
             <button id="moveDownBtn" class="icon-btn" type="button" disabled title="Move task down" aria-label="Move task down">↓</button>
           </div>
@@ -62,6 +61,7 @@
       </main>
     </div>
   </div>
+  <button id="editTaskBtn" class="floating-edit-btn" type="button" disabled>Edit</button>
 
   <div class="footer-controls">
     <div class="legend-wrapper">
@@ -866,6 +866,7 @@
       let draggedTaskId = null;
       let currentMode = 'create';
       let editingTaskId = null;
+      let hoverEditTaskId = null;
       let databaseRecords = [];
       let standdownDateSet = new Set();
       let milestones = [];
@@ -888,6 +889,7 @@
       const plannerViewportEl = document.getElementById('plannerViewport');
       const taskListHeaderEl = document.querySelector('.task-list-header');
       const taskListScrollEl = document.querySelector('.task-list-scroll');
+      const floatingEditBtn = document.getElementById('editTaskBtn');
       const ganttBodyScrollEl = document.querySelector('.gantt-body-scroll');
       const topBarEl = document.querySelector('.top-bar');
       const modalBackdrop = document.getElementById('modalBackdrop');
@@ -2700,6 +2702,25 @@
         if (removeTaskBtn) removeTaskBtn.disabled = !hasSelection;
       }
 
+      function hideFloatingEdit() {
+        hoverEditTaskId = null;
+        if (floatingEditBtn) {
+          floatingEditBtn.style.display = 'none';
+        }
+      }
+
+      function showFloatingEdit(targetRow) {
+        if (!floatingEditBtn || !targetRow) return;
+        const rect = targetRow.getBoundingClientRect();
+        const btnHeight = floatingEditBtn.offsetHeight || 32;
+        const btnWidth = floatingEditBtn.offsetWidth || 64;
+        const top = rect.top + rect.height / 2 - btnHeight / 2;
+        const left = rect.right - btnWidth - 6;
+        floatingEditBtn.style.display = 'inline-flex';
+        floatingEditBtn.style.top = `${top}px`;
+        floatingEditBtn.style.left = `${left}px`;
+      }
+
       function moveTaskRelative(sourceId, targetId, insertAfter = false) {
         if (!sourceId || !targetId || sourceId === targetId) return;
         const sourceIndex = tasks.findIndex((task) => task.id === sourceId);
@@ -3602,6 +3623,13 @@
         if (removeTaskBtn) {
           removeTaskBtn.addEventListener('click', () => removeSelectedTask());
         }
+        if (floatingEditBtn) {
+          floatingEditBtn.addEventListener('click', () => {
+            if (hoverEditTaskId && hoverEditTaskId !== selectedTaskId) {
+              selectTask(hoverEditTaskId);
+            }
+          }, true);
+        }
         editTaskBtn.addEventListener('click', () => {
           if (!selectedTaskId) return;
           openTaskModal('edit', selectedTaskId);
@@ -3616,6 +3644,27 @@
             setTimelineViewMode(button.dataset.viewMode);
           });
         });
+
+        taskListEl.addEventListener('mouseover', (event) => {
+          const row = event.target.closest('.task-row');
+          if (!row || !taskListEl.contains(row)) return;
+          hoverEditTaskId = row.dataset?.taskId || null;
+          if (hoverEditTaskId && floatingEditBtn) {
+            floatingEditBtn.disabled = false;
+            showFloatingEdit(row);
+          }
+        });
+
+        taskListEl.addEventListener('mouseleave', (event) => {
+          const toElement = event.relatedTarget;
+          if (floatingEditBtn && (floatingEditBtn === toElement || floatingEditBtn.contains(toElement))) return;
+          hideFloatingEdit();
+        });
+
+        taskListScrollEl.addEventListener('scroll', hideFloatingEdit);
+        if (ganttBodyScrollEl) {
+          ganttBodyScrollEl.addEventListener('scroll', hideFloatingEdit);
+        }
 
         modalStartDate.addEventListener('change', () => {
           modalStartDate.value = formatDate(ensureWeekday(parseDate(modalStartDate.value), 1));
