@@ -105,7 +105,7 @@ textarea{resize:vertical;min-height:96px;}
 .timeline-highlight{background:var(--color-danger-alpha12);border-left:2px solid transparent;border-right:2px solid transparent;border-radius:0px;pointer-events:none;position:absolute;z-index:1;}
 .timeline-highlight--today{background:var(--color-danger-alpha12);border-color:var(--color-danger-text);}
 .timeline-highlight--deadline{background:var(--color-deadline-fill);border-color:var(--color-deadline-color);}
-.timeline-highlight--standdown{background:repeating-linear-gradient(135deg,var(--color-slate-alpha01)0,var(--color-slate-alpha01)8px,var(--color-slate-alpha01)8px,var(--color-slate-alpha01)16px);background-attachment:fixed; background-position: 0 0 ;border:none;box-shadow:inset 0 0 0 1px var(--color-slate-alpha01);z-index:2;}
+.timeline-highlight--standdown{background:repeating-linear-gradient(135deg,var(--color-white)0,var(--color-slate-alpha01)8px,var(--color-white)8px,var(--color-slate-alpha01)16px);background-attachment:fixed; background-position: 0 0 ;border:none;box-shadow:inset 0 0 0 1px var(--color-slate-alpha01);z-index:2;}
 .timeline-header.week-view .timeline-highlight{border-radius:0px;}
 .timeline-header .timeline-header-label{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none;}
 .timeline-header .timeline-day-name.today,
