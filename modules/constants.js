@@ -18,20 +18,11 @@ const BASE_COLORS = Object.freeze({
   standdownText: '#000000'
 });
 
+const ACCENT_LEGACY_VALUE = 'rgba(0,204,222,.24)';
+
 const TRANSPARENT_COLORS = Object.freeze({
-  accentAlpha02: 'rgba(0,204,222,.02)',
-  accentAlpha05: 'rgba(0,204,222,.05)',
-  accentAlpha08: 'rgba(0,204,222,.08)',
-  accentAlpha12: 'rgba(0,204,222,.12)',
-  accentAlpha18: 'rgba(0,204,222,.18)',
-  accentAlpha24: 'rgba(0,204,222,.24)',
-  accentAlpha35: 'rgba(0,204,222,.35)',
-  accentAlpha45: 'rgba(0,204,222,.45)',
-  accentAlpha55: 'rgba(0,204,222,.55)',
-  accentAlpha60: 'rgba(0,204,222,.6)',
-  accentAlpha88: 'rgba(0,204,222,.88)',
+  accentLegacy: ACCENT_LEGACY_VALUE,
   blackAlpha08: 'rgba(0,0,0,.08)',
-  blackAlpha72: 'rgba(0,0,0,.72)',
   blackAlpha90: 'rgba(0,0,0,.9)',
   inkAlpha05: 'rgba(15,23,42,.05)',
   stageShadow: 'rgba(212,163,18,.25)',
