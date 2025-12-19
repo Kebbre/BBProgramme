@@ -137,7 +137,7 @@ textarea{resize:vertical;min-height:96px;}
 .timeline-header .timeline-day-number.milestone-standdown-start.milestone-standdown-end,
 .timeline-header .timeline-week.milestone-standdown-start.milestone-standdown-end{border-left:1px solid var(--color-slate-alpha01);box-shadow:inset -1px 0 0 var(--color-slate-alpha01);}
 .timeline-header .timeline-day-name{font-size:var(--text-text-small-font-size,.65rem);font-weight:var(--text-text-small-font-weight,450);color:var(--text-text-small-color,var(--color-text-muted));letter-spacing:-0.02em;text-transform:uppercase;}
-.timeline-header.day-view .timeline-day-name{font-size:calc(.72rem * .7);transform:rotate(-90deg);transform-origin:center;line-height:1;white-space:nowrap;padding:.15rem 0;}
+.timeline-header.day-view .timeline-day-name{font-size:var(--text-text-small-font-size,.65rem);transform:rotate(-90deg);transform-origin:center;line-height:1;white-space:nowrap;padding:.15rem 0;}
 .timeline-header .timeline-day-number{font-size:var(--text-text-small-font-size,.65rem);font-weight:var(--text-text-small-font-weight,450);color:var(--text-text-small-color,var(--color-text-muted));}
 .timeline-header.day-view .timeline-day-number:not(.today):not(.milestone-deadline):not(.milestone-standdown):not(.milestone-standdown-start):not(.milestone-standdown-end){color:var(--text-text-small-color,var(--color-text-muted));}
 .timeline-header.day-view .timeline-day-number.is-monday:not(.today):not(.milestone-deadline):not(.milestone-standdown):not(.milestone-standdown-start):not(.milestone-standdown-end){color:var(--text-text-small-color,var(--color-text-muted));}
