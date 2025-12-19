@@ -21,8 +21,8 @@ textarea{resize:vertical;min-height:96px;}
 .row-three{align-items:stretch;}
 .row-three .timeline-controls .view-mode-toggle,
 .row-three .timeline-controls .zoom-controls{justify-content:flex-end;}
-.top-bar button{background:var(--color-white);color:var(--color-solid-black);border:1px solid var(--border);min-height:30px;height:30px;display:flex;align-items:center;gap:.4rem;padding:.5rem 1rem;}
-.top-bar .icon-btn{min-height:80px;height:80px;width:80px;justify-content:center;}
+.top-bar button{background:var(--color-white);color:var(--color-solid-black);border:1px solid var(--border);min-height:25px;height:25px;display:flex;align-items:center;gap:.4rem;padding:.5rem 1rem;}
+.top-bar .icon-btn{min-height:25px;height:25px;width:80px;justify-content:center;}
 .top-bar-sidebar-actions{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;justify-content:flex-start;}
 .top-bar .top-bar-sidebar-actions button{flex:0 0 auto;min-width:0;}
 .legend{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:flex-end;font-size:.6rem;font-weight:500;}
