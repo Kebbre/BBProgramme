@@ -2,6 +2,7 @@ const BASE_COLORS = Object.freeze({
   accentPrimary: '#000000ff',
   accentGreen: '#ffffffff',
   accentPink: '#ff8fad',
+  accentBlue: '#00ccde',
   stageFill: '#ffd6d6',
   bodyBackground: '#ffffffff',
   surfaceBase: '#ffffffff',
