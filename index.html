@@ -13,6 +13,7 @@
 <body>
   <header class="top-bar">
     <div class="top-bar-row heading-row">
+      <img class="app-logo" src="assets/BB_Logo_Full.png" alt="BB Programme logo">
       <button class="hamburger-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="primaryMenu">☰</button>
       <div class="project-heading">
         <h1>Project ABCDE</h1>
@@ -81,7 +82,7 @@
 
   <div class="app-branding">
     <img src="assets/bb-logo.png" alt="BB Programme logo">
-    <span class="app-branding-text">Programme Tool : Version 02.01.22</span>
+    <span class="app-branding-text">Programme Tool : Version 02.01.24</span>
   </div>
 
   <div class="modal-backdrop hidden" id="modalBackdrop"></div>
@@ -2713,9 +2714,9 @@
         if (!floatingEditBtn || !targetRow) return;
         const rect = targetRow.getBoundingClientRect();
         const btnHeight = floatingEditBtn.offsetHeight || 32;
-        const btnWidth = floatingEditBtn.offsetWidth || 64;
+        const btnWidth = floatingEditBtn.offsetWidth || 80;
         const top = rect.top + rect.height / 2 - btnHeight / 2;
-        const left = rect.right - btnWidth - 6;
+        const left = rect.right + 160 - btnWidth;
         floatingEditBtn.style.display = 'inline-flex';
         floatingEditBtn.style.top = `${top}px`;
         floatingEditBtn.style.left = `${left}px`;
